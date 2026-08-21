@@ -7,6 +7,7 @@ const { db } = require("./config/firebase");
 
 const bookingRoutes = require("./routes/booking.routes");
 const paymentRoutes = require("./routes/payment.routes");
+const ticketRoutes = require("./routes/ticket.routes");
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use(express.json());
 
 app.use("/api", apiLimiter, bookingRoutes);
 app.use("/api", apiLimiter, paymentRoutes);
+app.use("/api", apiLimiter, ticketRoutes);
 
 
 app.get("/health", async (req, res) => {

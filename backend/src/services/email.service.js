@@ -1,7 +1,10 @@
-const QRCode = require("qrcode");
-
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM || "LumiShow <booking@lumishow.vn>";
+
+// Render tự inject biến này với URL public thật của service — dùng làm gốc
+// cho ảnh QR (xem ticket.routes.js). Fallback localhost để test ở máy local.
+const PUBLIC_API_BASE =
+    process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
 
 const VENUE_NAME = "Rạp Xiếc Trung Ương";
 const VENUE_ADDRESS = "67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội";
@@ -12,7 +15,7 @@ const SUPPORT_HOTLINE = "0869 512 246 (Ms. Chi)";
 const ASSET_BASE = "https://lumishow.vn/image";
 const HERO_IMG = `${ASSET_BASE}/SonThanThuyQuai.jpg`;
 const TITLE_IMG = `${ASSET_BASE}/textSTTQ.png`;
-const LOGO_IMG = `${ASSET_BASE}/iconlogo-lumishow.png`;
+const LOGO_IMG = `${ASSET_BASE}/logo-lumishow.png`;
 
 function fmtVND(n) {
     return n.toLocaleString("vi-VN") + "đ";
@@ -25,8 +28,11 @@ function splitShowtime(showtimeId) {
     return { time: timePart, date: `${d}/${m}/${y}` };
 }
 
-async function qrDataUrl(text) {
-    return QRCode.toDataURL(text, { margin: 1, width: 220 });
+// Ảnh QR thật (không phải base64 nhúng trong HTML) — nhiều mail client tự
+// strip ảnh dạng data:base64 nhúng qua API vì lý do chống spam, khiến QR
+// không hiện được (src rỗng). Dùng URL thật do backend tự vẽ thay vì nhúng.
+function qrImgUrl(ticketCode) {
+    return `${PUBLIC_API_BASE}/api/tickets/${encodeURIComponent(ticketCode)}/qr.png`;
 }
 
 function infoRow(icon, label, value) {
@@ -38,11 +44,11 @@ function infoRow(icon, label, value) {
     </tr>`;
 }
 
-function qrThumbHtml(ticket, qrSrc) {
+function qrThumbHtml(ticket) {
     return `
-    <td align="center" style="padding:0 8px 8px 0;">
-        <img src="${qrSrc}" width="92" height="92" alt="QR vé ${ticket.ticketCode}" style="display:block;border-radius:6px;background:#fff;padding:5px;">
-        <div style="color:#98a29b;font-size:10.5px;margin-top:4px;">${ticket.seatId}</div>
+    <td align="center" style="padding:0 10px 14px;">
+        <img src="${qrImgUrl(ticket.ticketCode)}" width="150" height="150" alt="QR vé ${ticket.ticketCode}" style="display:block;border-radius:10px;background:#fff;padding:10px;">
+        <div style="color:#E6F1EA;font-size:13px;font-weight:700;margin-top:8px;">${ticket.seatId}</div>
     </td>`;
 }
 
@@ -50,15 +56,11 @@ async function buildTicketEmailHtml(order, tickets) {
 
     const { time, date } = splitShowtime(order.showtimeId);
 
-    const qrList = await Promise.all(
-        tickets.map((t) => qrDataUrl(t.ticketCode))
-    );
-
     const tierSummary = [...new Set(tickets.map((t) => t.tierName))].join(", ");
     const seatSummary = tickets.map((t) => t.seatId).join(", ");
 
     const qrThumbs = tickets
-        .map((t, i) => qrThumbHtml(t, qrList[i]))
+        .map((t) => qrThumbHtml(t))
         .join("");
 
     return `
@@ -75,8 +77,7 @@ async function buildTicketEmailHtml(order, tickets) {
         <!-- LOGO + TITLE -->
         <tr>
             <td style="background:#0d1117;text-align:center;padding:24px 24px 20px;">
-                <img src="${LOGO_IMG}" width="40" height="40" alt="LumiShow" style="display:block;margin:0 auto 6px;">
-                <div style="color:#E6F1EA;font-size:13px;font-weight:800;letter-spacing:3px;margin-bottom:16px;">LUMI SHOW</div>
+                <img src="${LOGO_IMG}" width="200" alt="LumiShow" style="display:block;width:200px;max-width:60%;height:auto;margin:0 auto 18px;">
                 <img src="${TITLE_IMG}" width="320" alt="Sơn Thần Thủy Quái" style="display:block;width:100%;max-width:320px;height:auto;margin:0 auto 10px;">
                 <div style="color:#98a29b;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Show xiếc kết hợp 3D Mapping Panorama 360°</div>
                 <div style="color:#7CFF5A;font-size:11.5px;font-weight:700;margin-top:8px;">◆ &nbsp;LumiShow kết hợp cùng Rạp Xiếc Trung Ương&nbsp; ◆</div>
@@ -120,9 +121,9 @@ async function buildTicketEmailHtml(order, tickets) {
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding:4px 20px 20px;border-top:1px solid rgba(255,255,255,.08);">
-                            <div style="color:#98a29b;font-size:11px;margin:14px 0 10px;">📱&nbsp; Mã QR vé — quét để check-in tại rạp</div>
-                            <table role="presentation" cellpadding="0" cellspacing="0"><tr>${qrThumbs}</tr></table>
+                        <td align="center" style="padding:4px 20px 20px;border-top:1px solid rgba(255,255,255,.08);">
+                            <div style="color:#98a29b;font-size:11px;margin:14px 0 12px;text-align:center;">📱&nbsp; Mã QR vé — quét để check-in tại rạp</div>
+                            <table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>${qrThumbs}</tr></table>
                         </td>
                     </tr>
                 </table>
