@@ -10,6 +10,7 @@ const QRCode = require("qrcode");
 
 const { db } = require("../config/firebase");
 const { getHoldStatus } = require("./booking.service");
+const { sendTicketEmail } = require("./email.service");
 
 const payos = new PayOS({
     clientId: process.env.PAYOS_CLIENT_ID,
@@ -161,6 +162,7 @@ async function createPaymentForHold({
 async function finalizeOrderAsPaid(orderRef) {
 
     let alreadyPaid = false;
+    let emailPayload = null;
 
     await db.runTransaction(async (transaction) => {
 
@@ -223,6 +225,8 @@ async function finalizeOrderAsPaid(orderRef) {
         // 4. Ghế → SOLD, tạo vé cho từng ghế
         // ==========================================
 
+        const ticketsForEmail = [];
+
         seatDocs.forEach((seatDoc, i) => {
 
             if (!seatDoc.exists) {
@@ -230,6 +234,7 @@ async function finalizeOrderAsPaid(orderRef) {
             }
 
             const seatData = seatDoc.data();
+            const ticketCode = `LS-${order.orderCode}-${order.seatIds[i]}`;
 
             transaction.update(seatRefs[i], {
                 status: "SOLD",
@@ -249,20 +254,49 @@ async function finalizeOrderAsPaid(orderRef) {
 
                 customerName: order.customerName,
                 customerPhone: order.customerPhone,
+                customerEmail: order.customerEmail,
 
                 price: seatData.price,
 
                 paymentStatus: "paid",
                 ticketStatus: "valid",
-                ticketCode: `LS-${order.orderCode}-${order.seatIds[i]}`,
+                ticketCode,
 
                 checkedIn: false,
                 checkedInAt: null,
 
                 createdAt: now
             });
+
+            ticketsForEmail.push({
+                seatId: order.seatIds[i],
+                tierName: seatData.tierName,
+                price: seatData.price,
+                ticketCode
+            });
         });
+
+        emailPayload = {
+            order: {
+                customerName: order.customerName,
+                customerPhone: order.customerPhone,
+                customerEmail: order.customerEmail,
+                orderCode: order.orderCode,
+                amount: order.amount,
+                showId: order.showId,
+                showtimeId: order.showtimeId
+            },
+            tickets: ticketsForEmail
+        };
     });
+
+    // Gửi mail sau khi transaction đã chốt xong — không gửi trong lúc transaction
+    // đang chạy vì Firestore có thể tự retry transaction nếu xung đột ghi.
+    if (!alreadyPaid && emailPayload) {
+        sendTicketEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
+            console.error("GỬI MAIL VÉ THẤT BẠI:", error);
+        });
+    }
 
     return alreadyPaid;
 }
