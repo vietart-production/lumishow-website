@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiShow — Nơi ánh sáng kể câu chuyện</title>
+<meta name="description" content="LumiShow — Nghệ thuật thăng hoa. Những màn trình diễn xiếc nghệ thuật đỉnh cao.">
+<link rel="icon" type="image/png" href="image/iconlogo-lumishow.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700;800&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+  /* ============ RESET ============ */
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  img,svg{display:block;max-width:100%;}
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  ul{list-style:none;}
+
+  /* ============ TOKENS ============ */
+  :root{
+    --bg:#0D1117;
+    --bg-soft:#10151c;
+    --card-bg:#0d1210;
+    --line:rgba(255,255,255,.07);
+    --line-2:rgba(255,255,255,.15);
+    --white:#E6F1EA;
+    --gray:#98a29b;
+    --gray-dim:#636d66;
+    --green:#7CFF5A;
+    --green-deep:#4caf50;
+    --teal:#2fa97a;
+    --blue:#23B6FF;
+    --blue-deep:#3c7bd9;
+    --gold:#FFD15A;
+    --grad-btn:linear-gradient(90deg,#7CFF5A 0%,#2fa97a 100%);
+    /* Texture nền cho nút Đặt vé: núi ở trạng thái thường, biển trượt vào khi hover */
+    --btn-texture:url('image/BlendingButton_BF.jpg');
+    --btn-texture-sea:url('image/BlendingButton_HV.jpg');
+    --btn-blend:soft-light;   /* thử: soft-light | overlay | luminosity | multiply | screen */
+    --btn-texture-opacity:1; /* 0 = tắt hẳn, 1 = ảnh rõ nhất */
+    --btn-texture-size:100% 100%; /* 100% 100% = kéo vừa khít (thấy trọn ảnh) | cover = lấp đầy, cắt bớt trên dưới */
+    --btn-tint: 1;           /* độ đậm lớp xanh phủ lên ảnh: 1 = xanh đậm nhất, 0 = mất hẳn màu xanh, chỉ còn ảnh */
+    --btn-slide:.55s;         /* tốc độ trượt của hai lớp ảnh */
+    --grad-text:linear-gradient(90deg,#8fe06a 0%,#23B6FF 100%);
+    --font-heading:'Sora','Be Vietnam Pro',sans-serif;
+    --font-body:'Inter','Be Vietnam Pro',sans-serif;
+    --r-lg:20px;
+    --r-md:14px;
+    --r-sm:10px;
+    --r-pill:100px;
+    --container:1240px;
+    --gutter:clamp(20px,4vw,48px);
+    --shell-max:1720px;
+    --shell-pad:clamp(0px,2.2vw,40px);
+    --page-bg:#04060a;
+    --nav-bg:rgba(7,9,10,.72);
+    --overlay-strong:rgba(2,8,15,.85);
+    --overlay-mid:rgba(2,8,15,.45);
+    --overlay-soft:rgba(2,8,15,.1);
+  }
+
+  /* ---- Theme sáng ---- */
+  /* ---- Bật đèn: chỉ đổi màu hai lề trống hai bên thành trắng ---- */
+  html.light{
+    --page-bg:#ffffff;
+  }
+
+  body{
+    background:var(--page-bg);
+    color:var(--white);
+    font-family:'Be Vietnam Pro',sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    padding:var(--shell-pad);
+    transition:background .35s ease,color .35s ease;
+  }
+  /* Khung trang: chừa khoảng trống hai bên trên màn hình lớn */
+  .page-shell{
+    max-width:var(--shell-max);margin:0 auto;width:100%;
+    background:var(--bg);
+    border-radius:clamp(0px,1.4vw,22px);
+    overflow:clip; /* clip (không phải hidden) để navbar sticky vẫn hoạt động */
+    transition:background .35s ease;
+  }
+  .container{max-width:var(--container);margin:0 auto;padding:0 var(--gutter);width:100%;}
+  /* Chống lệch/tràn ngang khi zoom: cho phép các item co lại thay vì đẩy layout */
+  .nav-inner>*,.hero-inner>*,.contact-row,.weekend-node,.news-side-item{min-width:0;}
+  .hero-copy{max-width:100%;}
+  .weekend-track{flex-wrap:nowrap;max-width:100%;}
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+
+  /* ============ ICON DEFAULTS ============ */
+  .icon{width:20px;height:20px;flex-shrink:0;}
+  .icon-stroke{stroke:currentColor;fill:none;}
+
+  /* ============ NAVBAR ============ */
+  .navbar{
+    position:sticky;top:0;z-index:100;
+    padding:13px var(--gutter);
+    background:var(--nav-bg);
+    -webkit-backdrop-filter:blur(14px);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    position:relative;
+    max-width:var(--container);margin:0 auto;width:100%;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+  }
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;letter-spacing:.3px;}
+  .logo-lumishow{height:60px;width:auto;display:block;}
+  /* Căn giữa theo toàn bộ chiều rộng navbar (gốc tính từ lề trái),
+     không bị lệch theo độ rộng của logo hay cụm nút bên phải */
+  .nav-links{
+    display:flex;gap:32px;
+    position:absolute;left:60%;top:50%;transform:translate(-50%,-50%);
+  }
+  .nav-links a{font-size:14.5px;color:var(--gray);font-weight:500;padding:6px 0;position:relative;transition:color .2s;white-space:nowrap;}
+  .nav-links a:hover{color:var(--white);}
+  .nav-links a.active{color:var(--white);}
+  .nav-links a.active::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--white);border-radius:2px;}
+  .nav-right{display:flex;align-items:center;gap:8px;}
+  .icon-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--gray);border-radius:50%;transition:all .2s;}
+  .icon-btn:hover{color:var(--white);background:rgba(255,255,255,.06);}
+  .lang-select{display:flex;align-items:center;gap:3px;color:var(--gray);font-size:14px;font-weight:500;padding:8px 10px;border-radius:50px;transition:all .2s;}
+  .lang-select:hover{color:var(--white);background:rgba(255,255,255,.06);}
+  .lang-select .icon{width:15px;height:15px;}
+  .btn-primary{
+    position:relative;overflow:hidden;isolation:isolate;
+    display:inline-flex;align-items:center;gap:8px;
+    padding:11px 22px;margin-left:10px;
+    background:var(--grad-btn);
+    border-radius:var(--r-pill);
+    font-weight:600;font-size:13.5px;color:#ffffff;
+    transition:transform .2s,box-shadow .2s;
+    white-space:nowrap;
+  }
+  /* Hai lớp texture blend lên màu nút:
+     ::before = ảnh BF (mặc định hiển thị), ::after = ảnh HV (nằm chờ bên phải).
+     Khi hover: lớp BF trượt sang trái ra khỏi nút, lớp HV từ phải trượt vào thế chỗ.
+     Bỏ hover: cả hai trượt ngược về bên phải, trả lại vị trí cũ. */
+  .btn-primary::before,
+  .btn-primary::after{
+    content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+    background-size:var(--btn-texture-size);background-position:center;background-repeat:no-repeat;
+    background-blend-mode:var(--btn-blend),normal;
+    opacity:var(--btn-texture-opacity);
+    transition-property:transform;
+    transition-duration:var(--btn-slide);
+    transition-timing-function:cubic-bezier(.4,0,.2,1);
+    backface-visibility:hidden;
+  }
+  .btn-primary::before{
+    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture);
+    transform:translateX(0);
+  }
+  .btn-primary::after{
+    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture-sea);
+    transform:translateX(100%);
+  }
+  .btn-primary:hover::before{transform:translateX(-100%);}
+  .btn-primary:hover::after{transform:translateX(0);}
+  /* Chữ và icon phải nổi lên trên hai lớp ảnh */
+  .btn-primary>*{position:relative;z-index:2;}
+
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(126,217,87,.32);}
+  /* Nếu hệ thống bật chế độ giảm chuyển động thì chỉ trượt nhanh hơn, không tắt hẳn */
+  @media (prefers-reduced-motion:reduce){
+    .btn-primary::before,.btn-primary::after{transition-duration:.2s;}
+  }
+  .menu-toggle{display:none;width:36px;height:36px;align-items:center;justify-content:center;color:var(--white);}
+
+  /* ============ BUTTONS (shared) ============ */
+  .btn-outline{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;padding:11px;
+    border:1px solid var(--line-2);border-radius:var(--r-pill);
+    font-size:13.5px;font-weight:600;
+    transition:all .2s;
+  }
+  .btn-outline:hover{background:var(--white);color:var(--bg);border-color:var(--white);}
+  .link-arrow{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--white);white-space:nowrap;}
+  .link-arrow .icon{width:16px;height:16px;transition:transform .2s;}
+  .link-arrow:hover .icon{transform:translateX(3px);}
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;
+    min-height:clamp(560px,82vh,880px);
+    display:flex;align-items:flex-end;
+    overflow:hidden;
+    padding:70px var(--gutter) 90px;
+    background:radial-gradient(ellipse 1100px 650px at 74% 34%,#0f1c13 0%,#07090a 62%);
+  }
+  .hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;}
+  .hero-bg-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .hero-bg-overlay{
+    position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(90deg,var(--overlay-strong) 0%,var(--overlay-mid) 45%,var(--overlay-soft) 100%);
+    box-shadow:inset 0 0 120px 30px rgba(2,8,15,.6);
+    transition:opacity 1.4s ease;
+  }
+  .hero-bg-overlay.dim{opacity:.5;}
+  /* Blend đáy hero vào nền section kế tiếp */
+  .hero::after{
+    content:'';position:absolute;left:0;right:0;bottom:0;height:180px;z-index:2;pointer-events:none;
+    background:linear-gradient(180deg,transparent 0%,var(--bg) 100%);
+  }
+  .hero-inner{
+    position:relative;z-index:3;max-width:var(--container);margin:0 auto;width:100%;
+  }
+  .hero-eyebrow{color:var(--green);font-size:12.5px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:8px;}
+  .hero-eyebrow-2{color:var(--white);font-size:11.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:30px;}
+  .hero-title{margin-bottom:26px;}
+  .hero-title-img{width:100%;max-width:520px;height:auto;display:block;}
+  .hero-desc{font-family:var(--font-body);color:var(--white);font-size:16px;font-weight:600;font-style:italic;line-height:1.75;max-width:420px;margin-bottom:40px;}
+  .hero-actions{display:flex;align-items:center;gap:30px;flex-wrap:wrap;}
+  .btn-hero{padding:16px 28px;font-size:14.5px;}
+  .btn-hero .icon{width:16px;height:16px;}
+  .video-trigger{display:flex;align-items:center;gap:13px;}
+  .play-circle{
+    width:46px;height:46px;border-radius:50%;flex-shrink:0;
+    border:1px solid rgba(255,255,255,.28);
+    background:rgba(255,255,255,.04);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;transition:all .2s;
+  }
+  .play-circle .icon{width:14px;height:14px;color:var(--white);margin-left:2px;}
+  .video-trigger:hover .play-circle{background:var(--white);border-color:var(--white);}
+  .video-trigger:hover .play-circle .icon{color:var(--bg);}
+  .video-trigger .vt-label{display:block;font-family:var(--font-body);font-size:11.5px;letter-spacing:1px;color:var(--gray);text-transform:uppercase;}
+  .video-trigger .vt-sub{display:block;font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--white);margin-top:2px;}
+
+  /* ============ SECTION HEAD (shared) ============ */
+  .section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:40px;gap:20px;flex-wrap:wrap;}
+  .eyebrow{color:var(--green);font-size:12.5px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:10px;display:block;}
+  .section-title{font-size:29px;font-weight:700;letter-spacing:.2px;}
+  .section-title-img{display:inline-block;height:auto;max-width:100%;margin-left:auto;margin-right:auto;}
+
+  /* ============ SCHEDULE ============ */
+  .schedule-section{
+    position:relative;overflow:hidden;
+    padding:90px 0 110px;
+    background-image:
+      radial-gradient(ellipse 70% 100% at 50% 48%,rgba(3,6,8,1) 0%,rgba(3,6,8,.64) 45%,rgba(3,6,8,0) 75%),
+      url('image/BKG_LichDien.jpg');
+    background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;
+  }
+  /* Blend mép trên & dưới của schedule vào nền trang */
+  .schedule-section::before,.schedule-section::after{
+    content:'';position:absolute;left:0;right:0;height:150px;z-index:0;pointer-events:none;
+  }
+  .schedule-section::before{top:0;background:linear-gradient(180deg,var(--bg) 0%,transparent 100%);}
+  .schedule-section::after{bottom:0;background:linear-gradient(0deg,var(--bg) 0%,transparent 100%);}
+  .schedule-section .container{position:relative;z-index:1;}
+
+  .schedule-head{text-align:center;max-width:640px;margin:0 auto 12px;}
+  .schedule-head .eyebrow{margin-bottom:10px;}
+  .schedule-head .section-title{margin-bottom:20px;}
+  .schedule-meta{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;color:var(--gray);font-size:14px;}
+  .schedule-meta strong{color:var(--white);font-weight:700;}
+  .schedule-meta-dot{color:var(--green);}
+  .schedule-range{margin-top:8px;color:var(--gray-dim);font-size:12.5px;letter-spacing:.5px;}
+
+  /* ---- Timeline chọn ngày diễn (Thứ 6 · Thứ 7 · Chủ nhật) ---- */
+  .weekend-picker{
+    display:flex;align-items:center;justify-content:center;gap:clamp(3px,2vw,16px);margin-bottom:14px;
+    max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 1px;
+  }
+  .weekend-picker::-webkit-scrollbar{display:none;}
+  .week-nav-btn{width:clamp(26px,7.5vw,40px);height:clamp(26px,7.5vw,40px);border-radius:50%;flex-shrink:0;border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;color:var(--white);transition:all .2s;}
+  .week-nav-btn:hover{color:var(--bg);background:var(--white);border-color:var(--white);}
+  .week-nav-btn .icon{width:clamp(11px,3.2vw,16px);height:clamp(11px,3.2vw,16px);}
+  .week-nav-btn:disabled{opacity:.3;pointer-events:none;}
+
+  .weekend-track{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .weekend-connector{width:clamp(8px,5vw,64px);height:1px;flex-shrink:0;background:linear-gradient(90deg,var(--green),var(--blue));opacity:.55;position:relative;}
+  .weekend-connector::before,.weekend-connector::after{content:'';position:absolute;top:50%;width:6px;height:6px;border-radius:50%;transform:translateY(-50%);}
+  .weekend-connector::before{left:-3px;background:var(--green);box-shadow:0 0 8px rgba(126,217,87,.8);}
+  .weekend-connector::after{right:-3px;background:var(--blue);box-shadow:0 0 8px rgba(35,182,255,.8);}
+  .weekend-node{
+    display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;
+    width:clamp(62px,19vw,130px);padding:clamp(12px,4vw,24px) clamp(5px,2.2vw,12px) clamp(10px,3.2vw,20px);border-radius:var(--r-lg);
+    border:1px solid var(--line);background:var(--card-bg);
+    cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s;
+  }
+  .weekend-node:hover{border-color:var(--line-2);transform:translateY(-2px);}
+  .weekend-node.active{border-color:transparent;box-shadow:0 0 0 1.5px var(--green),0 0 34px rgba(126,217,87,.28);}
+  .weekend-node .wd-dow{font-size:clamp(9.5px,2.6vw,12px);letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;font-weight:600;white-space:nowrap;}
+  .weekend-node.active .wd-dow{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+  .weekend-node .wd-dom{font-family:var(--font-heading);font-size:clamp(22px,7vw,36px);font-weight:800;color:var(--white);line-height:1;margin:6px 0 4px;}
+  .weekend-node .wd-moy{font-size:clamp(9px,2.4vw,11px);color:var(--gray-dim);white-space:nowrap;}
+
+  .schedule-cta-row{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;margin-top:44px;}
+  /* Nút Đặt vé — cỡ vừa (đã thu nhỏ lại một nửa so với bản trước) */
+  .btn-sch-lg{padding:13px 28px;font-size:14.5px;margin-left:0;}
+  .btn-sch-lg .icon{width:18px;height:18px;}
+  /* Nút phụ "Tìm hiểu thêm" — giống style nút submit ở trang Liên hệ, thu nhỏ còn 70% cỡ trước */
+  .btn-gold{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:9px 20px;border-radius:var(--r-pill);
+    border:1px solid rgba(255,209,90,.55);
+    background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);
+    color:var(--gold);
+    font-weight:700;font-size:10px;letter-spacing:.5px;text-transform:uppercase;
+    box-shadow:0 0 0 1px rgba(255,209,90,.08) inset,0 10px 26px rgba(255,209,90,.15);
+    transition:transform .2s,box-shadow .2s;white-space:nowrap;
+  }
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,209,90,.15) inset,0 14px 32px rgba(255,209,90,.25);}
+  .btn-gold .icon{width:13px;height:13px;}
+
+  /* ============ FOOTER ============ */
+  .site-footer{
+    position:relative;overflow:hidden;
+    padding:clamp(20px,3vw,32px) var(--gutter) 0;
+    background:radial-gradient(ellipse 1000px 560px at 50% 0%,#0d1611 0%,var(--bg) 65%);
+  }
+  .footer-card{
+    position:relative;isolation:isolate;
+    width:100%;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:clamp(14px,1.6vw,22px);
+    background:linear-gradient(180deg,rgba(20,26,22,.5) 0%,rgba(8,11,10,.75) 100%);
+    padding:clamp(22px,3vw,38px) clamp(18px,3vw,38px) clamp(16px,2.2vw,24px);
+    overflow:hidden;
+  }
+
+  /* ---- top grid: brand / contact / map ---- */
+  .footer-grid{display:grid;grid-template-columns:1.15fr 2fr;grid-template-rows:auto 1fr;column-gap:clamp(22px,3.4vw,46px);row-gap:clamp(18px,2.6vw,28px);}
+  .footer-brand{min-width:0;grid-column:1;grid-row:1;}
+  .footer-contact-block{grid-column:1;grid-row:2;}
+  .footer-col-right{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;}
+  .footer-brand-inner{max-width:380px;}
+  .footer-logo{height:clamp(58px,7vw,86px);width:auto;display:block;margin:0 auto 18px;}
+  .footer-divider{display:flex;align-items:center;gap:0px;margin:0 auto 18px;max-width:250px;}
+  .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,209,90,.5));}
+  .footer-divider::after{background:linear-gradient(90deg,rgba(255,209,90,.5),transparent);}
+  .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;}
+  .footer-motif{opacity:.5;max-width:300px;}
+  .footer-motif svg{width:100%;height:auto;display:block;}
+
+  .footer-heading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:clamp(12px,1.15vw,14px);letter-spacing:.5px;text-transform:uppercase;color:var(--white);padding-bottom:12px;margin-bottom:16px;}
+  .footer-heading::after{content:'';position:absolute;left:0;bottom:0;width:30px;height:2px;background:var(--green);border-radius:2px;}
+
+  .footer-list{display:flex;flex-direction:column;}
+  .footer-row{display:flex;align-items:flex-start;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .footer-row:first-child{padding-top:0;}
+  .footer-row:last-child{border-bottom:none;padding-bottom:0;}
+  .footer-icon{width:clamp(36px,3.2vw,44px);height:clamp(36px,3.2vw,44px);border-radius:10px;flex-shrink:0;background:rgba(255,255,255,.04);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--green);}
+  .footer-icon .icon{width:18px;height:18px;}
+  .footer-label{display:block;color:var(--green);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+  .footer-value{color:var(--white);font-size:12.5px;line-height:1.55;}
+  .footer-value a{transition:color .2s;}
+  .footer-value a:hover{color:var(--green);}
+  .footer-value-line{display:block;}
+  .footer-value-person{color:var(--gray);font-size:10px;}
+
+  .footer-map-frame-wrap{position:relative;width:100%;flex:1 1 auto;min-height:clamp(170px,18vw,230px);border-radius:var(--r-md);overflow:hidden;background:#0a0d10;border:1px solid var(--line);}
+  .footer-map-frame{position:absolute;inset:0;width:100%;height:100%;border:0;filter:saturate(.85) brightness(.92);}
+  .footer-map-badge{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-pill);background:rgba(6,9,8,.82);border:1px solid var(--line-2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--white);font-size:11px;font-weight:600;transition:background .2s,color .2s;}
+  .footer-map-badge:hover{background:rgba(124,255,90,.14);color:var(--green);}
+  .footer-map-badge .icon{width:12px;height:12px;}
+  .footer-map-caption{display:flex;align-items:flex-start;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);}
+  .footer-map-caption .footer-icon{width:32px;height:32px;}
+  .footer-map-caption .footer-icon .icon{width:14px;height:14px;}
+  .footer-map-note{display:block;color:var(--gray);font-size:10.5px;margin-top:2px;font-weight:400;}
+
+  /* ---- bottom row ---- */
+  .footer-divider-line{height:1px;background:var(--line);margin:clamp(18px,2.6vw,28px) 0 clamp(16px,2.2vw,22px);}
+  .footer-bottom{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(14px,2.4vw,26px);}
+  .footer-social{min-width:0;}
+  .footer-subheading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--white);padding-bottom:9px;margin-bottom:11px;}
+  .footer-subheading::after{content:'';position:absolute;left:0;bottom:0;width:24px;height:2px;background:var(--green);border-radius:2px;}
+  .footer-social-icons{display:flex;gap:9px;}
+  .social-badge{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform .2s,box-shadow .2s;flex-shrink:0;}
+  .social-badge:hover{transform:translateY(-2px);}
+  .social-badge img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+
+  .footer-support{display:flex;align-items:center;gap:12px;padding-left:clamp(14px,2.4vw,26px);border-left:1px solid var(--line);}
+  .footer-icon--ghost{background:rgba(124,255,90,.06);}
+  .footer-support-text .footer-label{margin-bottom:3px;}
+  .footer-support-text .footer-value{font-size:12px;color:var(--gray);}
+
+  .footer-cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-left:auto;}
+  .footer-cta span{color:var(--gray);font-size:12px;max-width:320px;line-height:1.5;}
+  .footer-cta-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:11px 20px;border-radius:var(--r-pill);border:1px solid rgba(255,209,90,.55);background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 0 1px rgba(255,209,90,.08) inset;transition:transform .2s,box-shadow .2s;white-space:nowrap;}
+  .footer-cta-btn .icon{width:13px;height:13px;}
+  .footer-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,209,90,.15) inset,0 14px 30px rgba(255,209,90,.2);}
+
+  .footer-copyright{text-align:center;color:var(--gray-dim);font-size:12px;padding:18px 0;}
+
+  /* ============ FOOTER RESPONSIVE ============ */
+  @media (max-width:1080px){
+    .footer-grid{grid-template-columns:1fr;grid-template-rows:auto;gap:24px;}
+    .footer-brand,.footer-contact-block,.footer-col-right{grid-column:1;}
+    .footer-brand{grid-row:1;}
+    .footer-contact-block{grid-row:2;}
+    .footer-col-right{grid-row:3;}
+    .footer-brand-inner{max-width:100%;}
+    .footer-motif{display:none;}
+  }
+  @media (max-width:760px){
+    .footer-card{padding:20px 18px 16px;}
+    .footer-bottom{flex-direction:column;align-items:flex-start;}
+    .footer-support{border-left:none;padding-left:0;padding-top:13px;border-top:1px solid var(--line);width:100%;}
+    .footer-cta{margin-left:0;width:100%;}
+    .footer-cta-btn{width:100%;justify-content:center;}
+    .footer-map-frame-wrap{min-height:190px;}
+  }
+
+  /* ============ MOBILE NAV ============ */
+  .mobile-nav{display:none;flex-direction:column;gap:2px;padding:10px var(--gutter) 18px;background:var(--bg-soft);border-bottom:1px solid var(--line);}
+  .mobile-nav a{padding:12px 4px;font-size:15px;color:var(--gray);border-bottom:1px solid var(--line);}
+  .mobile-nav a.active{color:var(--white);}
+  .mobile-nav.open{display:flex;}
+
+  /* ============ NEWS ============ */
+  .section{padding:90px 0;}
+  .section.dark{
+    position:relative;overflow:hidden;
+    background-image:url('image/BKG_News.jpg');
+    background-size:cover;background-position:center;
+  }
+  .section.dark::before{
+    content:'';position:absolute;inset:0;z-index:0;
+    background:
+      linear-gradient(180deg,var(--bg) 0%,transparent 60%,transparent 78%,var(--bg) 100%),
+      rgba(2,8,15,.28);
+  }
+  .section.dark>.container{position:relative;z-index:1;}
+  .kicker{color:var(--green);font-size:12.5px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:10px;display:block;}
+
+  .news-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:36px;gap:20px;flex-wrap:wrap;}
+  .news-head-actions{display:flex;align-items:center;gap:14px;}
+  .news-all{
+    display:inline-flex;align-items:center;gap:6px;padding:12px 24px;
+    border-radius:var(--r-pill);border:1px solid var(--line-2);
+    font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);
+    white-space:nowrap;transition:all .2s;
+  }
+  .news-all:hover{background:var(--white);color:var(--bg);border-color:var(--white);}
+  .news-nav{display:flex;gap:8px;}
+  .news-nav-btn{width:38px;height:38px;border-radius:50%;flex-shrink:0;border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;color:var(--white);transition:all .2s;}
+  .news-nav-btn:hover{background:var(--white);color:var(--bg);border-color:var(--white);}
+  .news-nav-btn:disabled{opacity:.3;pointer-events:none;}
+  .news-nav-btn .icon{width:15px;height:15px;}
+
+  .news-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:26px;align-items:stretch;}
+
+  .news-featured{position:relative;display:block;border-radius:var(--r-lg);overflow:hidden;min-height:440px;border:1px solid var(--line);color:inherit;}
+  .news-featured img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s ease;}
+  .news-featured:hover img{transform:scale(1.045);}
+  .news-featured::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,6,8,.94) 0%,rgba(3,6,8,.6) 40%,transparent 72%);}
+  .news-featured-copy{position:absolute;left:0;right:0;bottom:0;padding:28px 26px 24px;z-index:1;}
+  .news-tags{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--gray);margin-bottom:12px;flex-wrap:wrap;}
+  .news-tags .nt-cat{color:var(--green);font-weight:700;}
+  .news-tags .nt-dot{opacity:.6;}
+  .news-featured-copy h3{font-family:var(--font-heading);font-size:21px;font-weight:800;line-height:1.35;color:var(--white);}
+
+  .news-side{display:flex;flex-direction:column;gap:16px;}
+  .news-side-item{
+    display:flex;gap:14px;padding:12px;
+    border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);
+    transition:border-color .2s,background .2s;color:inherit;
+  }
+  .news-side-item:hover{border-color:var(--line-2);background:rgba(255,255,255,.045);}
+  .news-side-thumb{width:104px;height:88px;border-radius:var(--r-sm);overflow:hidden;flex-shrink:0;}
+  .news-side-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .news-side-copy{min-width:0;display:flex;flex-direction:column;justify-content:center;}
+  .news-side-copy .news-tags{margin-bottom:7px;font-size:11.5px;}
+  .news-side-copy h4{
+    font-family:var(--font-heading);font-size:14px;font-weight:700;line-height:1.4;color:var(--white);
+    display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease;}
+  .reveal.in{opacity:1;transform:none;}
+
+  /* ============ SECTION DIVIDER ============ */
+  .section-divider{display:flex;align-items:center;justify-content:center;gap:14px;padding:34px 0;}
+  .section-divider span{width:70px;height:1px;background:linear-gradient(90deg,transparent,var(--line-2),transparent);}
+  .section-divider i{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 10px rgba(126,217,87,.7);}
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width:1080px){
+    .hero{padding-top:40px;}
+    .news-featured{min-height:360px;}
+  }
+  @media (max-width:760px){
+    .nav-links{display:none;}
+    .menu-toggle{display:flex;}
+    .navbar{padding-top:13px;padding-bottom:13px;}
+    .hero{padding-top:30px;padding-bottom:70px;}
+    .section-title{font-size:24px;}
+    .news-layout{grid-template-columns:1fr;}
+    .news-featured{min-height:300px;}
+    /* Thu nhỏ cụm nav-right + nút CTA để không bị cắt khi màn hình hẹp */
+    .nav-right{gap:clamp(3px,1.6vw,8px);}
+    .btn-primary{
+      padding:clamp(7px,2.4vw,11px) clamp(10px,4.2vw,22px);
+      font-size:clamp(10.5px,3vw,13.5px);
+      margin-left:clamp(3px,1.8vw,10px);
+      gap:5px;
+    }
+  }
+  @media (max-width:560px){
+    .weekend-picker{gap:clamp(3px,1.6vw,6px);}
+    .btn-sch-lg{padding:13px 28px;font-size:14.5px;width:100%;justify-content:center;}
+    .schedule-cta-row{flex-direction:column;width:100%;max-width:320px;margin:0 auto;}
+  }
+  @media (max-width:480px){
+    /* Giảm lề hai bên (gutter) để nhường chỗ cho nav-right, tránh đẩy nút CTA ra ngoài rồi bị viền cắt mất */
+    :root{--gutter:14px;}
+    .nav-inner{gap:8px;}
+    .logo-lumishow{height:40px;}
+    /* Cho chữ trong nút tự xuống dòng khi không đủ chỗ, thay vì bị cắt mất */
+    .btn-primary{white-space:normal;text-align:center;line-height:1.15;word-break:break-word;}
+    .weekend-picker{justify-content:flex-start;}
+  }
+  @media (max-width:400px){
+    .lang-select{padding:5px 6px;font-size:11.5px;}
+    .icon-btn{width:30px;height:30px;}
+    .menu-toggle{width:30px;height:30px;}
+    .btn-primary{padding:6px 8px;font-size:10px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ ICON / FIGURE SPRITE ============ -->
+<svg class="visually-hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gradGB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fe06a"/>
+      <stop offset="1" stop-color="#4f9bea"/>
+    </linearGradient>
+    <linearGradient id="gradGB2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8fe06a"/>
+      <stop offset="1" stop-color="#4f9bea"/>
+    </linearGradient>
+  </defs>
+
+  <!-- UI icons -->
+  <symbol id="ic-chevdown" viewBox="0 0 24 24"><polyline class="icon-stroke" points="6 9 12 15 18 9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="6" y2="6"/><line x1="18" y1="18" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="6" y2="18"/><line x1="18" y1="6" x2="19.8" y2="4.2"/></symbol>
+  <symbol id="ic-moon" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></symbol>
+  <symbol id="ic-menu" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></symbol>
+  <symbol id="ic-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7Z"/></symbol>
+  <symbol id="ic-arrow-right" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+  <symbol id="ic-chev-left" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+  <symbol id="ic-chev-right" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="ic-calendar" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+  <symbol id="ic-globe" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></symbol>
+  <symbol id="ic-ticket" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.8a2.2 2.2 0 0 0 0 4.4v1.8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.8a2.2 2.2 0 0 0 0-4.4Z"/><line x1="13" y1="6" x2="13" y2="8"/><line x1="13" y1="11" x2="13" y2="13"/><line x1="13" y1="16" x2="13" y2="18"/></symbol>
+  <symbol id="ic-armchair" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12V8.2A3.7 3.7 0 0 1 10.2 4.5h3.6A3.7 3.7 0 0 1 17.5 8.2V12"/><path d="M4.5 12.5h15a1 1 0 0 1 1 1v4a2.3 2.3 0 0 1-2 2.28V21h-2v-1.5h-9V21h-2v-1.22a2.3 2.3 0 0 1-2-2.28v-4a1 1 0 0 1 1-1Z"/></symbol>
+  <symbol id="ic-shield" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8 19 5.5v6c0 5.2-3.6 7.9-7 9.2-3.4-1.3-7-4-7-9.2v-6Z"/><polyline points="8.7 12 10.9 14.2 15.3 9.5"/></symbol>
+  <symbol id="ic-headset" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5a8 8 0 0 1 16 0V19"/><rect x="3" y="13.2" width="4" height="6.3" rx="1.6"/><rect x="17" y="13.2" width="4" height="6.3" rx="1.6"/><path d="M20 19.5v.3a2.7 2.7 0 0 1-2.7 2.7H14.5"/></symbol>
+  <symbol id="ic-map-pin" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-4.2-4.4-7-8.1-7-11.7a7 7 0 0 1 14 0c0 3.6-2.8 7.3-7 11.7Z"/><circle cx="12" cy="9.8" r="2.6"/></symbol>
+  <symbol id="ic-phone" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 3.5h3l1.4 4.2-2.2 1.7a12.3 12.3 0 0 0 5.8 5.8l1.7-2.2 4.2 1.4v3a2 2 0 0 1-2.1 2C11 19 5 13 4.5 5.6a2 2 0 0 1 2.1-2.1Z"/></symbol>
+  <symbol id="ic-mail" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="M3.5 6.5 12 13 20.5 6.5"/></symbol>
+
+  <!-- Hero performer figure -->
+  <symbol id="fig-hero" viewBox="0 0 440 640">
+    <path d="M320,10 C362,80 298,152 336,226 C367,290 314,347 340,412" stroke="url(#gradGB)" stroke-width="4" stroke-linecap="round" fill="none" opacity=".45"/>
+    <path d="M300,8 C336,60 284,122 316,182" stroke="url(#gradGB)" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".3"/>
+    <path d="M204,344 Q288,418 340,560" stroke="url(#gradGB)" stroke-width="26" stroke-linecap="round" fill="none"/>
+    <path d="M194,349 Q118,438 86,582" stroke="url(#gradGB)" stroke-width="26" stroke-linecap="round" fill="none"/>
+    <path d="M250,116 Q208,220 198,338" stroke="url(#gradGB)" stroke-width="30" stroke-linecap="round" fill="none"/>
+    <path d="M231,148 Q158,152 116,204" stroke="url(#gradGB)" stroke-width="21" stroke-linecap="round" fill="none"/>
+    <path d="M258,138 Q308,64 330,20" stroke="url(#gradGB)" stroke-width="21" stroke-linecap="round" fill="none"/>
+    <circle cx="253" cy="92" r="23" fill="url(#gradGB)"/>
+  </symbol>
+
+  <!-- Card 1 — Dấu Ấn (contemporary / ribbon) -->
+  <symbol id="fig-card1" viewBox="0 0 200 200">
+    <path d="M146,36 C170,54 132,80 164,104 C192,124 152,150 178,174" stroke="url(#gradGB2)" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"/>
+    <path d="M97,134 Q114,156 119,181" stroke="url(#gradGB2)" stroke-width="11" stroke-linecap="round" fill="none"/>
+    <path d="M94,136 Q76,160 66,183" stroke="url(#gradGB2)" stroke-width="11" stroke-linecap="round" fill="none"/>
+    <path d="M100,55 Q92,92 96,132" stroke="url(#gradGB2)" stroke-width="13" stroke-linecap="round" fill="none"/>
+    <path d="M92,70 Q71,84 60,108" stroke="url(#gradGB2)" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M105,66 Q128,52 146,36" stroke="url(#gradGB2)" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <circle cx="100" cy="42" r="12" fill="url(#gradGB2)"/>
+  </symbol>
+
+  <!-- Card 2 — Vũ Điệu Ánh Sáng (duo trapeze) -->
+  <symbol id="fig-card2" viewBox="0 0 200 200">
+    <line x1="42" y1="28" x2="158" y2="28" stroke="url(#gradGB2)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M88,120 Q100,128 96,144" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M86,122 Q73,132 76,148" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M78,82 Q83,102 88,120" stroke="url(#gradGB2)" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M70,28 Q73,46 76,60" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <circle cx="78" cy="72" r="9" fill="url(#gradGB2)"/>
+    <path d="M112,124 Q100,133 104,150" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M114,126 Q127,136 124,152" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M122,86 Q117,106 112,124" stroke="url(#gradGB2)" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M130,28 Q127,48 124,64" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <circle cx="122" cy="76" r="9" fill="url(#gradGB2)"/>
+  </symbol>
+
+  <!-- Card 3 — Tự Do (hoop / lyra) -->
+  <symbol id="fig-card3" viewBox="0 0 200 200">
+    <circle cx="100" cy="102" r="52" stroke="url(#gradGB2)" stroke-width="3.5" fill="none" opacity=".5"/>
+    <path d="M99,126 Q128,138 152,148" stroke="url(#gradGB2)" stroke-width="11" stroke-linecap="round" fill="none"/>
+    <path d="M96,126 Q86,145 90,166" stroke="url(#gradGB2)" stroke-width="11" stroke-linecap="round" fill="none"/>
+    <path d="M100,76 Q95,100 98,124" stroke="url(#gradGB2)" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M96,82 Q76,88 63,98" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M104,82 Q124,88 137,98" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <circle cx="100" cy="64" r="11" fill="url(#gradGB2)"/>
+  </symbol>
+
+  <!-- Card 4 — Khai Sáng (inverted hoop) -->
+  <symbol id="fig-card4" viewBox="0 0 200 200">
+    <circle cx="100" cy="100" r="52" stroke="url(#gradGB2)" stroke-width="3.5" fill="none" opacity=".5"/>
+    <path d="M98,78 Q90,54 76,46" stroke="url(#gradGB2)" stroke-width="11" stroke-linecap="round" fill="none"/>
+    <path d="M96,78 Q107,52 121,44" stroke="url(#gradGB2)" stroke-width="11" stroke-linecap="round" fill="none"/>
+    <path d="M100,130 Q95,104 98,80" stroke="url(#gradGB2)" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M96,92 Q76,102 61,116" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M104,92 Q124,102 139,114" stroke="url(#gradGB2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <circle cx="100" cy="142" r="11" fill="url(#gradGB2)"/>
+  </symbol>
+</svg>
+
+<div class="page-shell">
+
+<!-- ============ NAVBAR ============ -->
+<header class="navbar">
+  <div class="nav-inner">
+  <a href="#" class="logo">
+    <img class="logo-lumishow" src="image/logo-lumishow.png" alt="LumiShow">
+  </a>
+
+  <nav class="nav-links">
+    <a href="#" class="active" data-i18n="nav.home">Trang chủ</a>
+    <a href="GioiThieu.html" data-i18n="nav.about">Giới thiệu</a>
+    <a href="LienHe.html" data-i18n="nav.contact">Liên hệ</a>
+  </nav>
+
+  <div class="nav-right">
+    <button class="lang-select" id="langToggle" aria-label="Đổi ngôn ngữ"><span id="langLabel">VI</span> <svg class="icon"><use href="#ic-chevdown"/></svg></button>
+    <button class="icon-btn" id="themeToggle" aria-label="Bật/tắt đèn"><svg class="icon"><use href="#ic-sun" id="themeIcon"/></svg></button>
+    <a href="#schedule" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
+    <button class="menu-toggle" aria-label="Mở menu" id="menuToggle"><svg class="icon"><use href="#ic-menu"/></svg></button>
+  </div>
+  </div>
+</header>
+
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#" class="active" data-i18n="nav.home">Trang chủ</a>
+  <a href="GioiThieu.html" data-i18n="nav.about">Giới thiệu</a>
+  <a href="LienHe.html" data-i18n="nav.contact">Liên hệ</a>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-bg">
+    <!-- Dùng ẢNH: điền link vào src bên dưới -->
+    <img class="hero-bg-media" src="image/SonThanThuyQuai.jpg" alt="" onerror="this.style.display='none'">
+    <!-- Hoặc dùng VIDEO: xoá thẻ img ở trên, bỏ comment đoạn dưới và điền link vào src.
+         Video sẽ tự phát sau 2 giây (xử lý bằng JS ở cuối trang), không cần thuộc tính autoplay. -->
+    <!--
+    <video class="hero-bg-media" muted loop playsinline>
+      <source src="" type="video/mp4">
+    </video>
+    -->
+    <div class="hero-bg-overlay"></div>
+  </div>
+
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <span class="hero-eyebrow">LumiShow</span>
+      <span class="hero-eyebrow-2" data-i18n="hero.tagline">Nơi ánh sáng kể câu chuyện</span>
+      <h1 class="hero-title">
+        <img class="hero-title-img" src="image/textSTTQ.png" alt="Sơn Thần Thủy Quái">
+      </h1>
+      <p class="hero-desc" data-i18n="hero.desc">Những màn trình diễn mãn nhãn kết hợp giữa kỹ thuật đỉnh cao và cảm xúc thăng hoa.</p>
+      <div class="hero-actions">
+        <a href="#schedule" class="btn-primary btn-hero"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+        <button class="video-trigger">
+          <span class="play-circle"><svg class="icon"><use href="#ic-play"/></svg></span>
+          <span>
+            <span class="vt-label" data-i18n="hero.watch">Xem video</span>
+            <span class="vt-sub" data-i18n="hero.watchSub">Giới thiệu chương trình</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><span></span><i></i><span></span></div>
+
+<!-- ============ SCHEDULE ============ -->
+<section class="schedule-section" id="schedule">
+  <div class="container">
+    <div class="schedule-head">
+      <span class="eyebrow" data-i18n="sch.eyebrow">Lịch diễn sắp tới</span>
+      <img class="section-title section-title-img" src="image/textSTTQ.png" alt="Sơn Thần Thủy Quái">
+      <div class="schedule-meta">
+        <span data-i18n="sch.days">Thứ 6, Thứ 7 &amp; Chủ nhật</span>
+        <span class="schedule-meta-dot">·</span>
+        <span id="scheduleRangeInline">25.09 — 27.12.2026</span>
+      </div>
+    </div>
+
+    <div class="weekend-picker">
+      <button class="week-nav-btn" id="weekPrev" aria-label="Chuỗi ngày trước"><svg class="icon"><use href="#ic-chev-left"/></svg></button>
+      <div class="weekend-track" id="weekendTrack"></div>
+      <button class="week-nav-btn" id="weekNext" aria-label="Chuỗi ngày sau"><svg class="icon"><use href="#ic-chev-right"/></svg></button>
+    </div>
+
+    <div class="schedule-cta-row">
+      <a href="BookingTicket.html" class="btn-primary btn-sch-lg" id="scheduleBookBtn"><span>Đặt vé</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+      <a href="GioiThieu.html" class="btn-gold"><span data-i18n="sch.learnMore">Tìm hiểu thêm</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NEWS ============ -->
+<section class="section dark" id="news">
+  <div class="container">
+    <div class="news-head reveal in">
+      <div>
+        <div class="kicker" data-i18n="news.kicker">TIN TỨC</div>
+        <h2 class="section-title" data-i18n="news.title">NHỮNG GÌ ĐANG DIỄN RA.</h2>
+      </div>
+      <div class="news-head-actions">
+        <a class="news-all" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><span data-i18n="news.all">XEM TẤT CẢ</span></a>
+        <div class="news-nav">
+          <button class="news-nav-btn" id="newsPrev" aria-label="Tin trước đó"><svg class="icon"><use href="#ic-chev-left"/></svg></button>
+          <button class="news-nav-btn" id="newsNext" aria-label="Tin tiếp theo"><svg class="icon"><use href="#ic-chev-right"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="news-layout reveal in" id="newsLayout"></div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="footer-card">
+    <div class="footer-grid">
+
+      <!-- Row 1, col 1: Brand -->
+      <div class="footer-brand">
+        <div class="footer-brand-inner">
+          <img class="footer-logo" src="image/logo-lumishow.png" alt="LumiShow">
+          <div class="footer-divider"><span class="footer-divider-star"></span></div>
+          <p class="footer-desc" data-i18n="footer.desc">LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.</p>
+        </div>
+      </div>
+
+      <!-- Row 2, col 1: Contact -->
+      <div class="footer-contact-block">
+        <h4 class="footer-heading" data-i18n="footer.contactHeading">LIÊN HỆ VỚI CHÚNG TÔI</h4>
+        <div class="footer-list">
+          <div class="footer-row">
+            <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
+            <div class="footer-value">
+              <span class="footer-label" data-i18n="contact.address">Địa chỉ</span>
+              <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+            </div>
+          </div>
+          <div class="footer-row">
+            <div class="footer-icon"><svg class="icon"><use href="#ic-phone"/></svg></div>
+            <div class="footer-value">
+              <span class="footer-label" data-i18n="contact.hotline">Hotline</span>
+              <span class="footer-value-line"><a href="tel:+84869512246">0869 512 246</a> <span class="footer-value-person">(Hương Chi)</span></span>
+              <span class="footer-value-line"><a href="tel:+84944605190">094 460 51 90</a> <span class="footer-value-person">(Han Tae Quang)</span></span>
+            </div>
+          </div>
+          <div class="footer-row">
+            <div class="footer-icon"><svg class="icon"><use href="#ic-mail"/></svg></div>
+            <div class="footer-value">
+              <span class="footer-label" data-i18n="contact.email">Email</span>
+              <span><a href="mailto:lumishow.vietnam@gmail.com">lumishow.vietnam@gmail.com</a></span>
+            </div>
+          </div>
+          <div class="footer-row">
+            <div class="footer-icon"><svg class="icon"><use href="#ic-globe"/></svg></div>
+            <div class="footer-value">
+              <span class="footer-label" data-i18n="contact.website">Website</span>
+              <span><a href="https://lumishow.vn" target="_blank" rel="noopener">lumishow.vn</a></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2, col 2: Map, dropped down + stretched to match contact block -->
+      <div class="footer-col-right">
+        <h4 class="footer-heading" data-i18n="footer.mapHeading">TÌM ĐƯỜNG ĐẾN LUMISHOW</h4>
+        <div class="footer-map-frame-wrap">
+          <iframe class="footer-map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d276.8174182100974!2d105.84242121927876!3d21.01681956385038!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc654b563c9%3A0x9bcb7dfff2b12124!2zUuG6oXAgWGnhur9jIFRydW5nIMavxqFuZw!5e0!3m2!1svi!2s!4v1787208605122!5m2!1svi!2s" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Bản đồ vị trí LumiShow"></iframe>
+          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=192+L%C3%AA+Tr%E1%BB%8Dng+T%E1%BA%A5n%2C+Thanh+Xu%C3%A2n%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
+            <svg class="icon"><use href="#ic-map-pin"/></svg>
+            <span data-i18n="footer.gmapsBtn">Google Maps</span>
+          </a>
+        </div>
+        <div class="footer-map-caption">
+          <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
+          <div class="footer-value">
+            <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+            <span class="footer-map-note" data-i18n="footer.mapNote">Gần Royal City, cách Ngã Tư Sở 2.5km</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-divider-line"></div>
+
+    <div class="footer-bottom">
+      <div class="footer-social">
+        <h5 class="footer-subheading" data-i18n="footer.socialHeading">KẾT NỐI VỚI LUMISHOW</h5>
+        <div class="footer-social-icons">
+          <a class="social-badge fb" href="#" target="_blank" rel="noopener" aria-label="Facebook"><img src="image/facebook.png" alt="Facebook"></a>
+          <a class="social-badge threads" href="#" target="_blank" rel="noopener" aria-label="Threads"><img src="image/Thread.png" alt="Threads"></a>
+        </div>
+      </div>
+
+      <div class="footer-support">
+        <div class="footer-icon footer-icon--ghost"><svg class="icon"><use href="#ic-headset"/></svg></div>
+        <div class="footer-support-text">
+          <div class="footer-label" data-i18n="footer.support">HỖ TRỢ KHÁCH HÀNG</div>
+          <div class="footer-value" data-i18n="footer.supportHours">9:00 - 18:00 (Thứ 2 - Thứ 7)</div>
+        </div>
+      </div>
+
+      <div class="footer-cta">
+        <span data-i18n="footer.ctaText">Sẵn sàng kiến tạo những trải nghiệm sân khấu đột phá cùng LumiShow?</span>
+        <a href="LienHe.html#lhForm" class="footer-cta-btn">
+          <span data-i18n="footer.ctaBtn">LIÊN HỆ HỢP TÁC</span>
+          <svg class="icon"><use href="#ic-arrow-right"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-copyright" data-i18n="footer.copyright">© 2026 LumiShow. All rights reserved.</div>
+</footer>
+
+</div><!-- /.page-shell -->
+
+<script>
+  // Mobile menu
+  const menuToggle = document.getElementById('menuToggle');
+  const mobileNav = document.getElementById('mobileNav');
+  menuToggle?.addEventListener('click', () => mobileNav.classList.toggle('open'));
+
+  // ============ ĐỔI NGÔN NGỮ (VI / EN) ============
+  const I18N = {
+    vi: {
+      'nav.home':'Trang chủ', 'nav.about':'Giới thiệu', 'nav.contact':'Liên hệ', 'nav.cta':'ĐẶT VÉ NGAY',
+      'hero.tagline':'Nơi ánh sáng kể câu chuyện',
+      'hero.desc':'Những màn trình diễn mãn nhãn kết hợp giữa kỹ thuật đỉnh cao và cảm xúc thăng hoa.',
+      'hero.cta':'Đặt vé ngay', 'hero.watch':'Xem video', 'hero.watchSub':'Giới thiệu chương trình',
+      'sch.eyebrow':'Lịch diễn sắp tới', 'sch.days':'Thứ 6, Thứ 7 & Chủ nhật', 'sch.book':'Đặt vé', 'sch.learnMore':'Tìm hiểu thêm',
+      'news.kicker':'TIN TỨC', 'news.title':'NHỮNG GÌ ĐANG DIỄN RA.', 'news.all':'XEM TẤT CẢ',
+      'contact.address':'Địa chỉ', 'contact.hotline':'Hotline', 'contact.email':'Email',
+      'contact.website':'Website',
+      'contact.addressVal':'67-69 P. Trần Nhân Tông, Hai Bà Trưng, Hà Nội',
+      months:['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'],
+      dows:['Thứ 6','Thứ 7','Chủ nhật']
+    },
+    en: {
+      'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact', 'nav.cta':'BOOK NOW',
+      'hero.tagline':'Where light tells the story',
+      'hero.desc':'Breathtaking performances blending world-class technique with soaring emotion.',
+      'hero.cta':'Book now', 'hero.watch':'Watch video', 'hero.watchSub':'Show introduction',
+      'sch.eyebrow':'Upcoming shows', 'sch.days':'Friday, Saturday & Sunday', 'sch.book':'Book', 'sch.learnMore':'Learn more',
+      'news.kicker':'NEWS', 'news.title':"WHAT'S HAPPENING.", 'news.all':'VIEW ALL',
+      'contact.address':'Address', 'contact.hotline':'Hotline', 'contact.email':'Email',
+      'contact.website':'Website',
+      'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi',
+      months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+      dows:['Friday','Saturday','Sunday']
+    }
+  };
+
+  let currentLang = 'vi';
+  const langToggle = document.getElementById('langToggle');
+  const langLabel = document.getElementById('langLabel');
+
+  function setLang(lang){
+    currentLang = lang;
+    const dict = I18N[lang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const val = dict[el.dataset.i18n];
+      if (val) el.textContent = val;
+    });
+    if (langLabel) langLabel.textContent = lang.toUpperCase();
+    document.documentElement.lang = lang;
+    // Lịch diễn phụ thuộc ngôn ngữ nên vẽ lại
+    if (typeof renderWeekend === 'function') renderWeekend();
+  }
+
+  langToggle?.addEventListener('click', () => setLang(currentLang === 'vi' ? 'en' : 'vi'));
+
+  // ============ BẬT / TẮT ĐÈN (sáng / tối) ============
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+
+  function setTheme(mode){
+    document.documentElement.classList.toggle('light', mode === 'light');
+    themeIcon?.setAttribute('href', mode === 'light' ? '#ic-moon' : '#ic-sun');
+    try { localStorage.setItem('lumishow-theme', mode); } catch(e) {}
+  }
+
+  themeToggle?.addEventListener('click', () => {
+    setTheme(document.documentElement.classList.contains('light') ? 'dark' : 'light');
+  });
+
+  // Khôi phục lựa chọn đèn của lần truy cập trước
+  try {
+    const saved = localStorage.getItem('lumishow-theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+
+  // ============ LỊCH DIỄN — chọn chuỗi 3 ngày liên tục (Thứ 6 · Thứ 7 · Chủ nhật) ============
+  const SEASON_START = new Date(2026, 8, 25); // Thứ 6 đầu tiên: 25.09.2026
+  const SEASON_END   = new Date(2026, 11, 27); // Chủ nhật cuối cùng: 27.12.2026
+
+  function fmt(d){ return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0'); }
+
+  // Sinh danh sách các chuỗi 3 ngày (T6 + T7 + CN) trong suốt mùa diễn
+  const runs = [];
+  for (let d = new Date(SEASON_START); d <= SEASON_END; d.setDate(d.getDate() + 7)) {
+    const fri = new Date(d);
+    const sat = new Date(d); sat.setDate(sat.getDate() + 1);
+    const sun = new Date(d); sun.setDate(sun.getDate() + 2);
+    runs.push([fri, sat, sun]);
+  }
+
+  // Tự động chọn chuỗi ngày gần nhất so với hôm nay
+  const today = new Date(); today.setHours(0,0,0,0);
+  let runIndex = runs.findIndex(r => r[2] >= today);
+  if (runIndex === -1) runIndex = 0;
+  let selectedDay = 0; // 0 = Thứ 6, 1 = Thứ 7, 2 = Chủ nhật
+
+  const weekendTrack = document.getElementById('weekendTrack');
+  const weekPrevBtn = document.getElementById('weekPrev');
+  const weekNextBtn = document.getElementById('weekNext');
+  const scheduleBookBtn = document.getElementById('scheduleBookBtn');
+
+  function renderWeekend(){
+    if (!weekendTrack) return;
+    const run = runs[runIndex];
+    const dict = I18N[currentLang];
+
+    weekendTrack.innerHTML = run.map((date, i) => `
+      <div class="weekend-node${i === selectedDay ? ' active' : ''}" data-day="${i}">
+        <span class="wd-dow">${dict.dows[i]}</span>
+        <span class="wd-dom">${String(date.getDate()).padStart(2,'0')}</span>
+        <span class="wd-moy">${dict.months[date.getMonth()]}</span>
+      </div>
+    `).join('<div class="weekend-connector"></div>');
+
+    weekendTrack.querySelectorAll('.weekend-node').forEach(node => {
+      node.addEventListener('click', () => {
+        selectedDay = Number(node.dataset.day);
+        renderWeekend();
+      });
+    });
+
+    if (scheduleBookBtn) {
+      scheduleBookBtn.innerHTML = `<span>${dict['sch.book']}</span> <svg class="icon"><use href="#ic-arrow-right"/></svg>`;
+    }
+
+    if (weekPrevBtn) weekPrevBtn.disabled = runIndex === 0;
+    if (weekNextBtn) weekNextBtn.disabled = runIndex === runs.length - 1;
+  }
+
+  weekPrevBtn?.addEventListener('click', () => {
+    if (runIndex > 0) { runIndex--; selectedDay = 0; renderWeekend(); }
+  });
+  weekNextBtn?.addEventListener('click', () => {
+    if (runIndex < runs.length - 1) { runIndex++; selectedDay = 0; renderWeekend(); }
+  });
+
+  renderWeekend();
+
+  // Hero background: if a <video> is used instead of <img>, auto-play it after 2s
+  // and gradually fade the edge glow once playback actually starts
+  const heroBgMedia = document.querySelector('.hero-bg-media');
+  const heroBgOverlay = document.querySelector('.hero-bg-overlay');
+  if (heroBgMedia && heroBgMedia.tagName === 'VIDEO') {
+    setTimeout(() => {
+      heroBgMedia.play()
+        .then(() => heroBgOverlay?.classList.add('dim'))
+        .catch(() => {});
+    }, 2000);
+  }
+
+  /* =========================================================
+     TIN TỨC — 1 tin nổi bật (trái) + tối đa 3 tin phụ (phải)
+     Thêm bài mới: chỉ cần thêm 1 object vào mảng NEWS_ITEMS bên dưới.
+     ========================================================= */
+  const NEWS_ITEMS = [
+    {
+      img: 'image/News/news0_rxtw_12_8.jpg',
+      href: 'https://www.facebook.com/photo?fbid=1900682027968983&set=a.742690297101501',
+      date: '12.08', cat: 'Rạp Xiếc Trung Ương',
+      title: 'Siêu phẩm mới sắp ra mắt: “Sơn Thần Thủy Quái” — tác phẩm kinh điển về xiếc và cuộc chiến chưa bao giờ kết thúc.'
+    },
+    {
+      img: 'image/News/news1_rxtw_12_8.jpg',
+      href: 'https://www.facebook.com/reel/1363134739318187',
+      date: '12.08', cat: 'Rạp Xiếc Trung Ương',
+      title: 'Các bạn nhỏ đoán xem nhân vật nào trong vở “Sơn Thần Thủy Quái” sẽ xuất hiện vào dịp Trung thu năm nay nhé!'
+    }
+  ];
+
+  const escapeHtml = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const newsLayout = document.getElementById('newsLayout');
+  const newsPrevBtn = document.getElementById('newsPrev');
+  const newsNextBtn = document.getElementById('newsNext');
+  let newsIndex = 0;
+
+  function renderNews(){
+    if (!newsLayout || !NEWS_ITEMS.length) return;
+    const total = NEWS_ITEMS.length;
+    const visible = Math.min(4, total);
+    const idxs = Array.from({length: visible}, (_, i) => (newsIndex + i) % total);
+    const featured = NEWS_ITEMS[idxs[0]];
+    const sideItems = idxs.slice(1).map(i => NEWS_ITEMS[i]);
+
+    const tagsHtml = n => `<div class="news-tags"><span class="nt-date">${n.date}</span><span class="nt-dot">·</span><span class="nt-cat">${n.cat}</span></div>`;
+
+    newsLayout.innerHTML =
+      `<a class="news-featured" href="${featured.href}" target="_blank" rel="noopener">
+        <img src="${featured.img}" alt="${escapeHtml(featured.title)}">
+        <div class="news-featured-copy">
+          ${tagsHtml(featured)}
+          <h3>${featured.title}</h3>
+        </div>
+      </a>
+      <div class="news-side">
+        ${sideItems.map(n => `
+          <a class="news-side-item" href="${n.href}" target="_blank" rel="noopener">
+            <div class="news-side-thumb"><img src="${n.img}" alt="${escapeHtml(n.title)}"></div>
+            <div class="news-side-copy">
+              ${tagsHtml(n)}
+              <h4>${n.title}</h4>
+            </div>
+          </a>`).join('')}
+      </div>`;
+
+    const noNav = total <= visible;
+    if (newsPrevBtn) newsPrevBtn.disabled = noNav;
+    if (newsNextBtn) newsNextBtn.disabled = noNav;
+  }
+
+  newsPrevBtn?.addEventListener('click', () => {
+    newsIndex = (newsIndex - 1 + NEWS_ITEMS.length) % NEWS_ITEMS.length;
+    renderNews();
+  });
+  newsNextBtn?.addEventListener('click', () => {
+    newsIndex = (newsIndex + 1) % NEWS_ITEMS.length;
+    renderNews();
+  });
+
+  renderNews();
+</script>
+</body>
+</html>

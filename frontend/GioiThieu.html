@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giới thiệu | LumiShow — Sơn Thần Thủy Quái</title>
+<meta name="description" content="Sơn Thần Thủy Quái — truyền thuyết Sơn Tinh, Thủy Tinh được kể lại trong không gian xiếc Panorama 360°. Khám phá hành trình 5 hồi giữa Núi và Nước.">
+<link rel="icon" type="image/png" href="image/iconlogo-lumishow.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700;800&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+  /* ============ RESET ============ */
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  img,svg{display:block;max-width:100%;}
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  ul{list-style:none;}
+
+  /* ============ TOKENS ============ */
+  :root{
+    --bg:#0D1117;
+    --bg-soft:#10151c;
+    --card-bg:#0d1210;
+    --line:rgba(255,255,255,.07);
+    --line-2:rgba(255,255,255,.15);
+    --white:#E6F1EA;
+    --gray:#98a29b;
+    --gray-dim:#636d66;
+    --green:#7CFF5A;
+    --green-deep:#4caf50;
+    --teal:#2fa97a;
+    --blue:#23B6FF;
+    --blue-deep:#3c7bd9;
+    --gold:#FFD15A;
+    --gold-soft:#e8c27e;
+    --grad-btn:linear-gradient(90deg,#7CFF5A 0%,#2fa97a 100%);
+    --btn-texture:url('image/BlendingButton_BF.jpg');
+    --btn-texture-sea:url('image/BlendingButton_HV.jpg');
+    --btn-blend:soft-light;
+    --btn-texture-opacity:1;
+    --btn-texture-size:100% 100%;
+    --btn-tint: 1;
+    --btn-slide:.55s;
+    --grad-text:linear-gradient(90deg,#8fe06a 0%,#23B6FF 100%);
+    --grad-gold:linear-gradient(180deg,#FFF0C4 0%,#FFD15A 48%,#C9962E 100%);
+    --font-heading:'Sora','Be Vietnam Pro',sans-serif;
+    --font-body:'Inter','Be Vietnam Pro',sans-serif;
+    --r-lg:20px;
+    --r-md:14px;
+    --r-sm:10px;
+    --r-pill:100px;
+    --container:1240px;
+    --gutter:clamp(20px,4vw,48px);
+    --shell-max:1720px;
+    --shell-pad:clamp(0px,2.2vw,40px);
+    --page-bg:#04060a;
+    --nav-bg:rgba(7,9,10,.72);
+  }
+  html.light{--page-bg:#ffffff;}
+
+  body{
+    background:var(--page-bg);
+    color:var(--white);
+    font-family:'Be Vietnam Pro',sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    padding:var(--shell-pad);
+    transition:background .35s ease,color .35s ease;
+  }
+  .page-shell{
+    max-width:var(--shell-max);margin:0 auto;width:100%;
+    background:var(--bg);
+    border-radius:clamp(0px,1.4vw,22px);
+    overflow:clip;
+    transition:background .35s ease;
+  }
+  .container{max-width:var(--container);margin:0 auto;padding:0 var(--gutter);width:100%;}
+  .nav-inner>*,.contact-row{min-width:0;}
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+
+  .icon{width:20px;height:20px;flex-shrink:0;}
+  .icon-stroke{stroke:currentColor;fill:none;}
+
+  /* ============ NAVBAR ============ */
+  .navbar{
+    position:sticky;top:0;z-index:100;
+    padding:13px var(--gutter);
+    background:var(--nav-bg);
+    -webkit-backdrop-filter:blur(14px);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    position:relative;
+    max-width:var(--container);margin:0 auto;width:100%;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+  }
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;letter-spacing:.3px;}
+  .logo-lumishow{height:60px;width:auto;display:block;}
+  .nav-links{
+    display:flex;gap:32px;
+    position:absolute;left:60%;top:50%;transform:translate(-50%,-50%);
+  }
+  .nav-links a{font-size:14.5px;color:var(--gray);font-weight:500;padding:6px 0;position:relative;transition:color .2s;white-space:nowrap;}
+  .nav-links a:hover{color:var(--white);}
+  .nav-links a.active{color:var(--white);}
+  .nav-links a.active::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--white);border-radius:2px;}
+  .nav-right{display:flex;align-items:center;gap:8px;}
+  .icon-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--gray);border-radius:50%;transition:all .2s;}
+  .icon-btn:hover{color:var(--white);background:rgba(255,255,255,.06);}
+  .lang-select{display:flex;align-items:center;gap:3px;color:var(--gray);font-size:14px;font-weight:500;padding:8px 10px;border-radius:50px;transition:all .2s;}
+  .lang-select:hover{color:var(--white);background:rgba(255,255,255,.06);}
+  .lang-select .icon{width:15px;height:15px;}
+  .btn-primary{
+    position:relative;overflow:hidden;isolation:isolate;
+    display:inline-flex;align-items:center;gap:8px;
+    padding:11px 22px;margin-left:10px;
+    background:var(--grad-btn);
+    border-radius:var(--r-pill);
+    font-weight:600;font-size:13.5px;color:#ffffff;
+    transition:transform .2s,box-shadow .2s;
+    white-space:nowrap;
+  }
+  .btn-primary::before,
+  .btn-primary::after{
+    content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+    background-size:var(--btn-texture-size);background-position:center;background-repeat:no-repeat;
+    background-blend-mode:var(--btn-blend),normal;
+    opacity:var(--btn-texture-opacity);
+    transition-property:transform;
+    transition-duration:var(--btn-slide);
+    transition-timing-function:cubic-bezier(.4,0,.2,1);
+    backface-visibility:hidden;
+  }
+  .btn-primary::before{
+    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture);
+    transform:translateX(0);
+  }
+  .btn-primary::after{
+    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture-sea);
+    transform:translateX(100%);
+  }
+  .btn-primary:hover::before{transform:translateX(-100%);}
+  .btn-primary:hover::after{transform:translateX(0);}
+  .btn-primary>*{position:relative;z-index:2;}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(126,217,87,.32);}
+  @media (prefers-reduced-motion:reduce){
+    .btn-primary::before,.btn-primary::after{transition-duration:.2s;}
+  }
+  .menu-toggle{display:none;width:36px;height:36px;align-items:center;justify-content:center;color:var(--white);}
+
+  /* ============ MOBILE NAV ============ */
+  .mobile-nav{display:none;flex-direction:column;gap:2px;padding:10px var(--gutter) 18px;background:var(--bg-soft);border-bottom:1px solid var(--line);}
+  .mobile-nav a{padding:12px 4px;font-size:15px;color:var(--gray);border-bottom:1px solid var(--line);}
+  .mobile-nav a.active{color:var(--white);}
+  .mobile-nav.open{display:flex;}
+
+  /* ============ SHARED TEXT ============ */
+  .eyebrow{color:var(--gold);font-size:12.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:12px;display:block;}
+  #tong-quan,#hanh-trinh,#thu-vien{scroll-margin-top:90px;}
+
+  /* ============ SECTION DIVIDER ============ */
+  .section-divider{display:flex;align-items:center;justify-content:center;gap:14px;padding:34px 0;}
+  .section-divider span{width:70px;height:1px;background:linear-gradient(90deg,transparent,var(--line-2),transparent);}
+  .section-divider i{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;box-shadow:0 0 10px rgba(255,209,90,.7);}
+
+  /* ============ ABOUT HERO ============ */
+  .about-hero{
+    position:relative;overflow:hidden;
+    min-height:clamp(460px,64vh,680px);
+    display:flex;align-items:flex-end;justify-content:center;
+    padding:64px var(--gutter) 56px;
+    text-align:center;
+  }
+  .ah-bg{position:absolute;inset:0;z-index:0;overflow:hidden;background:#05070a;}
+  .ah-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .ah-bg-overlay{position:absolute;inset:0;
+    background:
+      linear-gradient(180deg,rgba(3,7,10,.18) 0%,rgba(3,7,10,.5) 58%,rgba(3,7,10,.92) 100%),
+      radial-gradient(ellipse 900px 420px at 50% 38%,rgba(3,7,10,0) 0%,rgba(3,7,10,.35) 100%);
+  }
+  .ah-inner{position:relative;z-index:2;max-width:760px;margin:0 auto;}
+  .ah-eyebrow{color:var(--white);font-size:11.5px;font-weight:600;letter-spacing:3px;text-transform:uppercase;opacity:.75;margin-bottom:18px;display:block;}
+  .ah-title{
+    font-family:var(--font-heading);font-weight:800;font-size:clamp(38px,6.4vw,66px);
+    line-height:1.08;letter-spacing:.5px;margin-bottom:20px;
+    background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;
+    color:transparent;-webkit-text-fill-color:transparent;
+  }
+  .ah-sub{color:var(--white);font-size:16.5px;font-weight:500;max-width:480px;margin:0 auto 36px;line-height:1.6;}
+  .ah-actions{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;}
+  .btn-outline-light{
+    display:inline-flex;align-items:center;gap:9px;padding:14px 26px;
+    border:1px solid rgba(255,255,255,.4);border-radius:var(--r-pill);
+    color:var(--white);font-weight:600;font-size:13.5px;letter-spacing:.2px;
+    transition:all .2s;white-space:nowrap;
+  }
+  .btn-outline-light:hover{background:rgba(255,255,255,.1);border-color:var(--white);transform:translateY(-2px);}
+  .btn-outline-light .icon{width:15px;height:15px;}
+  .btn-gold-solid{
+    display:inline-flex;align-items:center;gap:9px;padding:14px 27px;
+    border-radius:var(--r-pill);background:var(--grad-gold);
+    color:#241a06;font-weight:700;font-size:13.5px;letter-spacing:.2px;
+    box-shadow:0 10px 28px rgba(255,209,90,.28);
+    transition:transform .2s,box-shadow .2s;white-space:nowrap;
+  }
+  .btn-gold-solid:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(255,209,90,.4);}
+  .btn-gold-solid .icon{width:15px;height:15px;}
+
+  /* ============ OVERVIEW ============ */
+  .overview-section{padding:96px 0 84px;}
+  .overview-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:clamp(32px,5vw,72px);align-items:center;}
+  .ov-title{font-family:var(--font-heading);font-size:clamp(24px,2.6vw,31px);font-weight:700;color:var(--white);line-height:1.32;margin-bottom:22px;letter-spacing:.2px;}
+  .overview-copy p{color:var(--gray);font-size:14.5px;line-height:1.9;margin-bottom:15px;}
+  .overview-copy p:last-child{margin-bottom:0;}
+  .overview-media{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);aspect-ratio:16/11;}
+  .overview-media img{width:100%;height:100%;object-fit:cover;}
+
+  .overview-features{
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px 8px;
+    margin-top:60px;padding-top:34px;border-top:1px solid var(--line);
+  }
+  .of-item{display:flex;align-items:center;gap:11px;padding:4px 18px;border-right:1px solid var(--line);}
+  .of-item:last-child{border-right:none;}
+  .of-item .icon{width:23px;height:23px;color:var(--gold);flex-shrink:0;}
+  .of-item span{font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--white);white-space:nowrap;}
+
+  /* ============ JOURNEY (HÀNH TRÌNH 5 HỒI) ============ */
+  .journey-section{padding:76px 0 100px;}
+  .journey-title{
+    text-align:center;font-family:var(--font-heading);font-weight:800;
+    font-size:clamp(23px,3vw,32px);letter-spacing:1.5px;color:var(--gold);
+    margin-bottom:clamp(48px,7vw,84px);
+  }
+  .journey-list{position:relative;display:flex;flex-direction:column;gap:clamp(48px,7vw,84px);}
+  .journey-line{
+    position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);z-index:0;
+    background:linear-gradient(180deg,transparent 0%,rgba(255,209,90,.5) 6%,rgba(255,209,90,.5) 94%,transparent 100%);
+  }
+  .journey-row{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,60px);align-items:center;}
+  .journey-row::before{
+    content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--gold);
+    box-shadow:0 0 0 6px rgba(255,209,90,.14),0 0 18px rgba(255,209,90,.5);z-index:2;
+  }
+  .journey-media{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);height:100%;min-height:260px;}
+  .journey-media img{width:100%;height:100%;object-fit:cover;display:block;}
+  .journey-copy .j-num{color:var(--gold);font-size:12.5px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;display:block;}
+  .journey-copy .j-title{font-family:var(--font-heading);font-size:clamp(21px,2.3vw,26px);font-weight:700;color:var(--white);line-height:1.3;margin-bottom:16px;}
+  .journey-copy p{color:var(--gray);font-size:14.5px;line-height:1.85;margin-bottom:13px;}
+  .journey-copy p:last-of-type{margin-bottom:0;}
+  .j-tags{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px;}
+  .j-tags span{
+    padding:7px 15px;border:1px solid var(--line-2);border-radius:var(--r-pill);
+    font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--white);background:rgba(255,255,255,.03);white-space:nowrap;
+  }
+
+  /* ============ QUOTE BANNER ============ */
+  .quote-banner{
+    position:relative;overflow:hidden;padding:clamp(48px,7vw,72px) 0;
+    background:radial-gradient(ellipse 1300px 480px at 50% 25%,#181005 0%,var(--bg) 72%);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .qb-grid{display:grid;grid-template-columns:1fr 1fr 1.5fr 1fr;align-items:center;}
+  .qb-item{padding:0 clamp(14px,2.4vw,30px);border-left:1px solid var(--line);text-align:center;}
+  .qb-item:first-child{border-left:none;}
+  .qb-eyebrow{color:var(--gold);font-size:11.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;display:block;}
+  .qb-sub{color:var(--gray);font-size:12.5px;line-height:1.6;}
+  .qb-center-text{font-family:var(--font-heading);font-size:clamp(17px,2vw,22px);font-weight:800;color:var(--white);line-height:1.4;letter-spacing:.2px;}
+
+  /* ============ GALLERY + LỜI KẾT ============ */
+  .split-section{padding:94px 0 104px;}
+  .gallery-split{display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(36px,5vw,72px);align-items:start;}
+  .gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:22px;}
+  .gallery-grid img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:var(--r-sm);display:block;transition:transform .45s ease;}
+  .gallery-grid a{display:block;border-radius:var(--r-sm);overflow:hidden;}
+  .gallery-grid a:hover img{transform:scale(1.08);}
+  .gallery-more{
+    display:inline-flex;align-items:center;gap:8px;margin-top:24px;padding:12px 24px;
+    border-radius:var(--r-pill);border:1px solid var(--line-2);
+    font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);
+    transition:all .2s;
+  }
+  .gallery-more:hover{background:var(--white);color:var(--bg);border-color:var(--white);}
+  .gallery-more .icon{width:14px;height:14px;}
+
+  .lk-title{font-family:var(--font-heading);font-size:clamp(24px,2.8vw,32px);font-weight:800;color:var(--white);line-height:1.28;margin-bottom:20px;}
+  .lk-col p{color:var(--gray);font-size:14.5px;line-height:1.9;margin-bottom:15px;}
+  .lk-tagline{color:var(--gold-soft);font-style:italic;font-size:14.5px;line-height:1.8;margin-bottom:28px;padding-left:16px;border-left:2px solid rgba(255,209,90,.4);}
+  .lk-col .btn-gold-solid{margin-top:4px;}
+
+  /* ============ FOOTER ============ */
+  .site-footer{
+    position:relative;overflow:hidden;
+    padding:clamp(20px,3vw,32px) var(--gutter) 0;
+    background:radial-gradient(ellipse 1000px 560px at 50% 0%,#0d1611 0%,var(--bg) 65%);
+  }
+  .footer-card{
+    position:relative;isolation:isolate;
+    width:100%;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:clamp(14px,1.6vw,22px);
+    background:linear-gradient(180deg,rgba(20,26,22,.5) 0%,rgba(8,11,10,.75) 100%);
+    padding:clamp(22px,3vw,38px) clamp(18px,3vw,38px) clamp(16px,2.2vw,24px);
+    overflow:hidden;
+  }
+
+  /* ---- top grid: brand / contact / map ---- */
+  .footer-grid{display:grid;grid-template-columns:1.15fr 2fr;grid-template-rows:auto 1fr;column-gap:clamp(22px,3.4vw,46px);row-gap:clamp(18px,2.6vw,28px);}
+  .footer-brand{min-width:0;grid-column:1;grid-row:1;}
+  .footer-contact-block{grid-column:1;grid-row:2;}
+  .footer-col-right{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;}
+  .footer-brand-inner{max-width:380px;}
+  .footer-logo{height:clamp(58px,7vw,86px);width:auto;display:block;margin:0 auto 18px;}
+  .footer-divider{display:flex;align-items:center;gap:0px;margin:0 auto 18px;max-width:250px;}
+  .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,209,90,.5));}
+  .footer-divider::after{background:linear-gradient(90deg,rgba(255,209,90,.5),transparent);}
+  .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;}
+  .footer-motif{opacity:.5;max-width:300px;}
+  .footer-motif svg{width:100%;height:auto;display:block;}
+
+  .footer-heading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:clamp(12px,1.15vw,14px);letter-spacing:.5px;text-transform:uppercase;color:var(--white);padding-bottom:12px;margin-bottom:16px;}
+  .footer-heading::after{content:'';position:absolute;left:0;bottom:0;width:30px;height:2px;background:var(--green);border-radius:2px;}
+
+  .footer-list{display:flex;flex-direction:column;}
+  .footer-row{display:flex;align-items:flex-start;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .footer-row:first-child{padding-top:0;}
+  .footer-row:last-child{border-bottom:none;padding-bottom:0;}
+  .footer-icon{width:clamp(36px,3.2vw,44px);height:clamp(36px,3.2vw,44px);border-radius:10px;flex-shrink:0;background:rgba(255,255,255,.04);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--green);}
+  .footer-icon .icon{width:18px;height:18px;}
+  .footer-label{display:block;color:var(--green);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+  .footer-value{color:var(--white);font-size:12.5px;line-height:1.55;}
+  .footer-value a{transition:color .2s;}
+  .footer-value a:hover{color:var(--green);}
+  .footer-value-line{display:block;}
+  .footer-value-person{color:var(--gray);font-size:10px;}
+
+  .footer-map-frame-wrap{position:relative;width:100%;flex:1 1 auto;min-height:clamp(170px,18vw,230px);border-radius:var(--r-md);overflow:hidden;background:#0a0d10;border:1px solid var(--line);}
+  .footer-map-frame{position:absolute;inset:0;width:100%;height:100%;border:0;filter:saturate(.85) brightness(.92);}
+  .footer-map-badge{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-pill);background:rgba(6,9,8,.82);border:1px solid var(--line-2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--white);font-size:11px;font-weight:600;transition:background .2s,color .2s;}
+  .footer-map-badge:hover{background:rgba(124,255,90,.14);color:var(--green);}
+  .footer-map-badge .icon{width:12px;height:12px;}
+  .footer-map-caption{display:flex;align-items:flex-start;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);}
+  .footer-map-caption .footer-icon{width:32px;height:32px;}
+  .footer-map-caption .footer-icon .icon{width:14px;height:14px;}
+  .footer-map-note{display:block;color:var(--gray);font-size:10.5px;margin-top:2px;font-weight:400;}
+
+  /* ---- bottom row ---- */
+  .footer-divider-line{height:1px;background:var(--line);margin:clamp(18px,2.6vw,28px) 0 clamp(16px,2.2vw,22px);}
+  .footer-bottom{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(14px,2.4vw,26px);}
+  .footer-social{min-width:0;}
+  .footer-subheading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--white);padding-bottom:9px;margin-bottom:11px;}
+  .footer-subheading::after{content:'';position:absolute;left:0;bottom:0;width:24px;height:2px;background:var(--green);border-radius:2px;}
+  .footer-social-icons{display:flex;gap:9px;}
+  .social-badge{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform .2s,box-shadow .2s;flex-shrink:0;}
+  .social-badge:hover{transform:translateY(-2px);}
+  .social-badge img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+
+  .footer-support{display:flex;align-items:center;gap:12px;padding-left:clamp(14px,2.4vw,26px);border-left:1px solid var(--line);}
+  .footer-icon--ghost{background:rgba(124,255,90,.06);}
+  .footer-support-text .footer-label{margin-bottom:3px;}
+  .footer-support-text .footer-value{font-size:12px;color:var(--gray);}
+
+  .footer-cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-left:auto;}
+  .footer-cta span{color:var(--gray);font-size:12px;max-width:320px;line-height:1.5;}
+  .footer-cta-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:11px 20px;border-radius:var(--r-pill);border:1px solid rgba(255,209,90,.55);background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 0 1px rgba(255,209,90,.08) inset;transition:transform .2s,box-shadow .2s;white-space:nowrap;}
+  .footer-cta-btn .icon{width:13px;height:13px;}
+  .footer-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,209,90,.15) inset,0 14px 30px rgba(255,209,90,.2);}
+
+  .footer-copyright{text-align:center;color:var(--gray-dim);font-size:12px;padding:18px 0;}
+
+  /* ============ FOOTER RESPONSIVE ============ */
+  @media (max-width:1080px){
+    .footer-grid{grid-template-columns:1fr;grid-template-rows:auto;gap:24px;}
+    .footer-brand,.footer-contact-block,.footer-col-right{grid-column:1;}
+    .footer-brand{grid-row:1;}
+    .footer-contact-block{grid-row:2;}
+    .footer-col-right{grid-row:3;}
+    .footer-brand-inner{max-width:100%;}
+    .footer-motif{display:none;}
+  }
+  @media (max-width:760px){
+    .footer-card{padding:20px 18px 16px;}
+    .footer-bottom{flex-direction:column;align-items:flex-start;}
+    .footer-support{border-left:none;padding-left:0;padding-top:13px;border-top:1px solid var(--line);width:100%;}
+    .footer-cta{margin-left:0;width:100%;}
+    .footer-cta-btn{width:100%;justify-content:center;}
+    .footer-map-frame-wrap{min-height:190px;}
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width:1080px){
+    .overview-grid{grid-template-columns:1fr;gap:36px;}
+    .overview-media{aspect-ratio:16/9;order:-1;}
+    .qb-grid{grid-template-columns:1fr 1fr;gap:26px 0;}
+    .qb-item{border-left:none;border-top:1px solid var(--line);padding:22px clamp(14px,2.4vw,30px) 0;}
+    .qb-item:nth-child(1),.qb-item:nth-child(2){border-top:none;}
+    .qb-item.qb-center{grid-column:1/-1;order:-1;border-top:none;padding-top:0;padding-bottom:8px;}
+    .gallery-split{grid-template-columns:1fr;}
+  }
+  @media (max-width:760px){
+    .nav-links{display:none;}
+    .menu-toggle{display:flex;}
+    .navbar{padding-top:13px;padding-bottom:13px;}
+    .about-hero{padding-top:40px;padding-bottom:44px;}
+    .journey-row{grid-template-columns:1fr;}
+    .journey-line,.journey-row::before{display:none;}
+    .journey-media{min-height:220px;aspect-ratio:4/3;}
+    .of-item{border-right:none;padding:4px 12px;}
+    .overview-features{justify-content:center;}
+    .gallery-grid{grid-template-columns:repeat(3,1fr);}
+    .nav-right{gap:clamp(3px,1.6vw,8px);}
+    .btn-primary{
+      padding:clamp(7px,2.4vw,11px) clamp(10px,4.2vw,22px);
+      font-size:clamp(10.5px,3vw,13.5px);
+      margin-left:clamp(3px,1.8vw,10px);
+      gap:5px;
+    }
+  }
+  @media (max-width:560px){
+    .ah-actions{flex-direction:column;width:100%;max-width:320px;margin:0 auto;}
+    .btn-outline-light,.btn-gold-solid{width:100%;justify-content:center;}
+  }
+  @media (max-width:480px){
+    :root{--gutter:14px;}
+    .nav-inner{gap:8px;}
+    .logo-lumishow{height:40px;}
+    .btn-primary{white-space:normal;text-align:center;line-height:1.15;word-break:break-word;}
+    .gallery-grid{grid-template-columns:repeat(3,1fr);gap:7px;}
+  }
+  @media (max-width:400px){
+    .lang-select{padding:5px 6px;font-size:11.5px;}
+    .icon-btn{width:30px;height:30px;}
+    .menu-toggle{width:30px;height:30px;}
+    .btn-primary{padding:6px 8px;font-size:10px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ ICON / FIGURE SPRITE ============ -->
+<svg class="visually-hidden" aria-hidden="true" focusable="false">
+  <symbol id="ic-chevdown" viewBox="0 0 24 24"><polyline class="icon-stroke" points="6 9 12 15 18 9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="6" y2="6"/><line x1="18" y1="18" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="6" y2="18"/><line x1="18" y1="6" x2="19.8" y2="4.2"/></symbol>
+  <symbol id="ic-moon" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></symbol>
+  <symbol id="ic-menu" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></symbol>
+  <symbol id="ic-arrow-right" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+  <symbol id="ic-arrow-down" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="ic-globe" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></symbol>
+  <symbol id="ic-headset" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5a8 8 0 0 1 16 0V19"/><rect x="3" y="13.2" width="4" height="6.3" rx="1.6"/><rect x="17" y="13.2" width="4" height="6.3" rx="1.6"/><path d="M20 19.5v.3a2.7 2.7 0 0 1-2.7 2.7H14.5"/></symbol>
+  <symbol id="ic-map-pin" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-4.2-4.4-7-8.1-7-11.7a7 7 0 0 1 14 0c0 3.6-2.8 7.3-7 11.7Z"/><circle cx="12" cy="9.8" r="2.6"/></symbol>
+  <symbol id="ic-phone" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 3.5h3l1.4 4.2-2.2 1.7a12.3 12.3 0 0 0 5.8 5.8l1.7-2.2 4.2 1.4v3a2 2 0 0 1-2.1 2C11 19 5 13 4.5 5.6a2 2 0 0 1 2.1-2.1Z"/></symbol>
+  <symbol id="ic-mail" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="M3.5 6.5 12 13 20.5 6.5"/></symbol>
+
+  <!-- Feature strip icons -->
+  <symbol id="ic-circus" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 19h17"/><path d="M4.8 19 12 4.8 19.2 19Z"/><path d="M12 4.8V2.3"/><path d="M8.4 19 12 11.5 15.6 19"/></symbol>
+  <symbol id="ic-aerial" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2.3" x2="12" y2="6.8"/><circle cx="12" cy="13" r="6.2"/><circle cx="12" cy="10.6" r="1.4" fill="currentColor" stroke="none"/><path d="M9.3 18.5 12 14.2l2.7 4.3"/></symbol>
+  <symbol id="ic-magic" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 15.5 8.5"/><path d="M16 4v3M14.5 5.5h3"/><path d="M19.7 9.3v2.2M18.6 10.4h2.2"/><path d="M8.3 15v2M7.3 16h2"/></symbol>
+  <symbol id="ic-musiclight" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16.3V5.8L18 4v10.3"/><circle cx="7.7" cy="16.6" r="2.3"/><circle cx="15.7" cy="14.5" r="2.3"/><path d="M4.2 4.6 5.5 6M4 9.3h2.1" stroke-width="1.3"/></symbol>
+  <symbol id="ic-panorama" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="11.5" cy="12" rx="8.5" ry="4"/><path d="M11.5 3.2v17.6" stroke-width="1.1" opacity=".5"/><path d="M18.3 8a8.6 8.6 0 0 1 0 8"/><path d="M16.9 15.9l1.4-.2.3 1.5"/></symbol>
+</svg>
+
+<div class="page-shell">
+
+<!-- ============ NAVBAR ============ -->
+<header class="navbar">
+  <div class="nav-inner">
+  <a href="index.html" class="logo">
+    <img class="logo-lumishow" src="image/logo-lumishow.png" alt="LumiShow">
+  </a>
+
+  <nav class="nav-links">
+    <a href="index.html" data-i18n="nav.home">Trang chủ</a>
+    <a href="#" class="active" data-i18n="nav.about">Giới thiệu</a>
+    <a href="LienHe.html" data-i18n="nav.contact">Liên hệ</a>
+  </nav>
+
+  <div class="nav-right">
+    <button class="lang-select" id="langToggle" aria-label="Đổi ngôn ngữ"><span id="langLabel">VI</span> <svg class="icon"><use href="#ic-chevdown"/></svg></button>
+    <button class="icon-btn" id="themeToggle" aria-label="Bật/tắt đèn"><svg class="icon"><use href="#ic-sun" id="themeIcon"/></svg></button>
+    <a href="BookingTicket.html" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
+    <button class="menu-toggle" aria-label="Mở menu" id="menuToggle"><svg class="icon"><use href="#ic-menu"/></svg></button>
+  </div>
+  </div>
+</header>
+
+<nav class="mobile-nav" id="mobileNav">
+  <a href="index.html" data-i18n="nav.home">Trang chủ</a>
+  <a href="#" class="active" data-i18n="nav.about">Giới thiệu</a>
+  <a href="LienHe.html" data-i18n="nav.contact">Liên hệ</a>
+</nav>
+
+<!-- ============ ABOUT HERO ============ -->
+<section class="about-hero">
+  <div class="ah-bg">
+    <img class="ah-bg-img" src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái — Sơn Tinh và Thủy Tinh">
+    <div class="ah-bg-overlay"></div>
+  </div>
+  <div class="ah-inner">
+    <span class="ah-eyebrow">LumiShow</span>
+    <h1 class="ah-title">SƠN THẦN<br>THỦY QUÁI</h1>
+    <p class="ah-sub" data-i18n="ab.heroSub">Truyền thuyết Việt trong không gian xiếc Panorama 360°</p>
+    <div class="ah-actions">
+      <a href="#tong-quan" class="btn-outline-light"><span data-i18n="ab.heroBtn1">Khám phá câu chuyện</span> <svg class="icon"><use href="#ic-arrow-down"/></svg></a>
+      <a href="BookingTicket.html" class="btn-gold-solid"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><span></span><i></i><span></span></div>
+
+<!-- ============ TỔNG QUAN ============ -->
+<section class="overview-section" id="tong-quan">
+  <div class="container">
+    <div class="overview-grid">
+      <div class="overview-copy">
+        <span class="eyebrow" data-i18n="ab.ovE">TỔNG QUAN</span>
+        <h2 class="ov-title" data-i18n="ab.ovTitle">BƯỚC VÀO BÊN TRONG TRUYỀN THUYẾT</h2>
+        <p>Từ truyền thuyết Sơn Tinh - Thủy Tinh, Sơn thần Thủy quái mở ra một thế giới nơi núi rừng, đại dương và những thế lực huyền bí cùng hiện diện trên sân khấu.</p>
+        <p>Kết hợp giữa xiếc đương đại, kỹ thuật trình diễn trên không, ảo thuật, âm nhạc và 3D Mapping Panorama 360°, show đưa khán giả bước vào hành trình từ đất nước thanh bình đến cuộc đại chiến giữa Đất và Nước.</p>
+        <p>Ở đó, những chuyển động thật của nghệ sĩ xiếc hòa cùng không gian hình ảnh ảo. Núi rừng, đại dương có thể cuộn trào, bão tố có thể bao quanh vòm rạp, biến sân khấu thành một thế giới sống động của truyền thuyết Việt.</p>
+      </div>
+      <div class="overview-media">
+        <img src="image/SonThanThuyQuai.jpg" alt="Không gian sân khấu xiếc Panorama 360° — Sơn Thần Thủy Quái">
+      </div>
+    </div>
+
+    <div class="overview-features">
+      <div class="of-item"><svg class="icon"><use href="#ic-circus"/></svg><span data-i18n="ab.f1">Xiếc đương đại</span></div>
+      <div class="of-item"><svg class="icon"><use href="#ic-aerial"/></svg><span data-i18n="ab.f2">Trình diễn trên không</span></div>
+      <div class="of-item"><svg class="icon"><use href="#ic-magic"/></svg><span data-i18n="ab.f3">Ảo thuật</span></div>
+      <div class="of-item"><svg class="icon"><use href="#ic-musiclight"/></svg><span data-i18n="ab.f4">Âm nhạc &amp; ánh sáng</span></div>
+      <div class="of-item"><svg class="icon"><use href="#ic-panorama"/></svg><span data-i18n="ab.f5">3D Mapping Panorama 360°</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HÀNH TRÌNH 5 HỒI ============ -->
+<section class="journey-section" id="hanh-trinh">
+  <div class="container">
+    <h2 class="journey-title" data-i18n="ab.journeyTitle">HÀNH TRÌNH 5 HỒI</h2>
+
+    <div class="journey-list">
+      <div class="journey-line"></div>
+
+      <!-- HỒI I -->
+      <div class="journey-row">
+        <div class="journey-media"><img src="image/SonThanThuyQuai.jpg" alt="Hồi I – Đất nước thanh bình"></div>
+        <div class="journey-copy">
+          <span class="j-num" data-i18n="ab.j1num">Hồi I</span>
+          <h3 class="j-title" data-i18n="ab.j1title">Đất nước thanh bình</h3>
+          <p>Thuở các Vua Hùng dựng nước, đất nước yên bình, người dân sống hòa mình cùng núi rừng và thiên nhiên. Công chúa Mỵ Nương xuất hiện trong những màn đu lượn trên cao, giữa bầu trời xanh, chim Lạc và những dãy núi hùng vĩ được mở ra trong không gian Panorama 360°.</p>
+          <p>Khi Vua Hùng mở hội kén rể, Sơn Tinh và Thủy Tinh bước vào cuộc so tài. Những màn hip hop, lăn vòng, thăng bằng và đu dây đôi thể hiện sự đối lập giữa sức mạnh của Núi và Nước bằng chuyển động thật của nghệ sĩ và hình ảnh mapping kỳ ảo trên toàn bộ không gian sân khấu.</p>
+          <div class="j-tags">
+            <span data-i18n="ab.t1a">Đu lượn trên cao</span>
+            <span data-i18n="ab.t1b">Hip hop</span>
+            <span data-i18n="ab.t1c">Lăn vòng</span>
+            <span data-i18n="ab.t1d">Thăng bằng</span>
+            <span data-i18n="ab.t1e">Đu dây đôi</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HỒI II -->
+      <div class="journey-row">
+        <div class="journey-copy">
+          <span class="j-num" data-i18n="ab.j2num">Hồi II</span>
+          <h3 class="j-title" data-i18n="ab.j2title">Giang sơn của Sơn Tinh</h3>
+          <p>Sơn Tinh đưa Mỵ Nương về thăm giang sơn núi rừng. Dân làng mở hội, muông thú cùng xuất hiện trong những tiết mục xiếc vui tươi, từ thăng bằng, nhào lộn đến trình diễn với đạo cụ và cột tre.</p>
+          <p>Panorama 360° đưa khán giả đi qua rừng tre, suối nước, thác và những triền núi đầy sức sống. Nhưng giữa lúc hội vui đang diễn ra, Thủy Tinh bất ngờ xuất hiện, bắt cóc Mỵ Nương và đẩy Sơn Tinh vào cuộc hành trình giải cứu đầy nguy hiểm.</p>
+          <div class="j-tags">
+            <span data-i18n="ab.t2a">Thăng bằng</span>
+            <span data-i18n="ab.t2b">Nhào lộn</span>
+            <span data-i18n="ab.t2c">Đạo cụ &amp; cột tre</span>
+          </div>
+        </div>
+        <div class="journey-media"><img src="image/SonThanThuyQuai.jpg" alt="Hồi II – Giang sơn của Sơn Tinh"></div>
+      </div>
+
+      <!-- HỒI III -->
+      <div class="journey-row">
+        <div class="journey-media"><img src="image/SonThanThuyQuai.jpg" alt="Hồi III – Vương quốc Thủy Tinh"></div>
+        <div class="journey-copy">
+          <span class="j-num" data-i18n="ab.j3num">Hồi III</span>
+          <h3 class="j-title" data-i18n="ab.j3title">Vương quốc Thủy Tinh</h3>
+          <p>Mỵ Nương bị đưa xuống đáy đại dương — một thế giới lung linh nhưng bí ẩn và hiểm nguy. Tấm lưới từ trên cao, những màn đu dây bay và chuyển động hình thể của các thủy quái tạo nên cảm giác như cả sân khấu đang chìm trong nước.</p>
+          <p>Với hình ảnh cung điện Thủy Tinh, sinh vật biển và những dòng nước phát sáng, Mapping Panorama 360° biến vòm rạp thành một vương quốc dưới lòng đại dương. Giữa vẻ đẹp mê hoặc ấy, Mỵ Nương phải đối mặt với sự bạo ngược của Thủy Tinh và tìm cách giữ vững lòng mình.</p>
+          <div class="j-tags">
+            <span data-i18n="ab.t3a">Lưới trên cao</span>
+            <span data-i18n="ab.t3b">Đu dây bay</span>
+            <span data-i18n="ab.t3c">Chuyển động hình thể</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HỒI IV -->
+      <div class="journey-row">
+        <div class="journey-copy">
+          <span class="j-num" data-i18n="ab.j4num">Hồi IV</span>
+          <h3 class="j-title" data-i18n="ab.j4title">Đại dương cuộn sóng</h3>
+          <p>Sơn Tinh cùng muông thú tiến vào đại dương để giải cứu Mỵ Nương. Cuộc giải cứu trở thành trận đại chiến giữa đất và nước, với những màn nhào lộn, bay đu dây và đối kháng trên không.</p>
+          <p>Thủy Tinh làm nước dâng cao. Sơn Tinh nâng núi chống lại sóng dữ. Trong tiếng sấm, mưa bão và ánh sáng chuyển động, Panorama 360° mở rộng trận chiến ra khắp vòm rạp — nơi núi, nước, nghệ sĩ và hình ảnh cùng chuyển động trong một cao trào sử thi.</p>
+          <p>Cuối cùng, Thủy Tinh bị đánh bại. Mỵ Nương được giải cứu, còn thế giới đại dương dần lắng xuống sau cơn bão.</p>
+          <div class="j-tags">
+            <span data-i18n="ab.t4a">Nhào lộn</span>
+            <span data-i18n="ab.t4b">Bay đu dây</span>
+            <span data-i18n="ab.t4c">Đối kháng trên không</span>
+          </div>
+        </div>
+        <div class="journey-media"><img src="image/SonThanThuyQuai.jpg" alt="Hồi IV – Đại dương cuộn sóng"></div>
+      </div>
+
+      <!-- HỒI V -->
+      <div class="journey-row">
+        <div class="journey-media"><img src="image/SonThanThuyQuai.jpg" alt="Hồi V – Huyền thoại Đất - Nước"></div>
+        <div class="journey-copy">
+          <span class="j-num" data-i18n="ab.j5num">Hồi V</span>
+          <h3 class="j-title" data-i18n="ab.j5title">Huyền thoại Đất - Nước</h3>
+          <p>Sơn Tinh đưa Mỵ Nương trở về. Vua Hùng tổ chức lễ cưới trong niềm vui của dân làng, muông thú và cây rừng.</p>
+          <p>Không gian sân khấu chuyển sang sắc màu rực rỡ. Các nghệ sĩ cùng hòa vào màn múa kết, trong khi hình ảnh núi rừng, hoa cỏ và muông thú mở ra khắp Panorama 360°.</p>
+          <p>Câu chuyện khép lại bằng một thông điệp: Đất và Nước không chỉ là hai thế lực đối đầu, mà còn là hai nguồn sống tạo nên sự trường tồn của dân tộc. Sức mạnh của con người nằm ở lòng dũng cảm, sự đoàn kết và khả năng sống hài hòa với thiên nhiên.</p>
+          <div class="j-tags">
+            <span data-i18n="ab.t5a">Lễ hội</span>
+            <span data-i18n="ab.t5b">Múa kết tập thể</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QUOTE BANNER ============ -->
+<section class="quote-banner">
+  <div class="container qb-grid">
+    <div class="qb-item">
+      <span class="qb-eyebrow" data-i18n="ab.qb1e">Truyền thuyết Việt</span>
+      <p class="qb-sub" data-i18n="ab.qb1s">Một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh, bằng ngôn ngữ sân khấu đương đại.</p>
+    </div>
+    <div class="qb-item">
+      <span class="qb-eyebrow" data-i18n="ab.qb2e">Nghệ thuật xiếc</span>
+      <p class="qb-sub" data-i18n="ab.qb2s">Kỹ thuật trình diễn trên không, ảo thuật và chuyển động thật của nghệ sĩ.</p>
+    </div>
+    <div class="qb-item qb-center">
+      <p class="qb-center-text" data-i18n="ab.qb3">Một trải nghiệm chưa từng được kể theo cách này</p>
+    </div>
+    <div class="qb-item">
+      <span class="qb-eyebrow" data-i18n="ab.qb4e">Công nghệ Panorama 360°</span>
+      <p class="qb-sub" data-i18n="ab.qb4s">Âm nhạc, ánh sáng và 3D Mapping biến cả vòm rạp thành sân khấu sống động.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THƯ VIỆN HÌNH ẢNH + LỜI KẾT ============ -->
+<section class="split-section" id="thu-vien">
+  <div class="container gallery-split">
+    <div class="gallery-col">
+      <span class="eyebrow" data-i18n="ab.galleryE">Thư viện hình ảnh</span>
+      <div class="gallery-grid">
+        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 1"></a>
+        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 2"></a>
+        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 3"></a>
+        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 4"></a>
+        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 5"></a>
+        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 6"></a>
+        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 7"></a>
+        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 8"></a>
+      </div>
+      <a class="gallery-more" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener">
+        <span data-i18n="ab.galleryBtn">Xem thêm hình ảnh</span> <svg class="icon"><use href="#ic-plus"/></svg>
+      </a>
+    </div>
+
+    <div class="lk-col">
+      <span class="eyebrow" data-i18n="ab.lkE">Lời kết</span>
+      <h2 class="lk-title">Một câu chuyện về<br>Đất và Nước.</h2>
+      <p>Sơn thần Thủy quái là một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh. Nơi kỹ thuật xiếc, chuyển động trên không và ảo thuật gặp gỡ âm nhạc, ánh sáng và công nghệ 3D Mapping Panorama 360°.</p>
+      <p>Trải nghiệm không gian từ núi rừng đến đại dương, từ bình yên đến bão tố, khán giả được mời bước vào bên trong một truyền thuyết Việt sống động, kỳ ảo và chưa từng được kể theo cách này.</p>
+      <p class="lk-tagline">Một trải nghiệm xiếc 360°. Một truyền thuyết được đánh thức bằng nghệ thuật và công nghệ.</p>
+      <a href="BookingTicket.html" class="btn-gold-solid"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="footer-card">
+    <div class="footer-grid">
+
+      <!-- Row 1, col 1: Brand -->
+      <div class="footer-brand">
+        <div class="footer-brand-inner">
+          <img class="footer-logo" src="image/logo-lumishow.png" alt="LumiShow">
+          <div class="footer-divider"><span class="footer-divider-star"></span></div>
+          <p class="footer-desc" data-i18n="footer.desc">LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.</p>
+        </div>
+      </div>
+
+      <!-- Row 2, col 1: Contact -->
+      <div class="footer-contact-block">
+        <h4 class="footer-heading" data-i18n="footer.contactHeading">LIÊN HỆ VỚI CHÚNG TÔI</h4>
+        <div class="footer-list">
+          <div class="footer-row">
+            <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
+            <div class="footer-value">
+              <span class="footer-label" data-i18n="contact.address">Địa chỉ</span>
+              <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+            </div>
+          </div>
+          <div class="footer-row">
+            <div class="footer-icon"><svg class="icon"><use href="#ic-phone"/></svg></div>
+            <div class="footer-value">
+              <span class="footer-label" data-i18n="contact.hotline">Hotline</span>
+              <span class="footer-value-line"><a href="tel:+84869512246">0869 512 246</a> <span class="footer-value-person">(Hương Chi)</span></span>
+              <span class="footer-value-line"><a href="tel:+84944605190">094 460 51 90</a> <span class="footer-value-person">(Han Tae Quang)</span></span>
+            </div>
+          </div>
+          <div class="footer-row">
+            <div class="footer-icon"><svg class="icon"><use href="#ic-mail"/></svg></div>
+            <div class="footer-value">
+              <span class="footer-label" data-i18n="contact.email">Email</span>
+              <span><a href="mailto:lumishow.vietnam@gmail.com">lumishow.vietnam@gmail.com</a></span>
+            </div>
+          </div>
+          <div class="footer-row">
+            <div class="footer-icon"><svg class="icon"><use href="#ic-globe"/></svg></div>
+            <div class="footer-value">
+              <span class="footer-label" data-i18n="contact.website">Website</span>
+              <span><a href="https://lumishow.vn" target="_blank" rel="noopener">lumishow.vn</a></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2, col 2: Map, dropped down + stretched to match contact block -->
+      <div class="footer-col-right">
+        <h4 class="footer-heading" data-i18n="footer.mapHeading">TÌM ĐƯỜNG ĐẾN LUMISHOW</h4>
+        <div class="footer-map-frame-wrap">
+          <iframe class="footer-map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d276.8174182100974!2d105.84242121927876!3d21.01681956385038!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc654b563c9%3A0x9bcb7dfff2b12124!2zUuG6oXAgWGnhur9jIFRydW5nIMavxqFuZw!5e0!3m2!1svi!2s!4v1787208605122!5m2!1svi!2s" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Bản đồ vị trí LumiShow"></iframe>
+          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=192+L%C3%AA+Tr%E1%BB%8Dng+T%E1%BA%A5n%2C+Thanh+Xu%C3%A2n%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
+            <svg class="icon"><use href="#ic-map-pin"/></svg>
+            <span data-i18n="footer.gmapsBtn">Google Maps</span>
+          </a>
+        </div>
+        <div class="footer-map-caption">
+          <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
+          <div class="footer-value">
+            <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+            <span class="footer-map-note" data-i18n="footer.mapNote">Gần Royal City, cách Ngã Tư Sở 2.5km</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-divider-line"></div>
+
+    <div class="footer-bottom">
+      <div class="footer-social">
+        <h5 class="footer-subheading" data-i18n="footer.socialHeading">KẾT NỐI VỚI LUMISHOW</h5>
+        <div class="footer-social-icons">
+          <a class="social-badge fb" href="#" target="_blank" rel="noopener" aria-label="Facebook"><img src="image/facebook.png" alt="Facebook"></a>
+          <a class="social-badge threads" href="#" target="_blank" rel="noopener" aria-label="Threads"><img src="image/Thread.png" alt="Threads"></a>
+        </div>
+      </div>
+
+      <div class="footer-support">
+        <div class="footer-icon footer-icon--ghost"><svg class="icon"><use href="#ic-headset"/></svg></div>
+        <div class="footer-support-text">
+          <div class="footer-label" data-i18n="footer.support">HỖ TRỢ KHÁCH HÀNG</div>
+          <div class="footer-value" data-i18n="footer.supportHours">9:00 - 18:00 (Thứ 2 - Thứ 7)</div>
+        </div>
+      </div>
+
+      <div class="footer-cta">
+        <span data-i18n="footer.ctaText">Sẵn sàng kiến tạo những trải nghiệm sân khấu đột phá cùng LumiShow?</span>
+        <a href="LienHe.html#lhForm" class="footer-cta-btn">
+          <span data-i18n="footer.ctaBtn">LIÊN HỆ HỢP TÁC</span>
+          <svg class="icon"><use href="#ic-arrow-right"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-copyright" data-i18n="footer.copyright">© 2026 LumiShow. All rights reserved.</div>
+</footer>
+
+</div><!-- /.page-shell -->
+
+<script>
+  // Mobile menu
+  const menuToggle = document.getElementById('menuToggle');
+  const mobileNav = document.getElementById('mobileNav');
+  menuToggle?.addEventListener('click', () => mobileNav.classList.toggle('open'));
+
+  // ============ ĐỔI NGÔN NGỮ (VI / EN) ============
+  // Ghi chú: phần khung (menu, nút, nhãn) hỗ trợ song ngữ đầy đủ.
+  // Phần nội dung truyền thuyết (đoạn văn tường thuật 5 Hồi, Tổng quan, Lời kết)
+  // giữ nguyên tiếng Việt như nội dung gốc được cung cấp.
+  const I18N = {
+    vi: {
+      'nav.home':'Trang chủ', 'nav.about':'Giới thiệu', 'nav.contact':'Liên hệ', 'nav.cta':'ĐẶT VÉ NGAY',
+      'hero.cta':'Đặt vé ngay',
+      'contact.address':'Địa chỉ', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
+      'contact.addressVal':'67-69 P. Trần Nhân Tông, Hai Bà Trưng, Hà Nội',
+      'ab.heroSub':'Truyền thuyết Việt trong không gian xiếc Panorama 360°',
+      'ab.heroBtn1':'Khám phá câu chuyện',
+      'ab.ovE':'Tổng quan', 'ab.ovTitle':'Bước vào bên trong truyền thuyết',
+      'ab.f1':'Xiếc đương đại', 'ab.f2':'Trình diễn trên không', 'ab.f3':'Ảo thuật',
+      'ab.f4':'Âm nhạc & ánh sáng', 'ab.f5':'3D Mapping Panorama 360°',
+      'ab.journeyTitle':'Hành trình 5 Hồi',
+      'ab.j1num':'Hồi I', 'ab.j1title':'Đất nước thanh bình',
+      'ab.t1a':'Đu lượn trên cao', 'ab.t1b':'Hip hop', 'ab.t1c':'Lăn vòng', 'ab.t1d':'Thăng bằng', 'ab.t1e':'Đu dây đôi',
+      'ab.j2num':'Hồi II', 'ab.j2title':'Giang sơn của Sơn Tinh',
+      'ab.t2a':'Thăng bằng', 'ab.t2b':'Nhào lộn', 'ab.t2c':'Đạo cụ & cột tre',
+      'ab.j3num':'Hồi III', 'ab.j3title':'Vương quốc Thủy Tinh',
+      'ab.t3a':'Lưới trên cao', 'ab.t3b':'Đu dây bay', 'ab.t3c':'Chuyển động hình thể',
+      'ab.j4num':'Hồi IV', 'ab.j4title':'Đại dương cuộn sóng',
+      'ab.t4a':'Nhào lộn', 'ab.t4b':'Bay đu dây', 'ab.t4c':'Đối kháng trên không',
+      'ab.j5num':'Hồi V', 'ab.j5title':'Huyền thoại Đất - Nước',
+      'ab.t5a':'Lễ hội', 'ab.t5b':'Múa kết tập thể',
+      'ab.qb1e':'Truyền thuyết Việt', 'ab.qb1s':'Một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh, bằng ngôn ngữ sân khấu đương đại.',
+      'ab.qb2e':'Nghệ thuật xiếc', 'ab.qb2s':'Kỹ thuật trình diễn trên không, ảo thuật và chuyển động thật của nghệ sĩ.',
+      'ab.qb3':'Một trải nghiệm chưa từng được kể theo cách này',
+      'ab.qb4e':'Công nghệ Panorama 360°', 'ab.qb4s':'Âm nhạc, ánh sáng và 3D Mapping biến cả vòm rạp thành sân khấu sống động.',
+      'ab.galleryE':'Thư viện hình ảnh', 'ab.galleryBtn':'Xem thêm hình ảnh',
+      'ab.lkE':'Lời kết'
+    },
+    en: {
+      'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact', 'nav.cta':'BOOK NOW',
+      'hero.cta':'Book now',
+      'contact.address':'Address', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
+      'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi',
+      'ab.heroSub':'A Vietnamese legend inside a 360° panoramic circus',
+      'ab.heroBtn1':'Explore the story',
+      'ab.ovE':'Overview', 'ab.ovTitle':'Step inside the legend',
+      'ab.f1':'Contemporary circus', 'ab.f2':'Aerial performance', 'ab.f3':'Illusion & magic',
+      'ab.f4':'Music & light', 'ab.f5':'3D Mapping Panorama 360°',
+      'ab.journeyTitle':'A journey in 5 acts',
+      'ab.j1num':'Act I', 'ab.j1title':'A land at peace',
+      'ab.t1a':'Aerial silk', 'ab.t1b':'Hip hop', 'ab.t1c':'Cyr wheel', 'ab.t1d':'Balance', 'ab.t1e':'Duo trapeze',
+      'ab.j2num':'Act II', 'ab.j2title':'The mountain realm',
+      'ab.t2a':'Balance', 'ab.t2b':'Acrobatics', 'ab.t2c':'Props & bamboo pole',
+      'ab.j3num':'Act III', 'ab.j3title':'The water kingdom',
+      'ab.t3a':'Aerial net', 'ab.t3b':'Flying trapeze', 'ab.t3c':'Physical theatre',
+      'ab.j4num':'Act IV', 'ab.j4title':'The ocean at war',
+      'ab.t4a':'Acrobatics', 'ab.t4b':'Flying trapeze', 'ab.t4c':'Aerial combat',
+      'ab.j5num':'Act V', 'ab.j5title':'The legend of land & water',
+      'ab.t5a':'Celebration', 'ab.t5b':'Ensemble finale',
+      'ab.qb1e':'Vietnamese legend', 'ab.qb1s':'A national story told in the language of contemporary stagecraft.',
+      'ab.qb2e':'Circus artistry', 'ab.qb2s':'Aerial technique, illusion and the real motion of live performers.',
+      'ab.qb3':'An experience never told quite like this',
+      'ab.qb4e':'360° Panorama technology', 'ab.qb4s':'Music, light and 3D mapping turn the whole dome into the stage.',
+      'ab.galleryE':'Photo gallery', 'ab.galleryBtn':'View more photos',
+      'ab.lkE':'Closing'
+    }
+  };
+
+  let currentLang = 'vi';
+  const langToggle = document.getElementById('langToggle');
+  const langLabel = document.getElementById('langLabel');
+
+  function setLang(lang){
+    currentLang = lang;
+    const dict = I18N[lang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const val = dict[el.dataset.i18n];
+      if (val) el.textContent = val;
+    });
+    if (langLabel) langLabel.textContent = lang.toUpperCase();
+    document.documentElement.lang = lang;
+  }
+
+  langToggle?.addEventListener('click', () => setLang(currentLang === 'vi' ? 'en' : 'vi'));
+
+  // ============ BẬT / TẮT ĐÈN (sáng / tối) ============
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+
+  function setTheme(mode){
+    document.documentElement.classList.toggle('light', mode === 'light');
+    themeIcon?.setAttribute('href', mode === 'light' ? '#ic-moon' : '#ic-sun');
+    try { localStorage.setItem('lumishow-theme', mode); } catch(e) {}
+  }
+
+  themeToggle?.addEventListener('click', () => {
+    setTheme(document.documentElement.classList.contains('light') ? 'dark' : 'light');
+  });
+
+  try {
+    const saved = localStorage.getItem('lumishow-theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+</script>
+</body>
+</html>
