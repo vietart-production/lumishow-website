@@ -11,6 +11,11 @@ const ticketRoutes = require("./routes/ticket.routes");
 
 const app = express();
 
+// Render (và hầu hết PaaS) đặt app sau 1 reverse proxy — cần khai báo để
+// express-rate-limit đọc đúng IP thật từ X-Forwarded-For thay vì báo lỗi
+// validation liên tục. Chỉ tin proxy đầu tiên (Render), không tin toàn chuỗi.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 
 // Giới hạn số request /api mỗi IP để chống spam gọi /seats hoặc /bookings/hold
