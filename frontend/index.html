@@ -295,9 +295,8 @@
   .weekend-node .wd-moy{font-size:clamp(9px,2.4vw,11px);color:var(--gray-dim);white-space:nowrap;}
 
   .schedule-cta-row{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:18px;margin-top:44px;}
-  /* Nút Đặt vé — cỡ vừa (đã thu nhỏ lại một nửa so với bản trước) */
-  .btn-sch-lg{padding:13px 28px;font-size:14.5px;margin-left:0;}
-  .btn-sch-lg .icon{width:18px;height:18px;}
+  /* Nút Đặt vé — cùng cỡ với .btn-primary gốc (nút "ĐẶT VÉ NGAY" trên navbar) */
+  .btn-sch-lg{margin-left:0;}
   /* Nút phụ "Tìm hiểu thêm" — giống style nút submit ở trang Liên hệ, thu nhỏ còn 70% cỡ trước */
   .btn-gold{
     display:inline-flex;align-items:center;justify-content:center;gap:6px;
@@ -508,7 +507,7 @@
   }
   @media (max-width:560px){
     .weekend-picker{gap:clamp(3px,1.6vw,6px);}
-    .btn-sch-lg{padding:13px 28px;font-size:14.5px;justify-content:center;}
+    .btn-sch-lg{justify-content:center;}
     .schedule-cta-row{flex-direction:column;align-items:center;width:100%;max-width:320px;margin:0 auto;}
   }
   @media (max-width:480px){
