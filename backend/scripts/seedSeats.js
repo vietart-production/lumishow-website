@@ -17,21 +17,19 @@ const SHOWTIME_ID = "2026-09-25_17:30";
 // ==========================================
 
 const TIERS = {
-    // TẠM THỜI hạ giá về 2.000đ để dễ test thanh toán thật qua PayOS —
-    // nhớ đổi lại giá thật trước khi lên production.
     "son-than": {
         name: "Sơn Thần",
-        price: 2000
+        price: 500000
     },
 
     "thuy-quai": {
         name: "Thủy Quái",
-        price: 2000
+        price: 400000
     },
 
     "mi-nuong": {
         name: "Mị Nương",
-        price: 2000
+        price: 300000
     }
 };
 
