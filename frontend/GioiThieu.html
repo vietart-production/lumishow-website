@@ -53,12 +53,9 @@
     --r-pill:100px;
     --container:1240px;
     --gutter:clamp(20px,4vw,48px);
-    --shell-max:1720px;
-    --shell-pad:clamp(0px,2.2vw,40px);
     --page-bg:#020509;
     --nav-bg:rgba(6,10,15,.72);
   }
-  html.light{--page-bg:#ffffff;}
 
   body{
     background:var(--page-bg);
@@ -68,13 +65,11 @@
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
-    padding:var(--shell-pad);
     transition:background .35s ease,color .35s ease;
   }
   .page-shell{
-    max-width:var(--shell-max);margin:0 auto;width:100%;
+    width:100%;
     background:var(--bg);
-    border-radius:clamp(0px,1.4vw,22px);
     overflow:clip;
     transition:background .35s ease;
   }
@@ -147,7 +142,7 @@
 
   /* ============ SHARED TEXT ============ */
   .eyebrow{color:var(--gold);font-size:12.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:12px;display:block;}
-  #tong-quan,#hanh-trinh,#thu-vien{scroll-margin-top:90px;}
+  #tong-quan,#hanh-trinh{scroll-margin-top:90px;}
 
   /* ============ SECTION DIVIDER ============ */
   .section-divider{display:flex;align-items:center;justify-content:center;gap:14px;padding:34px 0;}
@@ -188,6 +183,32 @@
   }
   .btn-outline-light:hover{background:rgba(255,255,255,.1);border-color:var(--white);transform:translateY(-2px);}
   .btn-outline-light .icon{width:15px;height:15px;}
+
+  /* ---- Nút "Video giới thiệu" — vòng tròn play + nhãn 2 dòng ---- */
+  .btn-watch-video{display:inline-flex;align-items:center;gap:14px;background:none;padding:2px;}
+  .btn-watch-video-icon{
+    width:58px;height:58px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.08);
+    border:1.5px solid rgba(255,255,255,.35);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    color:#fff;
+    transition:transform .25s,background .25s,border-color .25s,box-shadow .25s;
+  }
+  .btn-watch-video-icon .icon{width:18px;height:18px;margin-left:2px;}
+  .btn-watch-video-label{display:flex;flex-direction:column;text-align:left;}
+  .btn-watch-video-label b{font-size:14.5px;font-weight:700;color:var(--white);letter-spacing:.3px;}
+  .btn-watch-video-label small{font-size:11.5px;color:var(--gray);font-weight:500;margin-top:2px;}
+  .btn-watch-video:hover .btn-watch-video-icon{transform:scale(1.08);background:var(--grad-btn);border-color:transparent;box-shadow:0 10px 26px rgba(242,121,12,.4);}
+
+  /* ---- Modal video giới thiệu ---- */
+  .video-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+  .video-modal.open{display:flex;}
+  .video-modal-backdrop{position:absolute;inset:0;background:rgba(2,5,9,.9);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+  .video-modal-inner{position:relative;z-index:1;width:100%;max-width:960px;aspect-ratio:16/9;background:#000;border-radius:var(--r-md);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.6);}
+  .video-modal-inner video{width:100%;height:100%;display:block;}
+  .video-modal-close{position:absolute;top:-44px;right:0;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+  .video-modal-close:hover{background:rgba(255,255,255,.22);}
 
   /* ============ OVERVIEW ============ */
   .overview-section{padding:96px 0 84px;}
@@ -248,27 +269,6 @@
   .lk-tagline{color:var(--gold-soft);font-style:italic;font-size:14.5px;line-height:1.8;margin-bottom:28px;border-left:none;padding-left:0;}
   .closing-inner .btn-primary{margin-top:4px;}
 
-  /* ============ THƯ VIỆN HÌNH ẢNH ============ */
-  .gallery-section{padding:94px 0 104px;}
-  .gallery-eyebrow{font-size:16px;letter-spacing:3px;margin-bottom:28px;}
-  .gallery-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:120px;gap:14px;}
-  .gi{display:block;position:relative;border-radius:var(--r-lg);overflow:hidden;}
-  .gi img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease;}
-  .gi:hover img{transform:scale(1.06);}
-  .gi-a{grid-column:1/4;grid-row:1/4;}
-  .gi-b{grid-column:4/7;grid-row:1/3;}
-  .gi-c{grid-column:4/6;grid-row:3/5;}
-  .gi-d{grid-column:6/7;grid-row:3/5;}
-  .gi-e{grid-column:1/4;grid-row:4/6;}
-  .gallery-more{
-    display:inline-flex;align-items:center;gap:8px;margin-top:26px;padding:12px 24px;
-    border-radius:var(--r-pill);border:1px solid var(--line-2);
-    font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);
-    transition:all .2s;
-  }
-  .gallery-more:hover{background:var(--white);color:var(--bg);border-color:var(--white);}
-  .gallery-more .icon{width:14px;height:14px;}
-
   /* ============ FOOTER ============ */
   .site-footer{
     position:relative;overflow:hidden;
@@ -285,18 +285,17 @@
     overflow:hidden;
   }
 
-  /* ---- top grid: brand / contact / map ---- */
-  .footer-grid{display:grid;grid-template-columns:1.15fr 2fr;grid-template-rows:auto 1fr;column-gap:clamp(22px,3.4vw,46px);row-gap:clamp(18px,2.6vw,28px);}
-  .footer-brand{min-width:0;grid-column:1;grid-row:1;}
-  .footer-contact-block{grid-column:1;grid-row:2;}
-  .footer-col-right{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;}
+  /* ---- top grid: brand / contact — lệch phải một chút để cân bằng sau khi bỏ bản đồ ---- */
+  .footer-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:clamp(22px,3.4vw,46px);align-items:start;}
+  .footer-brand{min-width:0;grid-column:1;}
+  .footer-contact-block{grid-column:2;width:100%;max-width:440px;margin-left:0;}
   .footer-brand-inner{max-width:380px;}
   .footer-logo{height:clamp(58px,7vw,86px);width:auto;display:block;margin:0 auto 18px;}
   .footer-divider{display:flex;align-items:center;gap:0px;margin:0 auto 18px;max-width:250px;}
   .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,187,33,.5));}
   .footer-divider::after{background:linear-gradient(90deg,rgba(251,187,33,.5),transparent);}
-  .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;}
-  .footer-motif{opacity:.5;max-width:300px;}
+  .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;text-align:center;}
+  .footer-motif{opacity:.5;max-width:240px;margin:0 auto;}
   .footer-motif svg{width:100%;height:auto;display:block;}
 
   .footer-heading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:clamp(12px,1.15vw,14px);letter-spacing:.5px;text-transform:uppercase;color:var(--white);padding-bottom:12px;margin-bottom:16px;}
@@ -314,16 +313,6 @@
   .footer-value a:hover{color:var(--green);}
   .footer-value-line{display:block;}
   .footer-value-person{color:var(--gray);font-size:10px;}
-
-  .footer-map-frame-wrap{position:relative;width:100%;flex:1 1 auto;min-height:clamp(170px,18vw,230px);border-radius:var(--r-md);overflow:hidden;background:#0a0d10;border:1px solid var(--line);}
-  .footer-map-frame{position:absolute;inset:0;width:100%;height:100%;border:0;filter:saturate(.85) brightness(.92);}
-  .footer-map-badge{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-pill);background:rgba(6,9,8,.82);border:1px solid var(--line-2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--white);font-size:11px;font-weight:600;transition:background .2s,color .2s;}
-  .footer-map-badge:hover{background:rgba(242,121,12,.14);color:var(--green);}
-  .footer-map-badge .icon{width:12px;height:12px;}
-  .footer-map-caption{display:flex;align-items:flex-start;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);}
-  .footer-map-caption .footer-icon{width:32px;height:32px;}
-  .footer-map-caption .footer-icon .icon{width:14px;height:14px;}
-  .footer-map-note{display:block;color:var(--gray);font-size:10.5px;margin-top:2px;font-weight:400;}
 
   /* ---- bottom row ---- */
   .footer-divider-line{height:1px;background:var(--line);margin:clamp(18px,2.6vw,28px) 0 clamp(16px,2.2vw,22px);}
@@ -351,11 +340,9 @@
 
   /* ============ FOOTER RESPONSIVE ============ */
   @media (max-width:1080px){
-    .footer-grid{grid-template-columns:1fr;grid-template-rows:auto;gap:24px;}
-    .footer-brand,.footer-contact-block,.footer-col-right{grid-column:1;}
-    .footer-brand{grid-row:1;}
-    .footer-contact-block{grid-row:2;}
-    .footer-col-right{grid-row:3;}
+    .footer-grid{grid-template-columns:1fr;gap:24px;}
+    .footer-brand,.footer-contact-block{grid-column:1;}
+    .footer-contact-block{max-width:100%;margin-left:0;}
     .footer-brand-inner{max-width:100%;}
     .footer-motif{display:none;}
   }
@@ -365,7 +352,6 @@
     .footer-support{border-left:none;padding-left:0;padding-top:13px;border-top:1px solid var(--line);width:100%;}
     .footer-cta{margin-left:0;width:100%;}
     .footer-cta-btn{width:100%;justify-content:center;}
-    .footer-map-frame-wrap{min-height:190px;}
   }
 
   /* ============ RESPONSIVE ============ */
@@ -383,9 +369,6 @@
     .journey-media{min-height:220px;aspect-ratio:4/3;}
     .of-item{border-right:none;padding:4px 12px;}
     .overview-features{justify-content:center;}
-    .gallery-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:160px;}
-    .gi-a,.gi-b,.gi-c,.gi-d,.gi-e{grid-column:auto;grid-row:auto;}
-    .gi-a{grid-column:1/3;grid-row:span 2;}
     .nav-right{gap:clamp(3px,1.6vw,8px);}
     .btn-primary{
       padding:clamp(7px,2.4vw,11px) clamp(10px,4.2vw,22px);
@@ -396,7 +379,8 @@
   }
   @media (max-width:560px){
     .ah-actions{flex-direction:column;width:100%;max-width:320px;margin:0 auto;}
-    .btn-outline-light,.ah-actions .btn-primary{width:100%;justify-content:center;}
+    .btn-outline-light{width:100%;justify-content:center;}
+    .ah-actions .btn-watch-video{justify-content:center;}
   }
   @media (max-width:480px){
     :root{--gutter:14px;}
@@ -417,12 +401,10 @@
 <!-- ============ ICON / FIGURE SPRITE ============ -->
 <svg class="visually-hidden" aria-hidden="true" focusable="false">
   <symbol id="ic-chevdown" viewBox="0 0 24 24"><polyline class="icon-stroke" points="6 9 12 15 18 9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="ic-sun" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="6" y2="6"/><line x1="18" y1="18" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="6" y2="18"/><line x1="18" y1="6" x2="19.8" y2="4.2"/></symbol>
-  <symbol id="ic-moon" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></symbol>
   <symbol id="ic-menu" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></symbol>
   <symbol id="ic-arrow-right" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
   <symbol id="ic-arrow-down" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/></symbol>
-  <symbol id="ic-plus" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="ic-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7Z"/></symbol>
   <symbol id="ic-globe" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></symbol>
   <symbol id="ic-headset" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5a8 8 0 0 1 16 0V19"/><rect x="3" y="13.2" width="4" height="6.3" rx="1.6"/><rect x="17" y="13.2" width="4" height="6.3" rx="1.6"/><path d="M20 19.5v.3a2.7 2.7 0 0 1-2.7 2.7H14.5"/></symbol>
   <symbol id="ic-map-pin" viewBox="0 0 24 24" class="icon-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-4.2-4.4-7-8.1-7-11.7a7 7 0 0 1 14 0c0 3.6-2.8 7.3-7 11.7Z"/><circle cx="12" cy="9.8" r="2.6"/></symbol>
@@ -454,8 +436,7 @@
 
   <div class="nav-right">
     <button class="lang-select" id="langToggle" aria-label="Đổi ngôn ngữ"><span id="langLabel">VI</span> <svg class="icon"><use href="#ic-chevdown"/></svg></button>
-    <button class="icon-btn" id="themeToggle" aria-label="Bật/tắt đèn"><svg class="icon"><use href="#ic-sun" id="themeIcon"/></svg></button>
-    <a href="BookingTicket.html" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
+    <a href="index.html#schedule" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
     <button class="menu-toggle" aria-label="Mở menu" id="menuToggle"><svg class="icon"><use href="#ic-menu"/></svg></button>
   </div>
   </div>
@@ -470,16 +451,35 @@
 <!-- ============ ABOUT HERO ============ -->
 <section class="about-hero">
   <div class="ah-bg">
-    <img class="ah-bg-img" src="image/SonThanThuyQuaiXanh.jpg" alt="Sơn Thần Thủy Quái — Sơn Tinh và Thủy Tinh">
+    <video class="ah-bg-img" autoplay muted loop playsinline>
+      <source src="video/Trailer_SonThanThuyQuai.mp4" type="video/mp4">
+    </video>
     <div class="ah-bg-overlay"></div>
   </div>
   <div class="ah-inner">
     <div class="ah-actions">
       <a href="#tong-quan" class="btn-outline-light"><span data-i18n="ab.heroBtn1">Khám phá câu chuyện</span> <svg class="icon"><use href="#ic-arrow-down"/></svg></a>
-      <a href="BookingTicket.html" class="btn-primary"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+      <button type="button" class="btn-watch-video" id="heroWatchBtn">
+        <span class="btn-watch-video-icon"><svg class="icon"><use href="#ic-play"/></svg></span>
+        <span class="btn-watch-video-label">
+          <b data-i18n="hero.watch">Xem video</b>
+          <small data-i18n="hero.watchSub">Giới thiệu chương trình</small>
+        </span>
+      </button>
     </div>
   </div>
 </section>
+
+<!-- ============ MODAL VIDEO GIỚI THIỆU ============ -->
+<div class="video-modal" id="videoModal">
+  <div class="video-modal-backdrop" id="videoModalBackdrop"></div>
+  <div class="video-modal-inner">
+    <button class="video-modal-close" id="videoModalClose" aria-label="Đóng">&times;</button>
+    <video id="videoModalPlayer" controls playsinline>
+      <source src="video/Trailer_SonThanThuyQuai.mp4" type="video/mp4">
+    </video>
+  </div>
+</div>
 
 <div class="section-divider"><span></span><i></i><span></span></div>
 
@@ -585,24 +585,7 @@
     <p>Sơn thần Thủy quái là một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh. Nơi kỹ thuật xiếc, chuyển động trên không và ảo thuật gặp gỡ âm nhạc, ánh sáng và công nghệ 3D Mapping Panorama 360°.</p>
     <p>Trải nghiệm không gian từ núi rừng đến đại dương, từ bình yên đến bão tố, khán giả được mời bước vào bên trong một truyền thuyết Việt sống động, kỳ ảo và chưa từng được kể theo cách này.</p>
     <p class="lk-tagline">Một trải nghiệm xiếc 360°. Một truyền thuyết được đánh thức bằng nghệ thuật và công nghệ.</p>
-    <a href="BookingTicket.html" class="btn-primary"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
-  </div>
-</section>
-
-<!-- ============ THƯ VIỆN HÌNH ẢNH ============ -->
-<section class="gallery-section" id="thu-vien">
-  <div class="container">
-    <span class="eyebrow gallery-eyebrow" data-i18n="ab.galleryE">Thư viện hình ảnh</span>
-    <div class="gallery-grid">
-      <a class="gi gi-a" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 1"></a>
-      <a class="gi gi-b" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 2"></a>
-      <a class="gi gi-c" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 3"></a>
-      <a class="gi gi-d" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 4"></a>
-      <a class="gi gi-e" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 5"></a>
-    </div>
-    <a class="gallery-more" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener">
-      <span data-i18n="ab.galleryBtn">Xem thêm hình ảnh</span> <svg class="icon"><use href="#ic-plus"/></svg>
-    </a>
+    <a href="index.html#schedule" class="btn-primary"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
   </div>
 </section>
 
@@ -611,16 +594,23 @@
   <div class="footer-card">
     <div class="footer-grid">
 
-      <!-- Row 1, col 1: Brand -->
+      <!-- Col 1: Brand -->
       <div class="footer-brand">
         <div class="footer-brand-inner">
           <img class="footer-logo" src="image/logo-lumishow.png" alt="LumiShow">
           <div class="footer-divider"><span class="footer-divider-star"></span></div>
           <p class="footer-desc" data-i18n="footer.desc">LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.</p>
+          <div class="footer-motif">
+            <svg viewBox="0 0 290 165" fill="none" aria-hidden="true">
+              <polyline points="4,105 30,55 56,90 84,30 112,82 140,18 168,74 196,50 222,98" stroke="rgba(251,187,33,.55)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4,118 C38,98 74,138 110,118 C146,98 182,138 218,118 C242,105 258,111 276,114" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M14,138 C48,120 84,156 120,138 C156,120 192,156 228,138 C250,127 262,132 278,135" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
       </div>
 
-      <!-- Row 2, col 1: Contact -->
+      <!-- Col 2: Contact -->
       <div class="footer-contact-block">
         <h4 class="footer-heading" data-i18n="footer.contactHeading">LIÊN HỆ VỚI CHÚNG TÔI</h4>
         <div class="footer-list">
@@ -652,25 +642,6 @@
               <span class="footer-label" data-i18n="contact.website">Website</span>
               <span><a href="https://lumishow.vn" target="_blank" rel="noopener">lumishow.vn</a></span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 2, col 2: Map, dropped down + stretched to match contact block -->
-      <div class="footer-col-right">
-        <h4 class="footer-heading" data-i18n="footer.mapHeading">TÌM ĐƯỜNG ĐẾN LUMISHOW</h4>
-        <div class="footer-map-frame-wrap">
-          <iframe class="footer-map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d276.8174182100974!2d105.84242121927876!3d21.01681956385038!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc654b563c9%3A0x9bcb7dfff2b12124!2zUuG6oXAgWGnhur9jIFRydW5nIMavxqFuZw!5e0!3m2!1svi!2s!4v1787208605122!5m2!1svi!2s" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Bản đồ vị trí LumiShow"></iframe>
-          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=R%E1%BA%A1p+Xi%E1%BA%BFc+Trung+%C6%AF%C6%A1ng%2C+67-69+Tr%E1%BA%A7n+Nh%C3%A2n+T%C3%B4ng%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
-            <svg class="icon"><use href="#ic-map-pin"/></svg>
-            <span data-i18n="footer.gmapsBtn">Google Maps</span>
-          </a>
-        </div>
-        <div class="footer-map-caption">
-          <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
-          <div class="footer-value">
-            <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
-            <span class="footer-map-note" data-i18n="footer.mapNote">Gần Royal City, cách Ngã Tư Sở 2.5km</span>
           </div>
         </div>
       </div>
@@ -724,7 +695,7 @@
   const I18N = {
     vi: {
       'nav.home':'Trang chủ', 'nav.about':'Giới thiệu', 'nav.contact':'Liên hệ', 'nav.cta':'ĐẶT VÉ NGAY',
-      'hero.cta':'Đặt vé ngay',
+      'hero.cta':'Đặt vé ngay', 'hero.watch':'Xem video', 'hero.watchSub':'Giới thiệu chương trình',
       'contact.address':'Địa chỉ', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
       'contact.addressVal':'67-69 P. Trần Nhân Tông, Hai Bà Trưng, Hà Nội',
       'ab.heroSub':'Truyền thuyết Việt trong không gian xiếc Panorama 360°',
@@ -738,12 +709,11 @@
       'ab.j3num':'Hồi III', 'ab.j3title':'Vương quốc Thủy Tinh',
       'ab.j4num':'Hồi IV', 'ab.j4title':'Đại dương cuộn sóng',
       'ab.j5num':'Hồi V', 'ab.j5title':'Huyền thoại Đất - Nước',
-      'ab.galleryE':'Thư viện hình ảnh', 'ab.galleryBtn':'Xem thêm hình ảnh',
       'ab.lkE':'Lời kết'
     },
     en: {
       'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact', 'nav.cta':'BOOK NOW',
-      'hero.cta':'Book now',
+      'hero.cta':'Book now', 'hero.watch':'Watch video', 'hero.watchSub':'Show introduction',
       'contact.address':'Address', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
       'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi',
       'ab.heroSub':'A Vietnamese legend inside a 360° panoramic circus',
@@ -757,7 +727,6 @@
       'ab.j3num':'Act III', 'ab.j3title':'The water kingdom',
       'ab.j4num':'Act IV', 'ab.j4title':'The ocean at war',
       'ab.j5num':'Act V', 'ab.j5title':'The legend of land & water',
-      'ab.galleryE':'Photo gallery', 'ab.galleryBtn':'View more photos',
       'ab.lkE':'Closing'
     }
   };
@@ -779,24 +748,26 @@
 
   langToggle?.addEventListener('click', () => setLang(currentLang === 'vi' ? 'en' : 'vi'));
 
-  // ============ BẬT / TẮT ĐÈN (sáng / tối) ============
-  const themeToggle = document.getElementById('themeToggle');
-  const themeIcon = document.getElementById('themeIcon');
+  // ============ MODAL VIDEO GIỚI THIỆU ============
+  const heroWatchBtn = document.getElementById('heroWatchBtn');
+  const videoModal = document.getElementById('videoModal');
+  const videoModalBackdrop = document.getElementById('videoModalBackdrop');
+  const videoModalClose = document.getElementById('videoModalClose');
+  const videoModalPlayer = document.getElementById('videoModalPlayer');
 
-  function setTheme(mode){
-    document.documentElement.classList.toggle('light', mode === 'light');
-    themeIcon?.setAttribute('href', mode === 'light' ? '#ic-moon' : '#ic-sun');
-    try { localStorage.setItem('lumishow-theme', mode); } catch(e) {}
+  function openVideoModal(){
+    videoModal.classList.add('open');
+    videoModalPlayer.currentTime = 0;
+    videoModalPlayer.play().catch(() => {});
   }
-
-  themeToggle?.addEventListener('click', () => {
-    setTheme(document.documentElement.classList.contains('light') ? 'dark' : 'light');
-  });
-
-  try {
-    const saved = localStorage.getItem('lumishow-theme');
-    if (saved) setTheme(saved);
-  } catch(e) {}
+  function closeVideoModal(){
+    videoModal.classList.remove('open');
+    videoModalPlayer.pause();
+  }
+  heroWatchBtn?.addEventListener('click', openVideoModal);
+  videoModalBackdrop?.addEventListener('click', closeVideoModal);
+  videoModalClose?.addEventListener('click', closeVideoModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideoModal(); });
 </script>
 </body>
 </html>

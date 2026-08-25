@@ -52,19 +52,11 @@
     --r-pill:100px;
     --container:1240px;
     --gutter:clamp(20px,4vw,48px);
-    --shell-max:1720px;
-    --shell-pad:clamp(0px,2.2vw,40px);
     --page-bg:#020509;
     --nav-bg:rgba(6,10,15,.72);
     --overlay-strong:rgba(3,8,14,.85);
     --overlay-mid:rgba(3,8,14,.45);
     --overlay-soft:rgba(3,8,14,.1);
-  }
-
-  /* ---- Theme sáng ---- */
-  /* ---- Bật đèn: chỉ đổi màu hai lề trống hai bên thành trắng ---- */
-  html.light{
-    --page-bg:#ffffff;
   }
 
   body{
@@ -75,14 +67,11 @@
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
-    padding:0 var(--shell-pad);
     transition:background .35s ease,color .35s ease;
   }
-  /* Khung trang: chừa khoảng trống hai bên trên màn hình lớn */
   .page-shell{
-    max-width:var(--shell-max);margin:0 auto;width:100%;
+    width:100%;
     background:var(--bg);
-    border-radius:clamp(0px,1.4vw,22px);
     overflow:clip; /* clip (không phải hidden) để navbar sticky vẫn hoạt động */
     transition:background .35s ease;
   }
@@ -199,10 +188,6 @@
     background:var(--grad-text);-webkit-background-clip:text;background-clip:text;
     color:transparent;-webkit-text-fill-color:transparent;
   }
-  .hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
-  .hero-actions .btn-gold{padding:15px 26px;font-size:12.5px;letter-spacing:.8px;}
-  .btn-hero{padding:16px 28px;font-size:14.5px;}
-  .btn-hero .icon{width:16px;height:16px;}
 
   /* ============ SECTION HEAD (shared) ============ */
   .section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:40px;gap:20px;flex-wrap:wrap;}
@@ -301,18 +286,17 @@
     overflow:hidden;
   }
 
-  /* ---- top grid: brand / contact / map ---- */
-  .footer-grid{display:grid;grid-template-columns:1.15fr 2fr;grid-template-rows:auto 1fr;column-gap:clamp(22px,3.4vw,46px);row-gap:clamp(18px,2.6vw,28px);}
-  .footer-brand{min-width:0;grid-column:1;grid-row:1;}
-  .footer-contact-block{grid-column:1;grid-row:2;}
-  .footer-col-right{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;}
+  /* ---- top grid: brand / contact — lệch phải một chút để cân bằng sau khi bỏ bản đồ ---- */
+  .footer-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:clamp(22px,3.4vw,46px);align-items:start;}
+  .footer-brand{min-width:0;grid-column:1;}
+  .footer-contact-block{grid-column:2;width:100%;max-width:440px;margin-left:0;}
   .footer-brand-inner{max-width:380px;}
   .footer-logo{height:clamp(58px,7vw,86px);width:auto;display:block;margin:0 auto 18px;}
   .footer-divider{display:flex;align-items:center;gap:0px;margin:0 auto 18px;max-width:250px;}
   .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,187,33,.5));}
   .footer-divider::after{background:linear-gradient(90deg,rgba(251,187,33,.5),transparent);}
-  .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;}
-  .footer-motif{opacity:.5;max-width:300px;}
+  .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;text-align:center;}
+  .footer-motif{opacity:.5;max-width:240px;margin:0 auto;}
   .footer-motif svg{width:100%;height:auto;display:block;}
 
   .footer-heading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:clamp(12px,1.15vw,14px);letter-spacing:.5px;text-transform:uppercase;color:var(--white);padding-bottom:12px;margin-bottom:16px;}
@@ -330,16 +314,6 @@
   .footer-value a:hover{color:var(--green);}
   .footer-value-line{display:block;}
   .footer-value-person{color:var(--gray);font-size:10px;}
-
-  .footer-map-frame-wrap{position:relative;width:100%;flex:1 1 auto;min-height:clamp(170px,18vw,230px);border-radius:var(--r-md);overflow:hidden;background:#0a0d10;border:1px solid var(--line);}
-  .footer-map-frame{position:absolute;inset:0;width:100%;height:100%;border:0;filter:saturate(.85) brightness(.92);}
-  .footer-map-badge{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-pill);background:rgba(6,9,8,.82);border:1px solid var(--line-2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--white);font-size:11px;font-weight:600;transition:background .2s,color .2s;}
-  .footer-map-badge:hover{background:rgba(242,121,12,.14);color:var(--green);}
-  .footer-map-badge .icon{width:12px;height:12px;}
-  .footer-map-caption{display:flex;align-items:flex-start;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);}
-  .footer-map-caption .footer-icon{width:32px;height:32px;}
-  .footer-map-caption .footer-icon .icon{width:14px;height:14px;}
-  .footer-map-note{display:block;color:var(--gray);font-size:10.5px;margin-top:2px;font-weight:400;}
 
   /* ---- bottom row ---- */
   .footer-divider-line{height:1px;background:var(--line);margin:clamp(18px,2.6vw,28px) 0 clamp(16px,2.2vw,22px);}
@@ -367,11 +341,9 @@
 
   /* ============ FOOTER RESPONSIVE ============ */
   @media (max-width:1080px){
-    .footer-grid{grid-template-columns:1fr;grid-template-rows:auto;gap:24px;}
-    .footer-brand,.footer-contact-block,.footer-col-right{grid-column:1;}
-    .footer-brand{grid-row:1;}
-    .footer-contact-block{grid-row:2;}
-    .footer-col-right{grid-row:3;}
+    .footer-grid{grid-template-columns:1fr;gap:24px;}
+    .footer-brand,.footer-contact-block{grid-column:1;}
+    .footer-contact-block{max-width:100%;margin-left:0;}
     .footer-brand-inner{max-width:100%;}
     .footer-motif{display:none;}
   }
@@ -381,7 +353,6 @@
     .footer-support{border-left:none;padding-left:0;padding-top:13px;border-top:1px solid var(--line);width:100%;}
     .footer-cta{margin-left:0;width:100%;}
     .footer-cta-btn{width:100%;justify-content:center;}
-    .footer-map-frame-wrap{min-height:190px;}
   }
 
   /* ============ MOBILE NAV ============ */
@@ -527,8 +498,6 @@
 
   <!-- UI icons -->
   <symbol id="ic-chevdown" viewBox="0 0 24 24"><polyline class="icon-stroke" points="6 9 12 15 18 9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="ic-sun" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="6" y2="6"/><line x1="18" y1="18" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="6" y2="18"/><line x1="18" y1="6" x2="19.8" y2="4.2"/></symbol>
-  <symbol id="ic-moon" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></symbol>
   <symbol id="ic-menu" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></symbol>
   <symbol id="ic-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7Z"/></symbol>
   <symbol id="ic-arrow-right" viewBox="0 0 24 24" class="icon-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
@@ -622,7 +591,6 @@
 
   <div class="nav-right">
     <button class="lang-select" id="langToggle" aria-label="Đổi ngôn ngữ"><span id="langLabel">VI</span> <svg class="icon"><use href="#ic-chevdown"/></svg></button>
-    <button class="icon-btn" id="themeToggle" aria-label="Bật/tắt đèn"><svg class="icon"><use href="#ic-sun" id="themeIcon"/></svg></button>
     <a href="#schedule" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
     <button class="menu-toggle" aria-label="Mở menu" id="menuToggle"><svg class="icon"><use href="#ic-menu"/></svg></button>
   </div>
@@ -654,10 +622,6 @@
     <div class="hero-copy">
       <span class="hero-eyebrow">LumiShow</span>
       <span class="hero-eyebrow-2" data-i18n="hero.tagline">Nơi ánh sáng kể câu chuyện</span>
-      <div class="hero-actions">
-        <a href="#schedule" class="btn-primary btn-hero"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
-        <a href="#schedule" class="btn-gold"><span data-i18n="sch.learnMore">Tìm hiểu thêm</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
-      </div>
     </div>
   </div>
 </section>
@@ -720,16 +684,23 @@
   <div class="footer-card">
     <div class="footer-grid">
 
-      <!-- Row 1, col 1: Brand -->
+      <!-- Col 1: Brand -->
       <div class="footer-brand">
         <div class="footer-brand-inner">
           <img class="footer-logo" src="image/logo-lumishow.png" alt="LumiShow">
           <div class="footer-divider"><span class="footer-divider-star"></span></div>
           <p class="footer-desc" data-i18n="footer.desc">LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.</p>
+          <div class="footer-motif">
+            <svg viewBox="0 0 290 165" fill="none" aria-hidden="true">
+              <polyline points="4,105 30,55 56,90 84,30 112,82 140,18 168,74 196,50 222,98" stroke="rgba(251,187,33,.55)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4,118 C38,98 74,138 110,118 C146,98 182,138 218,118 C242,105 258,111 276,114" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M14,138 C48,120 84,156 120,138 C156,120 192,156 228,138 C250,127 262,132 278,135" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
       </div>
 
-      <!-- Row 2, col 1: Contact -->
+      <!-- Col 2: Contact -->
       <div class="footer-contact-block">
         <h4 class="footer-heading" data-i18n="footer.contactHeading">LIÊN HỆ VỚI CHÚNG TÔI</h4>
         <div class="footer-list">
@@ -761,25 +732,6 @@
               <span class="footer-label" data-i18n="contact.website">Website</span>
               <span><a href="https://lumishow.vn" target="_blank" rel="noopener">lumishow.vn</a></span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 2, col 2: Map, dropped down + stretched to match contact block -->
-      <div class="footer-col-right">
-        <h4 class="footer-heading" data-i18n="footer.mapHeading">TÌM ĐƯỜNG ĐẾN LUMISHOW</h4>
-        <div class="footer-map-frame-wrap">
-          <iframe class="footer-map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d276.8174182100974!2d105.84242121927876!3d21.01681956385038!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc654b563c9%3A0x9bcb7dfff2b12124!2zUuG6oXAgWGnhur9jIFRydW5nIMavxqFuZw!5e0!3m2!1svi!2s!4v1787208605122!5m2!1svi!2s" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Bản đồ vị trí LumiShow"></iframe>
-          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=R%E1%BA%A1p+Xi%E1%BA%BFc+Trung+%C6%AF%C6%A1ng%2C+67-69+Tr%E1%BA%A7n+Nh%C3%A2n+T%C3%B4ng%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
-            <svg class="icon"><use href="#ic-map-pin"/></svg>
-            <span data-i18n="footer.gmapsBtn">Google Maps</span>
-          </a>
-        </div>
-        <div class="footer-map-caption">
-          <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
-          <div class="footer-value">
-            <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
-            <span class="footer-map-note" data-i18n="footer.mapNote">Rạp Xiếc Trung Ương — gần công viên Thống Nhất</span>
           </div>
         </div>
       </div>
@@ -876,26 +828,6 @@
   }
 
   langToggle?.addEventListener('click', () => setLang(currentLang === 'vi' ? 'en' : 'vi'));
-
-  // ============ BẬT / TẮT ĐÈN (sáng / tối) ============
-  const themeToggle = document.getElementById('themeToggle');
-  const themeIcon = document.getElementById('themeIcon');
-
-  function setTheme(mode){
-    document.documentElement.classList.toggle('light', mode === 'light');
-    themeIcon?.setAttribute('href', mode === 'light' ? '#ic-moon' : '#ic-sun');
-    try { localStorage.setItem('lumishow-theme', mode); } catch(e) {}
-  }
-
-  themeToggle?.addEventListener('click', () => {
-    setTheme(document.documentElement.classList.contains('light') ? 'dark' : 'light');
-  });
-
-  // Khôi phục lựa chọn đèn của lần truy cập trước
-  try {
-    const saved = localStorage.getItem('lumishow-theme');
-    if (saved) setTheme(saved);
-  } catch(e) {}
 
   // ============ LỊCH DIỄN — chọn chuỗi 3 ngày liên tục (Thứ 6 · Thứ 7 · Chủ nhật) ============
   const SEASON_START = new Date(2026, 8, 25); // Thứ 6 đầu tiên: 25.09.2026

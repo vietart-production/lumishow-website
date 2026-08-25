@@ -1,5 +1,6 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM || "LumiShow <booking@lumishow.vn>";
+const CONTACT_TO_EMAIL = process.env.CONTACT_TO_EMAIL || "lumishow.vietnam@gmail.com";
 
 // Render tự inject biến này với URL public thật của service — dùng làm gốc
 // cho ảnh QR (xem ticket.routes.js). Fallback localhost để test ở máy local.
@@ -236,6 +237,76 @@ async function sendTicketEmail(order, tickets) {
     }
 }
 
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+function buildContactEmailHtml({ name, phone, email, company, message }) {
+
+    return `
+    <div style="background:#04060a;padding:24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;background:#0d1117;border-radius:14px;overflow:hidden;">
+        <tr>
+            <td style="padding:24px;">
+                <div style="color:#FFD15A;font-size:18px;font-weight:800;margin-bottom:4px;">Liên hệ mới từ website LumiShow</div>
+                <div style="color:#98a29b;font-size:12px;margin-bottom:20px;">Biểu mẫu "Gửi thông tin liên hệ trao đổi công việc" — trang Liên hệ</div>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#10151c;">
+                    <tr><td style="padding:16px 18px;">
+                        ${infoRow("👤", "Họ và tên", escapeHtml(name))}
+                        ${infoRow("📞", "Số điện thoại", `<a href="tel:${escapeHtml(phone)}" style="color:#E6F1EA;">${escapeHtml(phone)}</a>`)}
+                        ${infoRow("✉️", "Email", `<a href="mailto:${escapeHtml(email)}" style="color:#E6F1EA;">${escapeHtml(email)}</a>`)}
+                        ${infoRow("🏢", "Công ty", company ? escapeHtml(company) : "—")}
+                    </td></tr>
+                </table>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,255,255,.1);border-radius:12px;margin-top:16px;background:#10151c;">
+                    <tr><td style="padding:16px 18px;">
+                        <div style="color:#98a29b;font-size:11.5px;margin-bottom:8px;">Nội dung trao đổi</div>
+                        <div style="color:#E6F1EA;font-size:14px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(message)}</div>
+                    </td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    </div>`;
+}
+
+// Gửi mail thông báo liên hệ mới (form trang Liên hệ) về hộp thư công ty qua Resend API.
+async function sendContactEmail({ name, phone, email, company, message }) {
+
+    if (!RESEND_API_KEY) {
+        console.warn("[email] RESEND_API_KEY chưa cấu hình — bỏ qua gửi mail liên hệ.");
+        throw new Error("Hệ thống email chưa được cấu hình");
+    }
+
+    const html = buildContactEmailHtml({ name, phone, email, company, message });
+
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            from: EMAIL_FROM,
+            to: CONTACT_TO_EMAIL,
+            reply_to: email,
+            subject: `[LumiShow] Liên hệ mới từ ${name}`,
+            html
+        })
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Gửi mail liên hệ thất bại (${response.status}): ${errText}`);
+    }
+}
+
 module.exports = {
-    sendTicketEmail
+    sendTicketEmail,
+    sendContactEmail
 };
