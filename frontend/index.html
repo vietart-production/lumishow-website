@@ -834,6 +834,7 @@
   const SEASON_END   = new Date(2026, 11, 27); // Chủ nhật cuối cùng: 27.12.2026
 
   function fmt(d){ return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0'); }
+  function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
   // Sinh danh sách các chuỗi 3 ngày (T6 + T7 + CN) trong suốt mùa diễn
   const runs = [];
@@ -877,6 +878,7 @@
 
     if (scheduleBookBtn) {
       scheduleBookBtn.innerHTML = `<span>${dict['sch.book']}</span> <svg class="icon"><use href="#ic-arrow-right"/></svg>`;
+      scheduleBookBtn.href = `BookingTicket.html?date=${isoDate(run[selectedDay])}`;
     }
 
     if (weekPrevBtn) weekPrevBtn.disabled = runIndex === 0;

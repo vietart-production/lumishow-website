@@ -2468,6 +2468,19 @@ function findScheduleIndexByShowKey(showKey){
   return null;
 }
 
+/* Nhận ngày được chọn sẵn từ lịch diễn ở trang chủ (index.html truyền qua
+   ?date=YYYY-MM-DD). Chỉ set ngày, giữ nguyên suất diễn mặc định đầu tiên
+   vì trang chủ chưa cho chọn suất giờ. */
+(function applyDateFromUrl(){
+  const dateParam = new URLSearchParams(location.search).get('date');
+  if (!dateParam) return;
+  const idx = findScheduleIndexByShowKey(`${dateParam}_${SHOWTIMES[0]}`);
+  if (idx) {
+    runIndex = idx.runIndex;
+    dayIndex = idx.dayIndex;
+  }
+})();
+
 function renderSchedule(){
   const run = runs[runIndex];
   document.getElementById('weekLabel').textContent = MONTHS[run[0].getMonth()] + ' · ' + run[0].getFullYear();
