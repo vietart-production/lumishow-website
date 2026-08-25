@@ -19,33 +19,33 @@
   input,textarea{font-family:inherit;}
   ul{list-style:none;}
 
+  /* ============ FONTS ============ */
+  @font-face{font-family:'FTV Magnetic';src:url('font/1FTV-SS-MAGNETIC.REGULAR.OTF') format('opentype');font-weight:400;font-style:normal;font-display:swap;}
+  @font-face{font-family:'FTV Raghlick';src:url('font/1FTV-RAGHLICK.OTF') format('opentype');font-weight:700;font-style:normal;font-display:swap;}
+
   /* ============ TOKENS ============ */
   :root{
-    --bg:#0D1117;
-    --bg-soft:#10151c;
-    --card-bg:#0d1210;
+    --bg:#0B1E1B;
+    --bg-soft:#0F2622;
+    --card-bg:#0D211E;
     --line:rgba(255,255,255,.07);
     --line-2:rgba(255,255,255,.15);
-    --white:#E6F1EA;
-    --gray:#98a29b;
-    --gray-dim:#636d66;
-    --green:#7CFF5A;
-    --green-deep:#4caf50;
-    --teal:#2fa97a;
-    --blue:#23B6FF;
-    --blue-deep:#3c7bd9;
-    --gold:#FFD15A;
-    --grad-btn:linear-gradient(90deg,#7CFF5A 0%,#2fa97a 100%);
-    --btn-texture:url('image/BlendingButton_BF.jpg');
-    --btn-texture-sea:url('image/BlendingButton_HV.jpg');
-    --btn-blend:soft-light;
-    --btn-texture-opacity:1;
-    --btn-texture-size:100% 100%;
-    --btn-tint: 1;
-    --btn-slide:.55s;
-    --grad-text:linear-gradient(90deg,#8fe06a 0%,#23B6FF 100%);
-    --font-heading:'Sora','Be Vietnam Pro',sans-serif;
-    --font-body:'Inter','Be Vietnam Pro',sans-serif;
+    --white:#EDF3EF;
+    --gray:#9AACA5;
+    --gray-dim:#5E6E68;
+    --rust:#9A3412;
+    --green:#F2790C;
+    --green-deep:#C4560A;
+    --olive:#82A33E;
+    --teal:#12958C;
+    --blue:#1C7A8C;
+    --blue-deep:#0F4A57;
+    --gold:#FBBB21;
+    --grad-btn:linear-gradient(100deg,#9A3412 0%,#F2790C 55%,#FBBB21 100%);
+    --grad-text:linear-gradient(90deg,#FBBB21 0%,#F2790C 100%);
+    --font-heading:'FTV Magnetic','Be Vietnam Pro',sans-serif;
+    --font-body:'FTV Magnetic','Be Vietnam Pro',sans-serif;
+    --font-sttq:'FTV Raghlick','Be Vietnam Pro',sans-serif;
     --r-lg:20px;
     --r-md:14px;
     --r-sm:10px;
@@ -54,15 +54,15 @@
     --gutter:clamp(20px,4vw,48px);
     --shell-max:1720px;
     --shell-pad:clamp(0px,2.2vw,40px);
-    --page-bg:#04060a;
-    --nav-bg:rgba(7,9,10,.72);
+    --page-bg:#020509;
+    --nav-bg:rgba(6,10,15,.72);
   }
   html.light{--page-bg:#ffffff;}
 
   body{
     background:var(--page-bg);
     color:var(--white);
-    font-family:'Be Vietnam Pro',sans-serif;
+    font-family:var(--font-body);
     font-size:15px;
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
@@ -124,31 +124,17 @@
     transition:transform .2s,box-shadow .2s;
     white-space:nowrap;
   }
-  .btn-primary::before,
   .btn-primary::after{
     content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
-    background-size:var(--btn-texture-size);background-position:center;background-repeat:no-repeat;
-    background-blend-mode:var(--btn-blend),normal;
-    opacity:var(--btn-texture-opacity);
-    transition-property:transform;
-    transition-duration:var(--btn-slide);
-    transition-timing-function:cubic-bezier(.4,0,.2,1);
-    backface-visibility:hidden;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 66%);
+    transform:translateX(-120%);
+    transition:transform .6s cubic-bezier(.4,0,.2,1);
   }
-  .btn-primary::before{
-    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture);
-    transform:translateX(0);
-  }
-  .btn-primary::after{
-    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture-sea);
-    transform:translateX(100%);
-  }
-  .btn-primary:hover::before{transform:translateX(-100%);}
-  .btn-primary:hover::after{transform:translateX(0);}
+  .btn-primary:hover::after{transform:translateX(120%);}
   .btn-primary>*{position:relative;z-index:2;}
-  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(126,217,87,.32);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(242,121,12,.35);}
   @media (prefers-reduced-motion:reduce){
-    .btn-primary::before,.btn-primary::after{transition-duration:.2s;}
+    .btn-primary::after{transition-duration:.2s;}
   }
   .menu-toggle{display:none;width:36px;height:36px;align-items:center;justify-content:center;color:var(--white);}
 
@@ -162,7 +148,7 @@
   .lienhe-hero{
     position:relative;overflow:hidden;
     padding:80px var(--gutter) 110px;
-    background:radial-gradient(ellipse 1100px 640px at 50% 6%,#101d14 0%,#05070a 62%);
+    background:radial-gradient(ellipse 1100px 640px at 50% 6%,#12241f 0%,#05070a 62%);
   }
   .lh-wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;}
 
@@ -180,8 +166,8 @@
     content:'';position:absolute;z-index:-1;width:46%;height:65%;bottom:-32%;
     filter:blur(50px);pointer-events:none;
   }
-  .lh-card::before{left:-8%;background:radial-gradient(circle,rgba(124,255,90,.35),transparent 72%);}
-  .lh-card::after{right:-8%;background:radial-gradient(circle,rgba(255,209,90,.28),transparent 72%);}
+  .lh-card::before{left:-8%;background:radial-gradient(circle,rgba(242,121,12,.35),transparent 72%);}
+  .lh-card::after{right:-8%;background:radial-gradient(circle,rgba(251,187,33,.28),transparent 72%);}
   .lh-glowline{position:absolute;left:6%;right:6%;bottom:-1px;height:2px;z-index:2;pointer-events:none;
     background:linear-gradient(90deg,transparent,var(--green) 30%,var(--gold) 70%,transparent);
     opacity:.75;filter:blur(.5px);}
@@ -224,21 +210,19 @@
     transition:border-color .2s,background .2s;
   }
   .lh-field::placeholder{color:var(--gray-dim);}
-  .lh-field:focus{outline:none;border-color:var(--green);background:rgba(124,255,90,.05);}
+  .lh-field:focus{outline:none;border-color:var(--green);background:rgba(242,121,12,.05);}
   textarea.lh-field{resize:vertical;min-height:130px;line-height:1.5;}
 
   .lh-submit{
     width:100%;margin-top:8px;
     padding:16px;
     border-radius:var(--r-pill);
-    border:1px solid rgba(255,209,90,.55);
-    background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);
-    color:var(--gold);
+    background:var(--grad-btn);
+    color:#ffffff;
     font-weight:700;font-size:13.5px;letter-spacing:1px;text-transform:uppercase;
-    box-shadow:0 0 0 1px rgba(255,209,90,.08) inset,0 14px 30px rgba(255,209,90,.15);
-    transition:transform .2s,box-shadow .2s,background .2s;
+    transition:transform .2s,box-shadow .2s;
   }
-  .lh-submit:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,209,90,.15) inset,0 18px 40px rgba(255,209,90,.25);}
+  .lh-submit:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(242,121,12,.35);}
   .lh-submit:disabled{opacity:.6;pointer-events:none;}
 
   .lh-note{display:flex;align-items:center;gap:8px;color:var(--gray);font-size:12.5px;margin-top:16px;}
@@ -248,8 +232,8 @@
     display:none;align-items:center;gap:10px;
     margin-top:16px;padding:13px 16px;
     border-radius:var(--r-sm);
-    border:1px solid rgba(124,255,90,.35);
-    background:rgba(124,255,90,.07);
+    border:1px solid rgba(242,121,12,.35);
+    background:rgba(242,121,12,.07);
     color:var(--green);font-size:13.5px;font-weight:500;
   }
   .lh-success.show{display:flex;}
@@ -265,7 +249,7 @@
   .site-footer{
     position:relative;overflow:hidden;
     padding:clamp(20px,3vw,32px) var(--gutter) 0;
-    background:radial-gradient(ellipse 1000px 560px at 50% 0%,#0d1611 0%,var(--bg) 65%);
+    background:radial-gradient(ellipse 1000px 560px at 50% 0%,#0f221d 0%,var(--bg) 65%);
   }
   .footer-card{
     position:relative;isolation:isolate;
@@ -285,8 +269,8 @@
   .footer-brand-inner{max-width:380px;}
   .footer-logo{height:clamp(58px,7vw,86px);width:auto;display:block;margin:0 auto 18px;}
   .footer-divider{display:flex;align-items:center;gap:0px;margin:0 auto 18px;max-width:250px;}
-  .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,209,90,.5));}
-  .footer-divider::after{background:linear-gradient(90deg,rgba(255,209,90,.5),transparent);}
+  .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,187,33,.5));}
+  .footer-divider::after{background:linear-gradient(90deg,rgba(251,187,33,.5),transparent);}
   .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;}
   .footer-motif{opacity:.5;max-width:300px;}
   .footer-motif svg{width:100%;height:auto;display:block;}
@@ -310,7 +294,7 @@
   .footer-map-frame-wrap{position:relative;width:100%;flex:1 1 auto;min-height:clamp(170px,18vw,230px);border-radius:var(--r-md);overflow:hidden;background:#0a0d10;border:1px solid var(--line);}
   .footer-map-frame{position:absolute;inset:0;width:100%;height:100%;border:0;filter:saturate(.85) brightness(.92);}
   .footer-map-badge{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-pill);background:rgba(6,9,8,.82);border:1px solid var(--line-2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--white);font-size:11px;font-weight:600;transition:background .2s,color .2s;}
-  .footer-map-badge:hover{background:rgba(124,255,90,.14);color:var(--green);}
+  .footer-map-badge:hover{background:rgba(242,121,12,.14);color:var(--green);}
   .footer-map-badge .icon{width:12px;height:12px;}
   .footer-map-caption{display:flex;align-items:flex-start;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);}
   .footer-map-caption .footer-icon{width:32px;height:32px;}
@@ -329,15 +313,15 @@
   .social-badge img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
 
   .footer-support{display:flex;align-items:center;gap:12px;padding-left:clamp(14px,2.4vw,26px);border-left:1px solid var(--line);}
-  .footer-icon--ghost{background:rgba(124,255,90,.06);}
+  .footer-icon--ghost{background:rgba(242,121,12,.06);}
   .footer-support-text .footer-label{margin-bottom:3px;}
   .footer-support-text .footer-value{font-size:12px;color:var(--gray);}
 
   .footer-cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-left:auto;}
   .footer-cta span{color:var(--gray);font-size:12px;max-width:320px;line-height:1.5;}
-  .footer-cta-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:11px 20px;border-radius:var(--r-pill);border:1px solid rgba(255,209,90,.55);background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 0 1px rgba(255,209,90,.08) inset;transition:transform .2s,box-shadow .2s;white-space:nowrap;}
+  .footer-cta-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:11px 20px;border-radius:var(--r-pill);border:1px solid rgba(251,187,33,.55);background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 0 1px rgba(251,187,33,.08) inset;transition:transform .2s,box-shadow .2s;white-space:nowrap;}
   .footer-cta-btn .icon{width:13px;height:13px;}
-  .footer-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,209,90,.15) inset,0 14px 30px rgba(255,209,90,.2);}
+  .footer-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(251,187,33,.15) inset,0 14px 30px rgba(251,187,33,.2);}
 
   .footer-copyright{text-align:center;color:var(--gray-dim);font-size:12px;padding:18px 0;}
 
@@ -445,7 +429,7 @@
             <svg class="icon"><use href="#ic-map-pin"/></svg>
             <div class="lh-c-text">
               <span class="lh-c-label" data-i18n="contact.address">Địa chỉ</span>
-              <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+              <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
             </div>
           </div>
           <div class="lh-contact-item">
@@ -538,7 +522,7 @@
             <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
             <div class="footer-value">
               <span class="footer-label" data-i18n="contact.address">Địa chỉ</span>
-              <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+              <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
             </div>
           </div>
           <div class="footer-row">
@@ -571,7 +555,7 @@
         <h4 class="footer-heading" data-i18n="footer.mapHeading">TÌM ĐƯỜNG ĐẾN LUMISHOW</h4>
         <div class="footer-map-frame-wrap">
           <iframe class="footer-map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d276.8174182100974!2d105.84242121927876!3d21.01681956385038!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc654b563c9%3A0x9bcb7dfff2b12124!2zUuG6oXAgWGnhur9jIFRydW5nIMavxqFuZw!5e0!3m2!1svi!2s!4v1787208605122!5m2!1svi!2s" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Bản đồ vị trí LumiShow"></iframe>
-          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=192+L%C3%AA+Tr%E1%BB%8Dng+T%E1%BA%A5n%2C+Thanh+Xu%C3%A2n%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
+          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=R%E1%BA%A1p+Xi%E1%BA%BFc+Trung+%C6%AF%C6%A1ng%2C+67-69+Tr%E1%BA%A7n+Nh%C3%A2n+T%C3%B4ng%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
             <svg class="icon"><use href="#ic-map-pin"/></svg>
             <span data-i18n="footer.gmapsBtn">Google Maps</span>
           </a>
@@ -579,7 +563,7 @@
         <div class="footer-map-caption">
           <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
           <div class="footer-value">
-            <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+            <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
             <span class="footer-map-note" data-i18n="footer.mapNote">Gần Royal City, cách Ngã Tư Sở 2.5km</span>
           </div>
         </div>
@@ -633,7 +617,7 @@
       'nav.home':'Trang chủ', 'nav.about':'Giới thiệu', 'nav.contact':'Liên hệ', 'nav.cta':'ĐẶT VÉ NGAY', 'hero.cta':'Đặt vé ngay',
       'contact.address':'Địa chỉ', 'contact.hotline':'Hotline', 'contact.email':'Email',
       'contact.website':'Website',
-      'contact.addressVal':'192 Lê Trọng Tấn, Thanh Xuân, Hà Nội',
+      'contact.addressVal':'67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội',
       'lh.desc':'LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.',
       'lh.website':'Website', 'lh.updating':'Đang cập nhật',
       'lh.title':'Gửi thông tin liên hệ trao đổi công việc',
@@ -654,7 +638,7 @@
       'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact', 'nav.cta':'BOOK NOW', 'hero.cta':'Book now',
       'contact.address':'Address', 'contact.hotline':'Hotline', 'contact.email':'Email',
       'contact.website':'Website',
-      'contact.addressVal':'192 Le Trong Tan St., Thanh Xuan, Hanoi',
+      'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi',
       'lh.desc':'LumiShow produces live shows with 3D mapping, stage graphics and modern projection technology.',
       'lh.website':'Website', 'lh.updating':'Updating',
       'lh.title':'Send us a business inquiry',

@@ -18,34 +18,33 @@
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
   ul{list-style:none;}
 
+  /* ============ FONTS ============ */
+  @font-face{font-family:'FTV Magnetic';src:url('font/1FTV-SS-MAGNETIC.REGULAR.OTF') format('opentype');font-weight:400;font-style:normal;font-display:swap;}
+  @font-face{font-family:'FTV Raghlick';src:url('font/1FTV-RAGHLICK.OTF') format('opentype');font-weight:700;font-style:normal;font-display:swap;}
+
   /* ============ TOKENS ============ */
   :root{
-    --bg:#0D1117;
-    --bg-soft:#10151c;
-    --card-bg:#0d1210;
+    --bg:#0B1E1B;
+    --bg-soft:#0F2622;
+    --card-bg:#0D211E;
     --line:rgba(255,255,255,.07);
     --line-2:rgba(255,255,255,.15);
-    --white:#E6F1EA;
-    --gray:#98a29b;
-    --gray-dim:#636d66;
-    --green:#7CFF5A;
-    --green-deep:#4caf50;
-    --teal:#2fa97a;
-    --blue:#23B6FF;
-    --blue-deep:#3c7bd9;
-    --gold:#FFD15A;
-    --grad-btn:linear-gradient(90deg,#7CFF5A 0%,#2fa97a 100%);
-    /* Texture nền cho nút Đặt vé: núi ở trạng thái thường, biển trượt vào khi hover */
-    --btn-texture:url('image/BlendingButton_BF.jpg');
-    --btn-texture-sea:url('image/BlendingButton_HV.jpg');
-    --btn-blend:soft-light;   /* thử: soft-light | overlay | luminosity | multiply | screen */
-    --btn-texture-opacity:1; /* 0 = tắt hẳn, 1 = ảnh rõ nhất */
-    --btn-texture-size:100% 100%; /* 100% 100% = kéo vừa khít (thấy trọn ảnh) | cover = lấp đầy, cắt bớt trên dưới */
-    --btn-tint: 1;           /* độ đậm lớp xanh phủ lên ảnh: 1 = xanh đậm nhất, 0 = mất hẳn màu xanh, chỉ còn ảnh */
-    --btn-slide:.55s;         /* tốc độ trượt của hai lớp ảnh */
-    --grad-text:linear-gradient(90deg,#8fe06a 0%,#23B6FF 100%);
-    --font-heading:'Sora','Be Vietnam Pro',sans-serif;
-    --font-body:'Inter','Be Vietnam Pro',sans-serif;
+    --white:#EDF3EF;
+    --gray:#9AACA5;
+    --gray-dim:#5E6E68;
+    --rust:#9A3412;
+    --green:#F2790C;
+    --green-deep:#C4560A;
+    --olive:#82A33E;
+    --teal:#12958C;
+    --blue:#1C7A8C;
+    --blue-deep:#0F4A57;
+    --gold:#FBBB21;
+    --grad-btn:linear-gradient(100deg,#9A3412 0%,#F2790C 55%,#FBBB21 100%);
+    --grad-text:linear-gradient(90deg,#FBBB21 0%,#F2790C 100%);
+    --font-heading:'FTV Magnetic','Be Vietnam Pro',sans-serif;
+    --font-body:'FTV Magnetic','Be Vietnam Pro',sans-serif;
+    --font-sttq:'FTV Raghlick','Be Vietnam Pro',sans-serif;
     --r-lg:20px;
     --r-md:14px;
     --r-sm:10px;
@@ -54,11 +53,11 @@
     --gutter:clamp(20px,4vw,48px);
     --shell-max:1720px;
     --shell-pad:clamp(0px,2.2vw,40px);
-    --page-bg:#04060a;
-    --nav-bg:rgba(7,9,10,.72);
-    --overlay-strong:rgba(2,8,15,.85);
-    --overlay-mid:rgba(2,8,15,.45);
-    --overlay-soft:rgba(2,8,15,.1);
+    --page-bg:#020509;
+    --nav-bg:rgba(6,10,15,.72);
+    --overlay-strong:rgba(3,8,14,.85);
+    --overlay-mid:rgba(3,8,14,.45);
+    --overlay-soft:rgba(3,8,14,.1);
   }
 
   /* ---- Theme sáng ---- */
@@ -70,7 +69,7 @@
   body{
     background:var(--page-bg);
     color:var(--white);
-    font-family:'Be Vietnam Pro',sans-serif;
+    font-family:var(--font-body);
     font-size:15px;
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
@@ -88,7 +87,7 @@
   }
   .container{max-width:var(--container);margin:0 auto;padding:0 var(--gutter);width:100%;}
   /* Chống lệch/tràn ngang khi zoom: cho phép các item co lại thay vì đẩy layout */
-  .nav-inner>*,.hero-inner>*,.contact-row,.weekend-node,.news-side-item{min-width:0;}
+  .nav-inner>*,.hero-inner>*,.contact-row,.weekend-node{min-width:0;}
   .hero-copy{max-width:100%;}
   .weekend-track{flex-wrap:nowrap;max-width:100%;}
   .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
@@ -139,38 +138,20 @@
     transition:transform .2s,box-shadow .2s;
     white-space:nowrap;
   }
-  /* Hai lớp texture blend lên màu nút:
-     ::before = ảnh BF (mặc định hiển thị), ::after = ảnh HV (nằm chờ bên phải).
-     Khi hover: lớp BF trượt sang trái ra khỏi nút, lớp HV từ phải trượt vào thế chỗ.
-     Bỏ hover: cả hai trượt ngược về bên phải, trả lại vị trí cũ. */
-  .btn-primary::before,
+  /* Ánh sáng lướt nhẹ qua nút khi hover — điểm nhấn tối giản thay cho ảnh blend cũ */
   .btn-primary::after{
     content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
-    background-size:var(--btn-texture-size);background-position:center;background-repeat:no-repeat;
-    background-blend-mode:var(--btn-blend),normal;
-    opacity:var(--btn-texture-opacity);
-    transition-property:transform;
-    transition-duration:var(--btn-slide);
-    transition-timing-function:cubic-bezier(.4,0,.2,1);
-    backface-visibility:hidden;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 66%);
+    transform:translateX(-120%);
+    transition:transform .6s cubic-bezier(.4,0,.2,1);
   }
-  .btn-primary::before{
-    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture);
-    transform:translateX(0);
-  }
-  .btn-primary::after{
-    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture-sea);
-    transform:translateX(100%);
-  }
-  .btn-primary:hover::before{transform:translateX(-100%);}
-  .btn-primary:hover::after{transform:translateX(0);}
-  /* Chữ và icon phải nổi lên trên hai lớp ảnh */
+  .btn-primary:hover::after{transform:translateX(120%);}
+  /* Chữ và icon phải nổi lên trên lớp ánh sáng */
   .btn-primary>*{position:relative;z-index:2;}
 
-  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(126,217,87,.32);}
-  /* Nếu hệ thống bật chế độ giảm chuyển động thì chỉ trượt nhanh hơn, không tắt hẳn */
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(242,121,12,.35);}
   @media (prefers-reduced-motion:reduce){
-    .btn-primary::before,.btn-primary::after{transition-duration:.2s;}
+    .btn-primary::after{transition-duration:.2s;}
   }
   .menu-toggle{display:none;width:36px;height:36px;align-items:center;justify-content:center;color:var(--white);}
 
@@ -194,10 +175,10 @@
     display:flex;align-items:flex-end;
     overflow:hidden;
     padding:70px var(--gutter) 90px;
-    background:radial-gradient(ellipse 1100px 650px at 74% 34%,#0f1c13 0%,#07090a 62%);
+    background:radial-gradient(ellipse 1100px 650px at 74% 34%,#12241f 0%,#07090a 62%);
   }
   .hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;}
-  .hero-bg-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .hero-bg-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;}
   .hero-bg-overlay{
     position:absolute;inset:0;pointer-events:none;
     background:linear-gradient(90deg,var(--overlay-strong) 0%,var(--overlay-mid) 45%,var(--overlay-soft) 100%);
@@ -216,38 +197,33 @@
   .hero-eyebrow{color:var(--green);font-size:12.5px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:8px;}
   .hero-eyebrow-2{color:var(--white);font-size:11.5px;letter-spacing:2px;text-transform:uppercase;margin-bottom:30px;}
   .hero-title{margin-bottom:26px;}
-  .hero-title-img{width:100%;max-width:520px;height:auto;display:block;}
+  .text-sttq{
+    display:block;font-family:var(--font-sttq);font-weight:700;
+    font-size:clamp(34px,5.6vw,68px);line-height:1.08;letter-spacing:.5px;
+    background:var(--grad-text);-webkit-background-clip:text;background-clip:text;
+    color:transparent;-webkit-text-fill-color:transparent;
+  }
   .hero-desc{font-family:var(--font-body);color:var(--white);font-size:16px;font-weight:600;font-style:italic;line-height:1.75;max-width:420px;margin-bottom:40px;}
-  .hero-actions{display:flex;align-items:center;gap:30px;flex-wrap:wrap;}
+  .hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .hero-actions .btn-gold{padding:15px 26px;font-size:12.5px;letter-spacing:.8px;}
   .btn-hero{padding:16px 28px;font-size:14.5px;}
   .btn-hero .icon{width:16px;height:16px;}
-  .video-trigger{display:flex;align-items:center;gap:13px;}
-  .play-circle{
-    width:46px;height:46px;border-radius:50%;flex-shrink:0;
-    border:1px solid rgba(255,255,255,.28);
-    background:rgba(255,255,255,.04);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-    display:flex;align-items:center;justify-content:center;transition:all .2s;
-  }
-  .play-circle .icon{width:14px;height:14px;color:var(--white);margin-left:2px;}
-  .video-trigger:hover .play-circle{background:var(--white);border-color:var(--white);}
-  .video-trigger:hover .play-circle .icon{color:var(--bg);}
-  .video-trigger .vt-label{display:block;font-family:var(--font-body);font-size:11.5px;letter-spacing:1px;color:var(--gray);text-transform:uppercase;}
-  .video-trigger .vt-sub{display:block;font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--white);margin-top:2px;}
 
   /* ============ SECTION HEAD (shared) ============ */
   .section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:40px;gap:20px;flex-wrap:wrap;}
   .eyebrow{color:var(--green);font-size:12.5px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:10px;display:block;}
   .section-title{font-size:29px;font-weight:700;letter-spacing:.2px;}
-  .section-title-img{display:inline-block;height:auto;max-width:100%;margin-left:auto;margin-right:auto;}
+  .schedule-head .text-sttq{margin:0 auto 20px;}
 
   /* ============ SCHEDULE ============ */
   .schedule-section{
     position:relative;overflow:hidden;
     padding:90px 0 110px;
-    background-image:
-      radial-gradient(ellipse 70% 100% at 50% 48%,rgba(3,6,8,1) 0%,rgba(3,6,8,.64) 45%,rgba(3,6,8,0) 75%),
-      url('image/BKG_LichDien.jpg');
-    background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat;
+    background:
+      radial-gradient(ellipse 800px 460px at 12% 0%,rgba(242,121,12,.13) 0%,transparent 58%),
+      radial-gradient(ellipse 700px 420px at 40% 100%,rgba(130,163,62,.09) 0%,transparent 60%),
+      radial-gradient(ellipse 900px 560px at 90% 55%,rgba(18,149,140,.12) 0%,transparent 62%),
+      var(--bg);
   }
   /* Blend mép trên & dưới của schedule vào nền trang */
   .schedule-section::before,.schedule-section::after{
@@ -279,16 +255,16 @@
   .weekend-track{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .weekend-connector{width:clamp(8px,5vw,64px);height:1px;flex-shrink:0;background:linear-gradient(90deg,var(--green),var(--blue));opacity:.55;position:relative;}
   .weekend-connector::before,.weekend-connector::after{content:'';position:absolute;top:50%;width:6px;height:6px;border-radius:50%;transform:translateY(-50%);}
-  .weekend-connector::before{left:-3px;background:var(--green);box-shadow:0 0 8px rgba(126,217,87,.8);}
-  .weekend-connector::after{right:-3px;background:var(--blue);box-shadow:0 0 8px rgba(35,182,255,.8);}
+  .weekend-connector::before{left:-3px;background:var(--green);box-shadow:0 0 8px rgba(242,121,12,.8);}
+  .weekend-connector::after{right:-3px;background:var(--blue);box-shadow:0 0 8px rgba(28,122,140,.8);}
   .weekend-node{
     display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;
     width:clamp(62px,19vw,130px);padding:clamp(12px,4vw,24px) clamp(5px,2.2vw,12px) clamp(10px,3.2vw,20px);border-radius:var(--r-lg);
-    border:1px solid var(--line);background:var(--card-bg);
-    cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s;
+    border:1px solid var(--line-2);background:rgba(255,255,255,.045);
+    cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s,background .25s;
   }
-  .weekend-node:hover{border-color:var(--line-2);transform:translateY(-2px);}
-  .weekend-node.active{border-color:transparent;box-shadow:0 0 0 1.5px var(--green),0 0 34px rgba(126,217,87,.28);}
+  .weekend-node:hover{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.07);transform:translateY(-2px);}
+  .weekend-node.active{border-color:transparent;box-shadow:0 0 0 1.5px var(--green),0 0 34px rgba(242,121,12,.28);}
   .weekend-node .wd-dow{font-size:clamp(9.5px,2.6vw,12px);letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;font-weight:600;white-space:nowrap;}
   .weekend-node.active .wd-dow{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
   .weekend-node .wd-dom{font-family:var(--font-heading);font-size:clamp(22px,7vw,36px);font-weight:800;color:var(--white);line-height:1;margin:6px 0 4px;}
@@ -301,21 +277,20 @@
   .btn-gold{
     display:inline-flex;align-items:center;justify-content:center;gap:6px;
     padding:9px 20px;border-radius:var(--r-pill);
-    border:1px solid rgba(255,209,90,.55);
-    background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);
+    border:1px solid rgba(251,187,33,.5);
+    background:rgba(251,187,33,.06);
     color:var(--gold);
     font-weight:700;font-size:10px;letter-spacing:.5px;text-transform:uppercase;
-    box-shadow:0 0 0 1px rgba(255,209,90,.08) inset,0 10px 26px rgba(255,209,90,.15);
-    transition:transform .2s,box-shadow .2s;white-space:nowrap;
+    transition:transform .2s,background .2s,border-color .2s;white-space:nowrap;
   }
-  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,209,90,.15) inset,0 14px 32px rgba(255,209,90,.25);}
+  .btn-gold:hover{transform:translateY(-2px);background:rgba(251,187,33,.14);border-color:rgba(251,187,33,.8);}
   .btn-gold .icon{width:13px;height:13px;}
 
   /* ============ FOOTER ============ */
   .site-footer{
     position:relative;overflow:hidden;
     padding:clamp(20px,3vw,32px) var(--gutter) 0;
-    background:radial-gradient(ellipse 1000px 560px at 50% 0%,#0d1611 0%,var(--bg) 65%);
+    background:radial-gradient(ellipse 1000px 560px at 50% 0%,#0f221d 0%,var(--bg) 65%);
   }
   .footer-card{
     position:relative;isolation:isolate;
@@ -335,8 +310,8 @@
   .footer-brand-inner{max-width:380px;}
   .footer-logo{height:clamp(58px,7vw,86px);width:auto;display:block;margin:0 auto 18px;}
   .footer-divider{display:flex;align-items:center;gap:0px;margin:0 auto 18px;max-width:250px;}
-  .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,209,90,.5));}
-  .footer-divider::after{background:linear-gradient(90deg,rgba(255,209,90,.5),transparent);}
+  .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,187,33,.5));}
+  .footer-divider::after{background:linear-gradient(90deg,rgba(251,187,33,.5),transparent);}
   .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;}
   .footer-motif{opacity:.5;max-width:300px;}
   .footer-motif svg{width:100%;height:auto;display:block;}
@@ -360,7 +335,7 @@
   .footer-map-frame-wrap{position:relative;width:100%;flex:1 1 auto;min-height:clamp(170px,18vw,230px);border-radius:var(--r-md);overflow:hidden;background:#0a0d10;border:1px solid var(--line);}
   .footer-map-frame{position:absolute;inset:0;width:100%;height:100%;border:0;filter:saturate(.85) brightness(.92);}
   .footer-map-badge{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-pill);background:rgba(6,9,8,.82);border:1px solid var(--line-2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--white);font-size:11px;font-weight:600;transition:background .2s,color .2s;}
-  .footer-map-badge:hover{background:rgba(124,255,90,.14);color:var(--green);}
+  .footer-map-badge:hover{background:rgba(242,121,12,.14);color:var(--green);}
   .footer-map-badge .icon{width:12px;height:12px;}
   .footer-map-caption{display:flex;align-items:flex-start;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);}
   .footer-map-caption .footer-icon{width:32px;height:32px;}
@@ -379,15 +354,15 @@
   .social-badge img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
 
   .footer-support{display:flex;align-items:center;gap:12px;padding-left:clamp(14px,2.4vw,26px);border-left:1px solid var(--line);}
-  .footer-icon--ghost{background:rgba(124,255,90,.06);}
+  .footer-icon--ghost{background:rgba(242,121,12,.06);}
   .footer-support-text .footer-label{margin-bottom:3px;}
   .footer-support-text .footer-value{font-size:12px;color:var(--gray);}
 
   .footer-cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-left:auto;}
   .footer-cta span{color:var(--gray);font-size:12px;max-width:320px;line-height:1.5;}
-  .footer-cta-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:11px 20px;border-radius:var(--r-pill);border:1px solid rgba(255,209,90,.55);background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 0 1px rgba(255,209,90,.08) inset;transition:transform .2s,box-shadow .2s;white-space:nowrap;}
+  .footer-cta-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:11px 20px;border-radius:var(--r-pill);border:1px solid rgba(251,187,33,.55);background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 0 1px rgba(251,187,33,.08) inset;transition:transform .2s,box-shadow .2s;white-space:nowrap;}
   .footer-cta-btn .icon{width:13px;height:13px;}
-  .footer-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,209,90,.15) inset,0 14px 30px rgba(255,209,90,.2);}
+  .footer-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(251,187,33,.15) inset,0 14px 30px rgba(251,187,33,.2);}
 
   .footer-copyright{text-align:center;color:var(--gray-dim);font-size:12px;padding:18px 0;}
 
@@ -420,59 +395,37 @@
   .section{padding:90px 0;}
   .section.dark{
     position:relative;overflow:hidden;
-    background-image:url('image/BKG_News.jpg');
-    background-size:cover;background-position:center;
+    background:
+      radial-gradient(ellipse 900px 500px at 10% 0%,rgba(251,187,33,.06) 0%,transparent 60%),
+      radial-gradient(ellipse 900px 500px at 90% 100%,rgba(18,149,140,.08) 0%,transparent 60%),
+      var(--bg-soft);
   }
   .section.dark::before{
     content:'';position:absolute;inset:0;z-index:0;
-    background:
-      linear-gradient(180deg,var(--bg) 0%,transparent 60%,transparent 78%,var(--bg) 100%),
-      rgba(2,8,15,.28);
+    background:linear-gradient(180deg,var(--bg) 0%,transparent 22%,transparent 82%,var(--bg) 100%);
   }
   .section.dark>.container{position:relative;z-index:1;}
   .kicker{color:var(--green);font-size:12.5px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:10px;display:block;}
 
-  .news-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:36px;gap:20px;flex-wrap:wrap;}
-  .news-head-actions{display:flex;align-items:center;gap:14px;}
-  .news-all{
-    display:inline-flex;align-items:center;gap:6px;padding:12px 24px;
-    border-radius:var(--r-pill);border:1px solid var(--line-2);
-    font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);
-    white-space:nowrap;transition:all .2s;
+  .news-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:32px;gap:20px;flex-wrap:wrap;}
+  .news-all{white-space:nowrap;}
+
+  /* Lưới tin tức: kích thước cố định theo ảnh + số dòng chữ, không giãn theo chiều cao màn hình */
+  .news-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+  .news{
+    display:flex;flex-direction:column;border-radius:var(--r-lg);overflow:hidden;
+    border:1px solid var(--line);background:rgba(255,255,255,.02);color:inherit;
+    transition:border-color .2s,transform .2s,background .2s;
   }
-  .news-all:hover{background:var(--white);color:var(--bg);border-color:var(--white);}
-  .news-nav{display:flex;gap:8px;}
-  .news-nav-btn{width:38px;height:38px;border-radius:50%;flex-shrink:0;border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;color:var(--white);transition:all .2s;}
-  .news-nav-btn:hover{background:var(--white);color:var(--bg);border-color:var(--white);}
-  .news-nav-btn:disabled{opacity:.3;pointer-events:none;}
-  .news-nav-btn .icon{width:15px;height:15px;}
-
-  .news-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:26px;align-items:stretch;}
-
-  .news-featured{position:relative;display:block;border-radius:var(--r-lg);overflow:hidden;min-height:440px;border:1px solid var(--line);color:inherit;}
-  .news-featured img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s ease;}
-  .news-featured:hover img{transform:scale(1.045);}
-  .news-featured::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,6,8,.94) 0%,rgba(3,6,8,.6) 40%,transparent 72%);}
-  .news-featured-copy{position:absolute;left:0;right:0;bottom:0;padding:28px 26px 24px;z-index:1;}
-  .news-tags{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--gray);margin-bottom:12px;flex-wrap:wrap;}
-  .news-tags .nt-cat{color:var(--green);font-weight:700;}
-  .news-tags .nt-dot{opacity:.6;}
-  .news-featured-copy h3{font-family:var(--font-heading);font-size:21px;font-weight:800;line-height:1.35;color:var(--white);}
-
-  .news-side{display:flex;flex-direction:column;gap:16px;}
-  .news-side-item{
-    display:flex;gap:14px;padding:12px;
-    border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);
-    transition:border-color .2s,background .2s;color:inherit;
-  }
-  .news-side-item:hover{border-color:var(--line-2);background:rgba(255,255,255,.045);}
-  .news-side-thumb{width:104px;height:88px;border-radius:var(--r-sm);overflow:hidden;flex-shrink:0;}
-  .news-side-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .news-side-copy{min-width:0;display:flex;flex-direction:column;justify-content:center;}
-  .news-side-copy .news-tags{margin-bottom:7px;font-size:11.5px;}
-  .news-side-copy h4{
-    font-family:var(--font-heading);font-size:14px;font-weight:700;line-height:1.4;color:var(--white);
-    display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  .news:hover{border-color:var(--line-2);background:rgba(255,255,255,.04);transform:translateY(-3px);}
+  .news img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;transition:transform .5s ease;}
+  .news:hover img{transform:scale(1.04);}
+  .news-copy{padding:16px 18px 18px;}
+  .news-copy small{display:block;color:var(--green);font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;}
+  .news-copy h3{font-family:var(--font-heading);font-size:14.5px;font-weight:700;line-height:1.4;color:var(--white);margin-bottom:7px;}
+  .news-desc{
+    color:var(--gray);font-size:12px;line-height:1.7;
+    display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
   }
 
   .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease;}
@@ -481,12 +434,11 @@
   /* ============ SECTION DIVIDER ============ */
   .section-divider{display:flex;align-items:center;justify-content:center;gap:14px;padding:34px 0;}
   .section-divider span{width:70px;height:1px;background:linear-gradient(90deg,transparent,var(--line-2),transparent);}
-  .section-divider i{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 10px rgba(126,217,87,.7);}
+  .section-divider i{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 10px rgba(242,121,12,.7);}
 
   /* ============ RESPONSIVE ============ */
   @media (max-width:1080px){
     .hero{padding-top:40px;}
-    .news-featured{min-height:360px;}
   }
   @media (max-width:760px){
     .nav-links{display:none;}
@@ -494,8 +446,7 @@
     .navbar{padding-top:13px;padding-bottom:13px;}
     .hero{padding-top:30px;padding-bottom:70px;}
     .section-title{font-size:24px;}
-    .news-layout{grid-template-columns:1fr;}
-    .news-featured{min-height:300px;}
+    .news-grid{grid-template-columns:1fr;}
     /* Thu nhỏ cụm nav-right + nút CTA để không bị cắt khi màn hình hẹp */
     .nav-right{gap:clamp(3px,1.6vw,8px);}
     .btn-primary{
@@ -672,18 +623,12 @@
       <span class="hero-eyebrow">LumiShow</span>
       <span class="hero-eyebrow-2" data-i18n="hero.tagline">Nơi ánh sáng kể câu chuyện</span>
       <h1 class="hero-title">
-        <img class="hero-title-img" src="image/textSTTQ.png" alt="Sơn Thần Thủy Quái">
+        <span class="text-sttq">Sơn Thần<br>Thủy Quái</span>
       </h1>
       <p class="hero-desc" data-i18n="hero.desc">Những màn trình diễn mãn nhãn kết hợp giữa kỹ thuật đỉnh cao và cảm xúc thăng hoa.</p>
       <div class="hero-actions">
         <a href="#schedule" class="btn-primary btn-hero"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
-        <button class="video-trigger">
-          <span class="play-circle"><svg class="icon"><use href="#ic-play"/></svg></span>
-          <span>
-            <span class="vt-label" data-i18n="hero.watch">Xem video</span>
-            <span class="vt-sub" data-i18n="hero.watchSub">Giới thiệu chương trình</span>
-          </span>
-        </button>
+        <a href="#schedule" class="btn-gold"><span data-i18n="sch.learnMore">Tìm hiểu thêm</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
       </div>
     </div>
   </div>
@@ -696,7 +641,7 @@
   <div class="container">
     <div class="schedule-head">
       <span class="eyebrow" data-i18n="sch.eyebrow">Lịch diễn sắp tới</span>
-      <img class="section-title section-title-img" src="image/textSTTQ.png" alt="Sơn Thần Thủy Quái">
+      <h2 class="text-sttq">Sơn Thần Thủy Quái</h2>
       <div class="schedule-meta">
         <span data-i18n="sch.days">Thứ 6, Thứ 7 &amp; Chủ nhật</span>
         <span class="schedule-meta-dot">·</span>
@@ -712,10 +657,11 @@
 
     <div class="schedule-cta-row">
       <a href="BookingTicket.html" class="btn-primary btn-sch-lg" id="scheduleBookBtn"><span>Đặt vé</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
-      <a href="GioiThieu.html" class="btn-gold"><span data-i18n="sch.learnMore">Tìm hiểu thêm</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
     </div>
   </div>
 </section>
+
+<div class="section-divider"><span></span><i></i><span></span></div>
 
 <!-- ============ NEWS ============ -->
 <section class="section dark" id="news">
@@ -725,15 +671,9 @@
         <div class="kicker" data-i18n="news.kicker">TIN TỨC</div>
         <h2 class="section-title" data-i18n="news.title">NHỮNG GÌ ĐANG DIỄN RA.</h2>
       </div>
-      <div class="news-head-actions">
-        <a class="news-all" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><span data-i18n="news.all">XEM TẤT CẢ</span></a>
-        <div class="news-nav">
-          <button class="news-nav-btn" id="newsPrev" aria-label="Tin trước đó"><svg class="icon"><use href="#ic-chev-left"/></svg></button>
-          <button class="news-nav-btn" id="newsNext" aria-label="Tin tiếp theo"><svg class="icon"><use href="#ic-chev-right"/></svg></button>
-        </div>
-      </div>
+      <a class="news-all link-arrow" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><span data-i18n="news.all">XEM TẤT CẢ</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
     </div>
-    <div class="news-layout reveal in" id="newsLayout"></div>
+    <div class="news-grid reveal in" id="newsLayout"></div>
   </div>
 </section>
 
@@ -759,7 +699,7 @@
             <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
             <div class="footer-value">
               <span class="footer-label" data-i18n="contact.address">Địa chỉ</span>
-              <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+              <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
             </div>
           </div>
           <div class="footer-row">
@@ -792,7 +732,7 @@
         <h4 class="footer-heading" data-i18n="footer.mapHeading">TÌM ĐƯỜNG ĐẾN LUMISHOW</h4>
         <div class="footer-map-frame-wrap">
           <iframe class="footer-map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d276.8174182100974!2d105.84242121927876!3d21.01681956385038!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc654b563c9%3A0x9bcb7dfff2b12124!2zUuG6oXAgWGnhur9jIFRydW5nIMavxqFuZw!5e0!3m2!1svi!2s!4v1787208605122!5m2!1svi!2s" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Bản đồ vị trí LumiShow"></iframe>
-          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=192+L%C3%AA+Tr%E1%BB%8Dng+T%E1%BA%A5n%2C+Thanh+Xu%C3%A2n%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
+          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=R%E1%BA%A1p+Xi%E1%BA%BFc+Trung+%C6%AF%C6%A1ng%2C+67-69+Tr%E1%BA%A7n+Nh%C3%A2n+T%C3%B4ng%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
             <svg class="icon"><use href="#ic-map-pin"/></svg>
             <span data-i18n="footer.gmapsBtn">Google Maps</span>
           </a>
@@ -800,8 +740,8 @@
         <div class="footer-map-caption">
           <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
           <div class="footer-value">
-            <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
-            <span class="footer-map-note" data-i18n="footer.mapNote">Gần Royal City, cách Ngã Tư Sở 2.5km</span>
+            <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
+            <span class="footer-map-note" data-i18n="footer.mapNote">Rạp Xiếc Trung Ương — gần công viên Thống Nhất</span>
           </div>
         </div>
       </div>
@@ -1001,64 +941,33 @@
       img: 'image/News/news0_rxtw_12_8.jpg',
       href: 'https://www.facebook.com/photo?fbid=1900682027968983&set=a.742690297101501',
       date: '12.08', cat: 'Rạp Xiếc Trung Ương',
-      title: 'Siêu phẩm mới sắp ra mắt: “Sơn Thần Thủy Quái” — tác phẩm kinh điển về xiếc và cuộc chiến chưa bao giờ kết thúc.'
+      title: 'Siêu phẩm mới sắp ra mắt: “Sơn Thần Thủy Quái” — tác phẩm kinh điển về xiếc và cuộc chiến chưa bao giờ kết thúc.',
+      desc: 'Lần đầu tiên một vở diễn kết hợp công nghệ Mapping cùng sân khấu nước siêu hoành tráng và visual ảo diệu — một đại tiệc thị giác bùng nổ, đưa truyền thuyết nghìn năm trở lại theo cách mạnh mẽ và uy lực chưa từng có.'
     },
     {
       img: 'image/News/news1_rxtw_12_8.jpg',
       href: 'https://www.facebook.com/reel/1363134739318187',
       date: '12.08', cat: 'Rạp Xiếc Trung Ương',
-      title: 'Các bạn nhỏ đoán xem nhân vật nào trong vở “Sơn Thần Thủy Quái” sẽ xuất hiện vào dịp Trung thu năm nay nhé!'
+      title: 'Các bạn nhỏ đoán xem nhân vật nào trong vở “Sơn Thần Thủy Quái” sẽ xuất hiện vào dịp Trung thu năm nay nhé!',
+      desc: 'Xiếc mạo hiểm đẳng cấp: những pha không chiến xé gió của Sơn Thần cùng màn thủy chiến ma mị của Thủy Quái khiến bạn không thể rời mắt dù chỉ 1 giây!'
     }
   ];
 
   const escapeHtml = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const newsLayout = document.getElementById('newsLayout');
-  const newsPrevBtn = document.getElementById('newsPrev');
-  const newsNextBtn = document.getElementById('newsNext');
-  let newsIndex = 0;
 
   function renderNews(){
     if (!newsLayout || !NEWS_ITEMS.length) return;
-    const total = NEWS_ITEMS.length;
-    const visible = Math.min(4, total);
-    const idxs = Array.from({length: visible}, (_, i) => (newsIndex + i) % total);
-    const featured = NEWS_ITEMS[idxs[0]];
-    const sideItems = idxs.slice(1).map(i => NEWS_ITEMS[i]);
-
-    const tagsHtml = n => `<div class="news-tags"><span class="nt-date">${n.date}</span><span class="nt-dot">·</span><span class="nt-cat">${n.cat}</span></div>`;
-
-    newsLayout.innerHTML =
-      `<a class="news-featured" href="${featured.href}" target="_blank" rel="noopener">
-        <img src="${featured.img}" alt="${escapeHtml(featured.title)}">
-        <div class="news-featured-copy">
-          ${tagsHtml(featured)}
-          <h3>${featured.title}</h3>
+    newsLayout.innerHTML = NEWS_ITEMS.map(n => `
+      <a class="news" href="${n.href}" target="_blank" rel="noopener">
+        <img src="${n.img}" alt="${escapeHtml(n.title)}">
+        <div class="news-copy">
+          <small>${n.date} · ${escapeHtml(n.cat)}</small>
+          <h3>${n.title}</h3>
+          <p class="news-desc">${n.desc}</p>
         </div>
-      </a>
-      <div class="news-side">
-        ${sideItems.map(n => `
-          <a class="news-side-item" href="${n.href}" target="_blank" rel="noopener">
-            <div class="news-side-thumb"><img src="${n.img}" alt="${escapeHtml(n.title)}"></div>
-            <div class="news-side-copy">
-              ${tagsHtml(n)}
-              <h4>${n.title}</h4>
-            </div>
-          </a>`).join('')}
-      </div>`;
-
-    const noNav = total <= visible;
-    if (newsPrevBtn) newsPrevBtn.disabled = noNav;
-    if (newsNextBtn) newsNextBtn.disabled = noNav;
+      </a>`).join('');
   }
-
-  newsPrevBtn?.addEventListener('click', () => {
-    newsIndex = (newsIndex - 1 + NEWS_ITEMS.length) % NEWS_ITEMS.length;
-    renderNews();
-  });
-  newsNextBtn?.addEventListener('click', () => {
-    newsIndex = (newsIndex + 1) % NEWS_ITEMS.length;
-    renderNews();
-  });
 
   renderNews();
 </script>

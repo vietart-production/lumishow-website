@@ -18,35 +18,35 @@
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
   ul{list-style:none;}
 
+  /* ============ FONTS ============ */
+  @font-face{font-family:'FTV Magnetic';src:url('font/1FTV-SS-MAGNETIC.REGULAR.OTF') format('opentype');font-weight:400;font-style:normal;font-display:swap;}
+  @font-face{font-family:'FTV Raghlick';src:url('font/1FTV-RAGHLICK.OTF') format('opentype');font-weight:700;font-style:normal;font-display:swap;}
+
   /* ============ TOKENS ============ */
   :root{
-    --bg:#0D1117;
-    --bg-soft:#10151c;
-    --card-bg:#0d1210;
+    --bg:#0B1E1B;
+    --bg-soft:#0F2622;
+    --card-bg:#0D211E;
     --line:rgba(255,255,255,.07);
     --line-2:rgba(255,255,255,.15);
-    --white:#E6F1EA;
-    --gray:#98a29b;
-    --gray-dim:#636d66;
-    --green:#7CFF5A;
-    --green-deep:#4caf50;
-    --teal:#2fa97a;
-    --blue:#23B6FF;
-    --blue-deep:#3c7bd9;
-    --gold:#FFD15A;
-    --gold-soft:#e8c27e;
-    --grad-btn:linear-gradient(90deg,#7CFF5A 0%,#2fa97a 100%);
-    --btn-texture:url('image/BlendingButton_BF.jpg');
-    --btn-texture-sea:url('image/BlendingButton_HV.jpg');
-    --btn-blend:soft-light;
-    --btn-texture-opacity:1;
-    --btn-texture-size:100% 100%;
-    --btn-tint: 1;
-    --btn-slide:.55s;
-    --grad-text:linear-gradient(90deg,#8fe06a 0%,#23B6FF 100%);
-    --grad-gold:linear-gradient(180deg,#FFF0C4 0%,#FFD15A 48%,#C9962E 100%);
-    --font-heading:'Sora','Be Vietnam Pro',sans-serif;
-    --font-body:'Inter','Be Vietnam Pro',sans-serif;
+    --white:#EDF3EF;
+    --gray:#9AACA5;
+    --gray-dim:#5E6E68;
+    --rust:#9A3412;
+    --green:#F2790C;
+    --green-deep:#C4560A;
+    --olive:#82A33E;
+    --teal:#12958C;
+    --blue:#1C7A8C;
+    --blue-deep:#0F4A57;
+    --gold:#FBBB21;
+    --gold-soft:#EBCB6E;
+    --grad-btn:linear-gradient(100deg,#9A3412 0%,#F2790C 55%,#FBBB21 100%);
+    --grad-text:linear-gradient(90deg,#FBBB21 0%,#F2790C 100%);
+    --grad-gold:linear-gradient(180deg,#FFEBAE 0%,#FBBB21 48%,#B87E1A 100%);
+    --font-heading:'FTV Magnetic','Be Vietnam Pro',sans-serif;
+    --font-body:'FTV Magnetic','Be Vietnam Pro',sans-serif;
+    --font-sttq:'FTV Raghlick','Be Vietnam Pro',sans-serif;
     --r-lg:20px;
     --r-md:14px;
     --r-sm:10px;
@@ -55,15 +55,15 @@
     --gutter:clamp(20px,4vw,48px);
     --shell-max:1720px;
     --shell-pad:clamp(0px,2.2vw,40px);
-    --page-bg:#04060a;
-    --nav-bg:rgba(7,9,10,.72);
+    --page-bg:#020509;
+    --nav-bg:rgba(6,10,15,.72);
   }
   html.light{--page-bg:#ffffff;}
 
   body{
     background:var(--page-bg);
     color:var(--white);
-    font-family:'Be Vietnam Pro',sans-serif;
+    font-family:var(--font-body);
     font-size:15px;
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
@@ -125,31 +125,17 @@
     transition:transform .2s,box-shadow .2s;
     white-space:nowrap;
   }
-  .btn-primary::before,
   .btn-primary::after{
     content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
-    background-size:var(--btn-texture-size);background-position:center;background-repeat:no-repeat;
-    background-blend-mode:var(--btn-blend),normal;
-    opacity:var(--btn-texture-opacity);
-    transition-property:transform;
-    transition-duration:var(--btn-slide);
-    transition-timing-function:cubic-bezier(.4,0,.2,1);
-    backface-visibility:hidden;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 66%);
+    transform:translateX(-120%);
+    transition:transform .6s cubic-bezier(.4,0,.2,1);
   }
-  .btn-primary::before{
-    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture);
-    transform:translateX(0);
-  }
-  .btn-primary::after{
-    background-image:linear-gradient(90deg,rgba(90,204,58,var(--btn-tint)) 0%,rgba(30,132,90,var(--btn-tint)) 100%),var(--btn-texture-sea);
-    transform:translateX(100%);
-  }
-  .btn-primary:hover::before{transform:translateX(-100%);}
-  .btn-primary:hover::after{transform:translateX(0);}
+  .btn-primary:hover::after{transform:translateX(120%);}
   .btn-primary>*{position:relative;z-index:2;}
-  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(126,217,87,.32);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(242,121,12,.35);}
   @media (prefers-reduced-motion:reduce){
-    .btn-primary::before,.btn-primary::after{transition-duration:.2s;}
+    .btn-primary::after{transition-duration:.2s;}
   }
   .menu-toggle{display:none;width:36px;height:36px;align-items:center;justify-content:center;color:var(--white);}
 
@@ -166,28 +152,29 @@
   /* ============ SECTION DIVIDER ============ */
   .section-divider{display:flex;align-items:center;justify-content:center;gap:14px;padding:34px 0;}
   .section-divider span{width:70px;height:1px;background:linear-gradient(90deg,transparent,var(--line-2),transparent);}
-  .section-divider i{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;box-shadow:0 0 10px rgba(255,209,90,.7);}
+  .section-divider i{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;box-shadow:0 0 10px rgba(251,187,33,.7);}
 
   /* ============ ABOUT HERO ============ */
   .about-hero{
     position:relative;overflow:hidden;
-    min-height:clamp(460px,64vh,680px);
+    aspect-ratio:16/9;
+    min-height:360px;
     display:flex;align-items:flex-end;justify-content:center;
     padding:64px var(--gutter) 56px;
     text-align:center;
   }
   .ah-bg{position:absolute;inset:0;z-index:0;overflow:hidden;background:#05070a;}
-  .ah-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .ah-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center top;}
   .ah-bg-overlay{position:absolute;inset:0;
     background:
-      linear-gradient(180deg,rgba(3,7,10,.18) 0%,rgba(3,7,10,.5) 58%,rgba(3,7,10,.92) 100%),
-      radial-gradient(ellipse 900px 420px at 50% 38%,rgba(3,7,10,0) 0%,rgba(3,7,10,.35) 100%);
+      linear-gradient(180deg,rgba(3,7,10,.05) 0%,rgba(3,7,10,.15) 62%,rgba(3,7,10,.92) 100%),
+      radial-gradient(ellipse 900px 420px at 50% 38%,rgba(3,7,10,0) 0%,rgba(3,7,10,.2) 100%);
   }
   .ah-inner{position:relative;z-index:2;max-width:760px;margin:0 auto;}
   .ah-eyebrow{color:var(--white);font-size:11.5px;font-weight:600;letter-spacing:3px;text-transform:uppercase;opacity:.75;margin-bottom:18px;display:block;}
   .ah-title{
-    font-family:var(--font-heading);font-weight:800;font-size:clamp(38px,6.4vw,66px);
-    line-height:1.08;letter-spacing:.5px;margin-bottom:20px;
+    font-family:var(--font-sttq);font-weight:700;font-size:clamp(38px,6.4vw,66px);
+    line-height:1.12;letter-spacing:.5px;margin-bottom:20px;
     background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;
     color:transparent;-webkit-text-fill-color:transparent;
   }
@@ -201,15 +188,6 @@
   }
   .btn-outline-light:hover{background:rgba(255,255,255,.1);border-color:var(--white);transform:translateY(-2px);}
   .btn-outline-light .icon{width:15px;height:15px;}
-  .btn-gold-solid{
-    display:inline-flex;align-items:center;gap:9px;padding:14px 27px;
-    border-radius:var(--r-pill);background:var(--grad-gold);
-    color:#241a06;font-weight:700;font-size:13.5px;letter-spacing:.2px;
-    box-shadow:0 10px 28px rgba(255,209,90,.28);
-    transition:transform .2s,box-shadow .2s;white-space:nowrap;
-  }
-  .btn-gold-solid:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(255,209,90,.4);}
-  .btn-gold-solid .icon{width:15px;height:15px;}
 
   /* ============ OVERVIEW ============ */
   .overview-section{padding:96px 0 84px;}
@@ -239,13 +217,13 @@
   .journey-list{position:relative;display:flex;flex-direction:column;gap:clamp(48px,7vw,84px);}
   .journey-line{
     position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);z-index:0;
-    background:linear-gradient(180deg,transparent 0%,rgba(255,209,90,.5) 6%,rgba(255,209,90,.5) 94%,transparent 100%);
+    background:linear-gradient(180deg,transparent 0%,rgba(251,187,33,.5) 6%,rgba(251,187,33,.5) 94%,transparent 100%);
   }
   .journey-row{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,60px);align-items:center;}
   .journey-row::before{
     content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
     width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--gold);
-    box-shadow:0 0 0 6px rgba(255,209,90,.14),0 0 18px rgba(255,209,90,.5);z-index:2;
+    box-shadow:0 0 0 6px rgba(251,187,33,.14),0 0 18px rgba(251,187,33,.5);z-index:2;
   }
   .journey-media{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);height:100%;min-height:260px;}
   .journey-media img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -253,35 +231,37 @@
   .journey-copy .j-title{font-family:var(--font-heading);font-size:clamp(21px,2.3vw,26px);font-weight:700;color:var(--white);line-height:1.3;margin-bottom:16px;}
   .journey-copy p{color:var(--gray);font-size:14.5px;line-height:1.85;margin-bottom:13px;}
   .journey-copy p:last-of-type{margin-bottom:0;}
-  .j-tags{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px;}
-  .j-tags span{
-    padding:7px 15px;border:1px solid var(--line-2);border-radius:var(--r-pill);
-    font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;
-    color:var(--white);background:rgba(255,255,255,.03);white-space:nowrap;
-  }
 
-  /* ============ QUOTE BANNER ============ */
-  .quote-banner{
-    position:relative;overflow:hidden;padding:clamp(48px,7vw,72px) 0;
-    background:radial-gradient(ellipse 1300px 480px at 50% 25%,#181005 0%,var(--bg) 72%);
+  /* ============ LỜI KẾT ============ */
+  .closing-section{
+    position:relative;overflow:hidden;padding:clamp(56px,8vw,88px) 0;
+    background:
+      radial-gradient(ellipse 1100px 420px at 30% 15%,rgba(242,121,12,.09) 0%,transparent 65%),
+      radial-gradient(ellipse 1100px 420px at 75% 85%,rgba(18,149,140,.08) 0%,transparent 65%),
+      var(--bg);
     border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    text-align:center;
   }
-  .qb-grid{display:grid;grid-template-columns:1fr 1fr 1.5fr 1fr;align-items:center;}
-  .qb-item{padding:0 clamp(14px,2.4vw,30px);border-left:1px solid var(--line);text-align:center;}
-  .qb-item:first-child{border-left:none;}
-  .qb-eyebrow{color:var(--gold);font-size:11.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;display:block;}
-  .qb-sub{color:var(--gray);font-size:12.5px;line-height:1.6;}
-  .qb-center-text{font-family:var(--font-heading);font-size:clamp(17px,2vw,22px);font-weight:800;color:var(--white);line-height:1.4;letter-spacing:.2px;}
+  .closing-inner{max-width:680px;margin:0 auto;}
+  .lk-title{font-family:var(--font-heading);font-size:clamp(24px,2.8vw,32px);font-weight:800;color:var(--white);line-height:1.28;margin-bottom:20px;}
+  .closing-inner p{color:var(--gray);font-size:14.5px;line-height:1.9;margin-bottom:15px;}
+  .lk-tagline{color:var(--gold-soft);font-style:italic;font-size:14.5px;line-height:1.8;margin-bottom:28px;border-left:none;padding-left:0;}
+  .closing-inner .btn-primary{margin-top:4px;}
 
-  /* ============ GALLERY + LỜI KẾT ============ */
-  .split-section{padding:94px 0 104px;}
-  .gallery-split{display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(36px,5vw,72px);align-items:start;}
-  .gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:22px;}
-  .gallery-grid img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:var(--r-sm);display:block;transition:transform .45s ease;}
-  .gallery-grid a{display:block;border-radius:var(--r-sm);overflow:hidden;}
-  .gallery-grid a:hover img{transform:scale(1.08);}
+  /* ============ THƯ VIỆN HÌNH ẢNH ============ */
+  .gallery-section{padding:94px 0 104px;}
+  .gallery-eyebrow{font-size:16px;letter-spacing:3px;margin-bottom:28px;}
+  .gallery-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:120px;gap:14px;}
+  .gi{display:block;position:relative;border-radius:var(--r-lg);overflow:hidden;}
+  .gi img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease;}
+  .gi:hover img{transform:scale(1.06);}
+  .gi-a{grid-column:1/4;grid-row:1/4;}
+  .gi-b{grid-column:4/7;grid-row:1/3;}
+  .gi-c{grid-column:4/6;grid-row:3/5;}
+  .gi-d{grid-column:6/7;grid-row:3/5;}
+  .gi-e{grid-column:1/4;grid-row:4/6;}
   .gallery-more{
-    display:inline-flex;align-items:center;gap:8px;margin-top:24px;padding:12px 24px;
+    display:inline-flex;align-items:center;gap:8px;margin-top:26px;padding:12px 24px;
     border-radius:var(--r-pill);border:1px solid var(--line-2);
     font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);
     transition:all .2s;
@@ -289,16 +269,11 @@
   .gallery-more:hover{background:var(--white);color:var(--bg);border-color:var(--white);}
   .gallery-more .icon{width:14px;height:14px;}
 
-  .lk-title{font-family:var(--font-heading);font-size:clamp(24px,2.8vw,32px);font-weight:800;color:var(--white);line-height:1.28;margin-bottom:20px;}
-  .lk-col p{color:var(--gray);font-size:14.5px;line-height:1.9;margin-bottom:15px;}
-  .lk-tagline{color:var(--gold-soft);font-style:italic;font-size:14.5px;line-height:1.8;margin-bottom:28px;padding-left:16px;border-left:2px solid rgba(255,209,90,.4);}
-  .lk-col .btn-gold-solid{margin-top:4px;}
-
   /* ============ FOOTER ============ */
   .site-footer{
     position:relative;overflow:hidden;
     padding:clamp(20px,3vw,32px) var(--gutter) 0;
-    background:radial-gradient(ellipse 1000px 560px at 50% 0%,#0d1611 0%,var(--bg) 65%);
+    background:radial-gradient(ellipse 1000px 560px at 50% 0%,#0f221d 0%,var(--bg) 65%);
   }
   .footer-card{
     position:relative;isolation:isolate;
@@ -318,8 +293,8 @@
   .footer-brand-inner{max-width:380px;}
   .footer-logo{height:clamp(58px,7vw,86px);width:auto;display:block;margin:0 auto 18px;}
   .footer-divider{display:flex;align-items:center;gap:0px;margin:0 auto 18px;max-width:250px;}
-  .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,209,90,.5));}
-  .footer-divider::after{background:linear-gradient(90deg,rgba(255,209,90,.5),transparent);}
+  .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,187,33,.5));}
+  .footer-divider::after{background:linear-gradient(90deg,rgba(251,187,33,.5),transparent);}
   .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;}
   .footer-motif{opacity:.5;max-width:300px;}
   .footer-motif svg{width:100%;height:auto;display:block;}
@@ -343,7 +318,7 @@
   .footer-map-frame-wrap{position:relative;width:100%;flex:1 1 auto;min-height:clamp(170px,18vw,230px);border-radius:var(--r-md);overflow:hidden;background:#0a0d10;border:1px solid var(--line);}
   .footer-map-frame{position:absolute;inset:0;width:100%;height:100%;border:0;filter:saturate(.85) brightness(.92);}
   .footer-map-badge{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-pill);background:rgba(6,9,8,.82);border:1px solid var(--line-2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--white);font-size:11px;font-weight:600;transition:background .2s,color .2s;}
-  .footer-map-badge:hover{background:rgba(124,255,90,.14);color:var(--green);}
+  .footer-map-badge:hover{background:rgba(242,121,12,.14);color:var(--green);}
   .footer-map-badge .icon{width:12px;height:12px;}
   .footer-map-caption{display:flex;align-items:flex-start;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);}
   .footer-map-caption .footer-icon{width:32px;height:32px;}
@@ -362,15 +337,15 @@
   .social-badge img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
 
   .footer-support{display:flex;align-items:center;gap:12px;padding-left:clamp(14px,2.4vw,26px);border-left:1px solid var(--line);}
-  .footer-icon--ghost{background:rgba(124,255,90,.06);}
+  .footer-icon--ghost{background:rgba(242,121,12,.06);}
   .footer-support-text .footer-label{margin-bottom:3px;}
   .footer-support-text .footer-value{font-size:12px;color:var(--gray);}
 
   .footer-cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-left:auto;}
   .footer-cta span{color:var(--gray);font-size:12px;max-width:320px;line-height:1.5;}
-  .footer-cta-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:11px 20px;border-radius:var(--r-pill);border:1px solid rgba(255,209,90,.55);background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 0 1px rgba(255,209,90,.08) inset;transition:transform .2s,box-shadow .2s;white-space:nowrap;}
+  .footer-cta-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:11px 20px;border-radius:var(--r-pill);border:1px solid rgba(251,187,33,.55);background:linear-gradient(180deg,rgba(40,64,34,.9) 0%,rgba(10,14,10,.95) 100%);color:var(--gold);font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 0 1px rgba(251,187,33,.08) inset;transition:transform .2s,box-shadow .2s;white-space:nowrap;}
   .footer-cta-btn .icon{width:13px;height:13px;}
-  .footer-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,209,90,.15) inset,0 14px 30px rgba(255,209,90,.2);}
+  .footer-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(251,187,33,.15) inset,0 14px 30px rgba(251,187,33,.2);}
 
   .footer-copyright{text-align:center;color:var(--gray-dim);font-size:12px;padding:18px 0;}
 
@@ -397,11 +372,6 @@
   @media (max-width:1080px){
     .overview-grid{grid-template-columns:1fr;gap:36px;}
     .overview-media{aspect-ratio:16/9;order:-1;}
-    .qb-grid{grid-template-columns:1fr 1fr;gap:26px 0;}
-    .qb-item{border-left:none;border-top:1px solid var(--line);padding:22px clamp(14px,2.4vw,30px) 0;}
-    .qb-item:nth-child(1),.qb-item:nth-child(2){border-top:none;}
-    .qb-item.qb-center{grid-column:1/-1;order:-1;border-top:none;padding-top:0;padding-bottom:8px;}
-    .gallery-split{grid-template-columns:1fr;}
   }
   @media (max-width:760px){
     .nav-links{display:none;}
@@ -413,7 +383,9 @@
     .journey-media{min-height:220px;aspect-ratio:4/3;}
     .of-item{border-right:none;padding:4px 12px;}
     .overview-features{justify-content:center;}
-    .gallery-grid{grid-template-columns:repeat(3,1fr);}
+    .gallery-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:160px;}
+    .gi-a,.gi-b,.gi-c,.gi-d,.gi-e{grid-column:auto;grid-row:auto;}
+    .gi-a{grid-column:1/3;grid-row:span 2;}
     .nav-right{gap:clamp(3px,1.6vw,8px);}
     .btn-primary{
       padding:clamp(7px,2.4vw,11px) clamp(10px,4.2vw,22px);
@@ -424,14 +396,13 @@
   }
   @media (max-width:560px){
     .ah-actions{flex-direction:column;width:100%;max-width:320px;margin:0 auto;}
-    .btn-outline-light,.btn-gold-solid{width:100%;justify-content:center;}
+    .btn-outline-light,.ah-actions .btn-primary{width:100%;justify-content:center;}
   }
   @media (max-width:480px){
     :root{--gutter:14px;}
     .nav-inner{gap:8px;}
     .logo-lumishow{height:40px;}
     .btn-primary{white-space:normal;text-align:center;line-height:1.15;word-break:break-word;}
-    .gallery-grid{grid-template-columns:repeat(3,1fr);gap:7px;}
   }
   @media (max-width:400px){
     .lang-select{padding:5px 6px;font-size:11.5px;}
@@ -499,16 +470,13 @@
 <!-- ============ ABOUT HERO ============ -->
 <section class="about-hero">
   <div class="ah-bg">
-    <img class="ah-bg-img" src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái — Sơn Tinh và Thủy Tinh">
+    <img class="ah-bg-img" src="image/SonThanThuyQuaiXanh.jpg" alt="Sơn Thần Thủy Quái — Sơn Tinh và Thủy Tinh">
     <div class="ah-bg-overlay"></div>
   </div>
   <div class="ah-inner">
-    <span class="ah-eyebrow">LumiShow</span>
-    <h1 class="ah-title">SƠN THẦN<br>THỦY QUÁI</h1>
-    <p class="ah-sub" data-i18n="ab.heroSub">Truyền thuyết Việt trong không gian xiếc Panorama 360°</p>
     <div class="ah-actions">
       <a href="#tong-quan" class="btn-outline-light"><span data-i18n="ab.heroBtn1">Khám phá câu chuyện</span> <svg class="icon"><use href="#ic-arrow-down"/></svg></a>
-      <a href="BookingTicket.html" class="btn-gold-solid"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+      <a href="BookingTicket.html" class="btn-primary"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
     </div>
   </div>
 </section>
@@ -557,13 +525,6 @@
           <h3 class="j-title" data-i18n="ab.j1title">Đất nước thanh bình</h3>
           <p>Thuở các Vua Hùng dựng nước, đất nước yên bình, người dân sống hòa mình cùng núi rừng và thiên nhiên. Công chúa Mỵ Nương xuất hiện trong những màn đu lượn trên cao, giữa bầu trời xanh, chim Lạc và những dãy núi hùng vĩ được mở ra trong không gian Panorama 360°.</p>
           <p>Khi Vua Hùng mở hội kén rể, Sơn Tinh và Thủy Tinh bước vào cuộc so tài. Những màn hip hop, lăn vòng, thăng bằng và đu dây đôi thể hiện sự đối lập giữa sức mạnh của Núi và Nước bằng chuyển động thật của nghệ sĩ và hình ảnh mapping kỳ ảo trên toàn bộ không gian sân khấu.</p>
-          <div class="j-tags">
-            <span data-i18n="ab.t1a">Đu lượn trên cao</span>
-            <span data-i18n="ab.t1b">Hip hop</span>
-            <span data-i18n="ab.t1c">Lăn vòng</span>
-            <span data-i18n="ab.t1d">Thăng bằng</span>
-            <span data-i18n="ab.t1e">Đu dây đôi</span>
-          </div>
         </div>
       </div>
 
@@ -574,11 +535,6 @@
           <h3 class="j-title" data-i18n="ab.j2title">Giang sơn của Sơn Tinh</h3>
           <p>Sơn Tinh đưa Mỵ Nương về thăm giang sơn núi rừng. Dân làng mở hội, muông thú cùng xuất hiện trong những tiết mục xiếc vui tươi, từ thăng bằng, nhào lộn đến trình diễn với đạo cụ và cột tre.</p>
           <p>Panorama 360° đưa khán giả đi qua rừng tre, suối nước, thác và những triền núi đầy sức sống. Nhưng giữa lúc hội vui đang diễn ra, Thủy Tinh bất ngờ xuất hiện, bắt cóc Mỵ Nương và đẩy Sơn Tinh vào cuộc hành trình giải cứu đầy nguy hiểm.</p>
-          <div class="j-tags">
-            <span data-i18n="ab.t2a">Thăng bằng</span>
-            <span data-i18n="ab.t2b">Nhào lộn</span>
-            <span data-i18n="ab.t2c">Đạo cụ &amp; cột tre</span>
-          </div>
         </div>
         <div class="journey-media"><img src="image/SonThanThuyQuai.jpg" alt="Hồi II – Giang sơn của Sơn Tinh"></div>
       </div>
@@ -591,11 +547,6 @@
           <h3 class="j-title" data-i18n="ab.j3title">Vương quốc Thủy Tinh</h3>
           <p>Mỵ Nương bị đưa xuống đáy đại dương — một thế giới lung linh nhưng bí ẩn và hiểm nguy. Tấm lưới từ trên cao, những màn đu dây bay và chuyển động hình thể của các thủy quái tạo nên cảm giác như cả sân khấu đang chìm trong nước.</p>
           <p>Với hình ảnh cung điện Thủy Tinh, sinh vật biển và những dòng nước phát sáng, Mapping Panorama 360° biến vòm rạp thành một vương quốc dưới lòng đại dương. Giữa vẻ đẹp mê hoặc ấy, Mỵ Nương phải đối mặt với sự bạo ngược của Thủy Tinh và tìm cách giữ vững lòng mình.</p>
-          <div class="j-tags">
-            <span data-i18n="ab.t3a">Lưới trên cao</span>
-            <span data-i18n="ab.t3b">Đu dây bay</span>
-            <span data-i18n="ab.t3c">Chuyển động hình thể</span>
-          </div>
         </div>
       </div>
 
@@ -607,11 +558,6 @@
           <p>Sơn Tinh cùng muông thú tiến vào đại dương để giải cứu Mỵ Nương. Cuộc giải cứu trở thành trận đại chiến giữa đất và nước, với những màn nhào lộn, bay đu dây và đối kháng trên không.</p>
           <p>Thủy Tinh làm nước dâng cao. Sơn Tinh nâng núi chống lại sóng dữ. Trong tiếng sấm, mưa bão và ánh sáng chuyển động, Panorama 360° mở rộng trận chiến ra khắp vòm rạp — nơi núi, nước, nghệ sĩ và hình ảnh cùng chuyển động trong một cao trào sử thi.</p>
           <p>Cuối cùng, Thủy Tinh bị đánh bại. Mỵ Nương được giải cứu, còn thế giới đại dương dần lắng xuống sau cơn bão.</p>
-          <div class="j-tags">
-            <span data-i18n="ab.t4a">Nhào lộn</span>
-            <span data-i18n="ab.t4b">Bay đu dây</span>
-            <span data-i18n="ab.t4c">Đối kháng trên không</span>
-          </div>
         </div>
         <div class="journey-media"><img src="image/SonThanThuyQuai.jpg" alt="Hồi IV – Đại dương cuộn sóng"></div>
       </div>
@@ -625,65 +571,38 @@
           <p>Sơn Tinh đưa Mỵ Nương trở về. Vua Hùng tổ chức lễ cưới trong niềm vui của dân làng, muông thú và cây rừng.</p>
           <p>Không gian sân khấu chuyển sang sắc màu rực rỡ. Các nghệ sĩ cùng hòa vào màn múa kết, trong khi hình ảnh núi rừng, hoa cỏ và muông thú mở ra khắp Panorama 360°.</p>
           <p>Câu chuyện khép lại bằng một thông điệp: Đất và Nước không chỉ là hai thế lực đối đầu, mà còn là hai nguồn sống tạo nên sự trường tồn của dân tộc. Sức mạnh của con người nằm ở lòng dũng cảm, sự đoàn kết và khả năng sống hài hòa với thiên nhiên.</p>
-          <div class="j-tags">
-            <span data-i18n="ab.t5a">Lễ hội</span>
-            <span data-i18n="ab.t5b">Múa kết tập thể</span>
-          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ QUOTE BANNER ============ -->
-<section class="quote-banner">
-  <div class="container qb-grid">
-    <div class="qb-item">
-      <span class="qb-eyebrow" data-i18n="ab.qb1e">Truyền thuyết Việt</span>
-      <p class="qb-sub" data-i18n="ab.qb1s">Một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh, bằng ngôn ngữ sân khấu đương đại.</p>
-    </div>
-    <div class="qb-item">
-      <span class="qb-eyebrow" data-i18n="ab.qb2e">Nghệ thuật xiếc</span>
-      <p class="qb-sub" data-i18n="ab.qb2s">Kỹ thuật trình diễn trên không, ảo thuật và chuyển động thật của nghệ sĩ.</p>
-    </div>
-    <div class="qb-item qb-center">
-      <p class="qb-center-text" data-i18n="ab.qb3">Một trải nghiệm chưa từng được kể theo cách này</p>
-    </div>
-    <div class="qb-item">
-      <span class="qb-eyebrow" data-i18n="ab.qb4e">Công nghệ Panorama 360°</span>
-      <p class="qb-sub" data-i18n="ab.qb4s">Âm nhạc, ánh sáng và 3D Mapping biến cả vòm rạp thành sân khấu sống động.</p>
-    </div>
+<!-- ============ LỜI KẾT ============ -->
+<section class="closing-section">
+  <div class="container closing-inner">
+    <span class="eyebrow" data-i18n="ab.lkE">Lời kết</span>
+    <h2 class="lk-title">Một câu chuyện về<br>Đất và Nước.</h2>
+    <p>Sơn thần Thủy quái là một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh. Nơi kỹ thuật xiếc, chuyển động trên không và ảo thuật gặp gỡ âm nhạc, ánh sáng và công nghệ 3D Mapping Panorama 360°.</p>
+    <p>Trải nghiệm không gian từ núi rừng đến đại dương, từ bình yên đến bão tố, khán giả được mời bước vào bên trong một truyền thuyết Việt sống động, kỳ ảo và chưa từng được kể theo cách này.</p>
+    <p class="lk-tagline">Một trải nghiệm xiếc 360°. Một truyền thuyết được đánh thức bằng nghệ thuật và công nghệ.</p>
+    <a href="BookingTicket.html" class="btn-primary"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
   </div>
 </section>
 
-<!-- ============ THƯ VIỆN HÌNH ẢNH + LỜI KẾT ============ -->
-<section class="split-section" id="thu-vien">
-  <div class="container gallery-split">
-    <div class="gallery-col">
-      <span class="eyebrow" data-i18n="ab.galleryE">Thư viện hình ảnh</span>
-      <div class="gallery-grid">
-        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 1"></a>
-        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 2"></a>
-        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 3"></a>
-        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 4"></a>
-        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 5"></a>
-        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 6"></a>
-        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 7"></a>
-        <a href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 8"></a>
-      </div>
-      <a class="gallery-more" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener">
-        <span data-i18n="ab.galleryBtn">Xem thêm hình ảnh</span> <svg class="icon"><use href="#ic-plus"/></svg>
-      </a>
+<!-- ============ THƯ VIỆN HÌNH ẢNH ============ -->
+<section class="gallery-section" id="thu-vien">
+  <div class="container">
+    <span class="eyebrow gallery-eyebrow" data-i18n="ab.galleryE">Thư viện hình ảnh</span>
+    <div class="gallery-grid">
+      <a class="gi gi-a" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 1"></a>
+      <a class="gi gi-b" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 2"></a>
+      <a class="gi gi-c" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 3"></a>
+      <a class="gi gi-d" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 4"></a>
+      <a class="gi gi-e" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener"><img src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái 5"></a>
     </div>
-
-    <div class="lk-col">
-      <span class="eyebrow" data-i18n="ab.lkE">Lời kết</span>
-      <h2 class="lk-title">Một câu chuyện về<br>Đất và Nước.</h2>
-      <p>Sơn thần Thủy quái là một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh. Nơi kỹ thuật xiếc, chuyển động trên không và ảo thuật gặp gỡ âm nhạc, ánh sáng và công nghệ 3D Mapping Panorama 360°.</p>
-      <p>Trải nghiệm không gian từ núi rừng đến đại dương, từ bình yên đến bão tố, khán giả được mời bước vào bên trong một truyền thuyết Việt sống động, kỳ ảo và chưa từng được kể theo cách này.</p>
-      <p class="lk-tagline">Một trải nghiệm xiếc 360°. Một truyền thuyết được đánh thức bằng nghệ thuật và công nghệ.</p>
-      <a href="BookingTicket.html" class="btn-gold-solid"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
-    </div>
+    <a class="gallery-more" href="https://www.facebook.com/liendoanxiec" target="_blank" rel="noopener">
+      <span data-i18n="ab.galleryBtn">Xem thêm hình ảnh</span> <svg class="icon"><use href="#ic-plus"/></svg>
+    </a>
   </div>
 </section>
 
@@ -709,7 +628,7 @@
             <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
             <div class="footer-value">
               <span class="footer-label" data-i18n="contact.address">Địa chỉ</span>
-              <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+              <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
             </div>
           </div>
           <div class="footer-row">
@@ -742,7 +661,7 @@
         <h4 class="footer-heading" data-i18n="footer.mapHeading">TÌM ĐƯỜNG ĐẾN LUMISHOW</h4>
         <div class="footer-map-frame-wrap">
           <iframe class="footer-map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d276.8174182100974!2d105.84242121927876!3d21.01681956385038!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc654b563c9%3A0x9bcb7dfff2b12124!2zUuG6oXAgWGnhur9jIFRydW5nIMavxqFuZw!5e0!3m2!1svi!2s!4v1787208605122!5m2!1svi!2s" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Bản đồ vị trí LumiShow"></iframe>
-          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=192+L%C3%AA+Tr%E1%BB%8Dng+T%E1%BA%A5n%2C+Thanh+Xu%C3%A2n%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
+          <a class="footer-map-badge" href="https://www.google.com/maps/search/?api=1&query=R%E1%BA%A1p+Xi%E1%BA%BFc+Trung+%C6%AF%C6%A1ng%2C+67-69+Tr%E1%BA%A7n+Nh%C3%A2n+T%C3%B4ng%2C+H%C3%A0+N%E1%BB%99i" target="_blank" rel="noopener">
             <svg class="icon"><use href="#ic-map-pin"/></svg>
             <span data-i18n="footer.gmapsBtn">Google Maps</span>
           </a>
@@ -750,7 +669,7 @@
         <div class="footer-map-caption">
           <div class="footer-icon"><svg class="icon"><use href="#ic-map-pin"/></svg></div>
           <div class="footer-value">
-            <span data-i18n="contact.addressVal">192 Lê Trọng Tấn, Thanh Xuân, Hà Nội</span>
+            <span data-i18n="contact.addressVal">67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội</span>
             <span class="footer-map-note" data-i18n="footer.mapNote">Gần Royal City, cách Ngã Tư Sở 2.5km</span>
           </div>
         </div>
@@ -815,19 +734,10 @@
       'ab.f4':'Âm nhạc & ánh sáng', 'ab.f5':'3D Mapping Panorama 360°',
       'ab.journeyTitle':'Hành trình 5 Hồi',
       'ab.j1num':'Hồi I', 'ab.j1title':'Đất nước thanh bình',
-      'ab.t1a':'Đu lượn trên cao', 'ab.t1b':'Hip hop', 'ab.t1c':'Lăn vòng', 'ab.t1d':'Thăng bằng', 'ab.t1e':'Đu dây đôi',
       'ab.j2num':'Hồi II', 'ab.j2title':'Giang sơn của Sơn Tinh',
-      'ab.t2a':'Thăng bằng', 'ab.t2b':'Nhào lộn', 'ab.t2c':'Đạo cụ & cột tre',
       'ab.j3num':'Hồi III', 'ab.j3title':'Vương quốc Thủy Tinh',
-      'ab.t3a':'Lưới trên cao', 'ab.t3b':'Đu dây bay', 'ab.t3c':'Chuyển động hình thể',
       'ab.j4num':'Hồi IV', 'ab.j4title':'Đại dương cuộn sóng',
-      'ab.t4a':'Nhào lộn', 'ab.t4b':'Bay đu dây', 'ab.t4c':'Đối kháng trên không',
       'ab.j5num':'Hồi V', 'ab.j5title':'Huyền thoại Đất - Nước',
-      'ab.t5a':'Lễ hội', 'ab.t5b':'Múa kết tập thể',
-      'ab.qb1e':'Truyền thuyết Việt', 'ab.qb1s':'Một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh, bằng ngôn ngữ sân khấu đương đại.',
-      'ab.qb2e':'Nghệ thuật xiếc', 'ab.qb2s':'Kỹ thuật trình diễn trên không, ảo thuật và chuyển động thật của nghệ sĩ.',
-      'ab.qb3':'Một trải nghiệm chưa từng được kể theo cách này',
-      'ab.qb4e':'Công nghệ Panorama 360°', 'ab.qb4s':'Âm nhạc, ánh sáng và 3D Mapping biến cả vòm rạp thành sân khấu sống động.',
       'ab.galleryE':'Thư viện hình ảnh', 'ab.galleryBtn':'Xem thêm hình ảnh',
       'ab.lkE':'Lời kết'
     },
@@ -843,19 +753,10 @@
       'ab.f4':'Music & light', 'ab.f5':'3D Mapping Panorama 360°',
       'ab.journeyTitle':'A journey in 5 acts',
       'ab.j1num':'Act I', 'ab.j1title':'A land at peace',
-      'ab.t1a':'Aerial silk', 'ab.t1b':'Hip hop', 'ab.t1c':'Cyr wheel', 'ab.t1d':'Balance', 'ab.t1e':'Duo trapeze',
       'ab.j2num':'Act II', 'ab.j2title':'The mountain realm',
-      'ab.t2a':'Balance', 'ab.t2b':'Acrobatics', 'ab.t2c':'Props & bamboo pole',
       'ab.j3num':'Act III', 'ab.j3title':'The water kingdom',
-      'ab.t3a':'Aerial net', 'ab.t3b':'Flying trapeze', 'ab.t3c':'Physical theatre',
       'ab.j4num':'Act IV', 'ab.j4title':'The ocean at war',
-      'ab.t4a':'Acrobatics', 'ab.t4b':'Flying trapeze', 'ab.t4c':'Aerial combat',
       'ab.j5num':'Act V', 'ab.j5title':'The legend of land & water',
-      'ab.t5a':'Celebration', 'ab.t5b':'Ensemble finale',
-      'ab.qb1e':'Vietnamese legend', 'ab.qb1s':'A national story told in the language of contemporary stagecraft.',
-      'ab.qb2e':'Circus artistry', 'ab.qb2s':'Aerial technique, illusion and the real motion of live performers.',
-      'ab.qb3':'An experience never told quite like this',
-      'ab.qb4e':'360° Panorama technology', 'ab.qb4s':'Music, light and 3D mapping turn the whole dome into the stage.',
       'ab.galleryE':'Photo gallery', 'ab.galleryBtn':'View more photos',
       'ab.lkE':'Closing'
     }
