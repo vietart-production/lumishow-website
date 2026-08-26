@@ -19,17 +19,17 @@ const SHOWTIME_ID = "2026-09-25_17:30";
 const TIERS = {
     "son-than": {
         name: "Sơn Thần",
-        price: 500000
+        price: 300000
     },
 
     "thuy-quai": {
         name: "Thủy Quái",
-        price: 400000
+        price: 250000
     },
 
     "mi-nuong": {
         name: "Mị Nương",
-        price: 300000
+        price: 200000
     }
 };
 
