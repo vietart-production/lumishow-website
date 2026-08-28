@@ -1039,13 +1039,17 @@ const ROWS = [
   {code:'P', r:604.6, total:96, entryStart:202.1, hauTruongEnd:339.3, wcGap:[247.3,291.9]},
 ];
 /* Rạp không dùng chữ F và J nên hàng nhảy từ E sang G, I sang K */
-const NEAR_ROWS = new Set(['B','C','D','E']);
-const MID_ROWS  = new Set(['G','H','I','K']);
+/* Hạng ghế theo VỊ TRÍ THẬT (trước/sau sân khấu), không chỉ theo tên hàng —
+   khớp đúng logic đã seed ở backend/scripts/seatTiers.generate.js:
+   phía trước (y > CY, đối diện sân khấu) hàng B,C,D,E,G,H,I = Sơn Thần,
+   phía trước hàng K,L,M,N,O,P = Thủy Quái; còn lại (toàn bộ phía sau) = Mị Nương. */
+const INNER_ROWS = new Set(['B','C','D','E','G','H','I']);
+const OUTER_ROWS = new Set(['K','L','M','N','O','P']);
 
-/* Hạng ghế theo hàng — khớp với ranh giới VIP/Thường thật của rạp (rơi đúng vào hàng D/E) */
-function tierOf(rowCode){
-  if (NEAR_ROWS.has(rowCode)) return 'son-than';
-  if (MID_ROWS.has(rowCode))  return 'thuy-quai';
+function tierOf(rowCode, y){
+  const front = y > CY;
+  if (front && INNER_ROWS.has(rowCode)) return 'son-than';
+  if (front && OUTER_ROWS.has(rowCode)) return 'thuy-quai';
   return 'mi-nuong';
 }
 
@@ -1071,8 +1075,8 @@ function buildSeats(){
   return Object.keys(SEAT_XY).map(id => {
     const m = id.match(/^([A-Z]+)(\d+)$/);
     const rowCode = m[1], num = parseInt(m[2], 10);
-    const tier = tierOf(rowCode);
     const [x, y] = SEAT_XY[id];
+    const tier = tierOf(rowCode, y);
     return {
       id, row: rowCode, num, side: num % 2 === 1 ? 'odd' : 'even',
       tier, price: TIERS[tier].price, x, y
