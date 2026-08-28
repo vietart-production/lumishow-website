@@ -1,5 +1,6 @@
 const { db } = require("../src/config/firebase");
 const { FieldValue } = require("firebase-admin/firestore");
+const SEAT_TIERS = require("./seatTiers.json");
 
 
 // ==========================================
@@ -35,81 +36,50 @@ const TIERS = {
 
 
 // ==========================================
-// HÀNG GHẾ
-// Chỉ cần code + tổng số ghế cho Firestore
+// HẠNG GHẾ THEO TỪNG GHẾ THẬT
+// ------------------------------------------
+// seatTiers.json là danh sách 1181 ghế thật + hạng của từng ghế, tự sinh
+// từ toạ độ thật trong frontend/BookingTicket.html (SEAT_XY), theo quy tắc:
+//   - Phía trước (đối diện sân khấu, y > CY): hàng B,C,D,E,G,H,I = "son-than"
+//     (300k), hàng K,L,M,N,O,P = "thuy-quai" (250k).
+//   - Phía sau (mọi hàng) = "mi-nuong" (200k).
+// Dùng đúng 1181 ghế thật này thay vì tính theo tổng số ghế/hàng, để tránh
+// lệch với sơ đồ ghế thật bên frontend (trước đây sinh dư 105 ghế ảo).
+// Muốn tái tạo lại file này: xem seatTiers.generate.js.
 // ==========================================
 
-const ROWS = [
-    { code: "B", total: 64 },
-    { code: "C", total: 78 },
-    { code: "D", total: 88 },
-    { code: "E", total: 98 },
-
-    { code: "G", total: 106 },
-    { code: "H", total: 108 },
-    { code: "I", total: 86 },
-    { code: "K", total: 116 },
-
-    { code: "L", total: 128 },
-    { code: "M", total: 130 },
-    { code: "N", total: 96 },
-    { code: "O", total: 92 },
-    { code: "P", total: 96 }
-];
-
-
-const NEAR_ROWS = new Set(["B", "C", "D", "E"]);
-
-const MID_ROWS = new Set(["G", "H", "I", "K"]);
-
-
-function tierOf(rowCode) {
-    if (NEAR_ROWS.has(rowCode)) {
-        return "son-than";
-    }
-
-    if (MID_ROWS.has(rowCode)) {
-        return "thuy-quai";
-    }
-
-    return "mi-nuong";
-}
-
-
-// ==========================================
-// TẠO DANH SÁCH GHẾ
-// ==========================================
+const SEAT_CODE_RE = /^([A-Z]+)(\d+)$/;
 
 function buildSeats() {
     const seats = [];
 
-    for (const row of ROWS) {
+    for (const seatCode of Object.keys(SEAT_TIERS)) {
 
-        const tier = tierOf(row.code);
+        const [, row, numberStr] = seatCode.match(SEAT_CODE_RE);
+        const number = parseInt(numberStr, 10);
+
+        const tier = SEAT_TIERS[seatCode];
         const price = TIERS[tier].price;
 
-        for (let number = 1; number <= row.total; number++) {
+        seats.push({
+            seatCode,
+            row,
+            number,
 
-            seats.push({
-                seatCode: `${row.code}${number}`,
-                row: row.code,
-                number: number,
+            side: number % 2 === 1
+                ? "odd"
+                : "even",
 
-                side: number % 2 === 1
-                    ? "odd"
-                    : "even",
+            tier,
+            tierName: TIERS[tier].name,
 
-                tier: tier,
-                tierName: TIERS[tier].name,
+            price,
 
-                price: price,
+            status: "AVAILABLE",
 
-                status: "AVAILABLE",
-
-                holdId: null,
-                holdExpiresAt: null
-            });
-        }
+            holdId: null,
+            holdExpiresAt: null
+        });
     }
 
     return seats;
