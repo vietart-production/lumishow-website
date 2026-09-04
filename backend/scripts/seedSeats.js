@@ -9,7 +9,7 @@ const SEAT_TIERS = require("./seatTiers.json");
 
 const SHOW_ID = "son-than-thuy-quai";
 
-const SHOWTIME_ID = "2026-09-25_16:30";
+const SHOWTIME_ID = "2026-09-25_20:00";
 
 
 // ==========================================

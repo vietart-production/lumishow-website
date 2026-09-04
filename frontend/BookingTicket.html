@@ -2435,7 +2435,14 @@ coNextBtn.addEventListener('click', async () => {
    ========================================================= */
 const SEASON_START = new Date(2026, 8, 25);
 const SEASON_END   = new Date(2026, 11, 27);
-const SHOWTIMES = ['16:30','20:00'];
+/* Mỗi ngày trong tuần diễn có suất giờ riêng — Thứ 6 chỉ diễn 1 suất tối,
+   Thứ 7 & Chủ nhật diễn 2 suất. Thứ tự khớp với DOWS (index 0=Thứ 6,
+   1=Thứ 7, 2=Chủ nhật). */
+const SHOWTIMES_BY_DAY = [
+  ['20:00'],
+  ['16:30','20:00'],
+  ['10:00','16:30']
+];
 const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 const DOWS = ['Thứ 6','Thứ 7','Chủ nhật'];
 
@@ -2453,32 +2460,40 @@ const pad = n => String(n).padStart(2,'0');
 
 function currentShowKey(){
   const d = runs[runIndex][dayIndex];
-  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + '_' + SHOWTIMES[timeIndex];
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + '_' + SHOWTIMES_BY_DAY[dayIndex][timeIndex];
+}
+
+/* Tìm vị trí lịch diễn (tuần + ngày) khớp với một mốc ngày YYYY-MM-DD,
+   không quan tâm suất giờ — dùng khi chỉ có ngày (vd. từ trang chủ). */
+function findScheduleIndexByDateKey(datePart){
+  for (let r = 0; r < runs.length; r++){
+    for (let d = 0; d < runs[r].length; d++){
+      const date = runs[r][d];
+      const key = date.getFullYear() + '-' + pad(date.getMonth()+1) + '-' + pad(date.getDate());
+      if (key === datePart) return { runIndex: r, dayIndex: d };
+    }
+  }
+  return null;
 }
 
 /* Chiều ngược lại của currentShowKey(): tìm vị trí lịch diễn khớp với một
    showKey đã lưu, dùng khi khôi phục phiên giữ ghế sau reload. */
 function findScheduleIndexByShowKey(showKey){
   const [datePart, timePart] = String(showKey).split('_');
-  const timeIndex = SHOWTIMES.indexOf(timePart);
+  const dateIdx = findScheduleIndexByDateKey(datePart);
+  if (!dateIdx) return null;
+  const timeIndex = SHOWTIMES_BY_DAY[dateIdx.dayIndex].indexOf(timePart);
   if (timeIndex === -1) return null;
-  for (let r = 0; r < runs.length; r++){
-    for (let d = 0; d < runs[r].length; d++){
-      const date = runs[r][d];
-      const key = date.getFullYear() + '-' + pad(date.getMonth()+1) + '-' + pad(date.getDate());
-      if (key === datePart) return { runIndex: r, dayIndex: d, timeIndex };
-    }
-  }
-  return null;
+  return { ...dateIdx, timeIndex };
 }
 
 /* Nhận ngày được chọn sẵn từ lịch diễn ở trang chủ (index.html truyền qua
-   ?date=YYYY-MM-DD). Chỉ set ngày, giữ nguyên suất diễn mặc định đầu tiên
-   vì trang chủ chưa cho chọn suất giờ. */
+   ?date=YYYY-MM-DD). Chỉ set ngày, giữ suất giờ mặc định (đầu tiên) của
+   đúng ngày đó vì trang chủ chưa cho chọn suất giờ. */
 (function applyDateFromUrl(){
   const dateParam = new URLSearchParams(location.search).get('date');
   if (!dateParam) return;
-  const idx = findScheduleIndexByShowKey(`${dateParam}_${SHOWTIMES[0]}`);
+  const idx = findScheduleIndexByDateKey(dateParam);
   if (idx) {
     runIndex = idx.runIndex;
     dayIndex = idx.dayIndex;
@@ -2497,13 +2512,16 @@ function renderSchedule(){
     node.innerHTML = '<span class="d-dow">' + DOWS[i] + '</span>' +
                      '<span class="d-dom">' + pad(date.getDate()) + '</span>' +
                      '<span class="d-moy">' + MONTHS[date.getMonth()] + '</span>';
-    node.addEventListener('click', () => switchShow(() => { dayIndex = i; }));
+    // Đổi ngày thì suất giờ của ngày cũ có thể không tồn tại ở ngày mới
+    // (vd. đang xem suất 20:00 của Thứ 7, bấm sang Thứ 6 chỉ có 1 suất
+    // 20:00 ở index 0) — luôn về suất đầu tiên của ngày vừa chọn.
+    node.addEventListener('click', () => switchShow(() => { dayIndex = i; timeIndex = 0; }));
     track.appendChild(node);
   });
 
   const timeRow = document.getElementById('timeRow');
   timeRow.textContent = '';
-  SHOWTIMES.forEach((t, i) => {
+  SHOWTIMES_BY_DAY[dayIndex].forEach((t, i) => {
     const b = document.createElement('button');
     b.className = 'time-btn' + (i === timeIndex ? ' active' : '');
     b.textContent = t;
@@ -2516,7 +2534,7 @@ function renderSchedule(){
 
   const d = run[dayIndex];
   document.getElementById('showWhen').textContent =
-    DOWS[dayIndex] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' · ' + SHOWTIMES[timeIndex];
+    DOWS[dayIndex] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' · ' + SHOWTIMES_BY_DAY[dayIndex][timeIndex];
 }
 
 /* Đổi suất: nếu đang có ghế chọn thì hỏi trước, tránh mất công chọn lại */
@@ -2540,9 +2558,9 @@ function switchShow(mutate){
 }
 
 document.getElementById('weekPrev').addEventListener('click',
-  () => { if (runIndex > 0) switchShow(() => { runIndex--; dayIndex = 0; }); });
+  () => { if (runIndex > 0) switchShow(() => { runIndex--; dayIndex = 0; timeIndex = 0; }); });
 document.getElementById('weekNext').addEventListener('click',
-  () => { if (runIndex < runs.length - 1) switchShow(() => { runIndex++; dayIndex = 0; }); });
+  () => { if (runIndex < runs.length - 1) switchShow(() => { runIndex++; dayIndex = 0; timeIndex = 0; }); });
 
 async function loadShow() {
   if (holdSession) {
