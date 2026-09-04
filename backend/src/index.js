@@ -9,6 +9,7 @@ const bookingRoutes = require("./routes/booking.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const ticketRoutes = require("./routes/ticket.routes");
 const contactRoutes = require("./routes/contact.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.use("/api", apiLimiter, bookingRoutes);
 app.use("/api", apiLimiter, paymentRoutes);
 app.use("/api", apiLimiter, ticketRoutes);
 app.use("/api", apiLimiter, contactRoutes);
+app.use("/api", apiLimiter, adminRoutes);
 
 
 app.get("/health", async (req, res) => {

@@ -7,6 +7,16 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "expiresAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "tickets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "showId", "order": "ASCENDING" },
+        { "fieldPath": "showtimeId", "order": "ASCENDING" },
+        { "fieldPath": "seatId", "order": "ASCENDING" },
+        { "fieldPath": "ticketStatus", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
