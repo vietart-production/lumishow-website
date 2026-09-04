@@ -440,7 +440,11 @@
     .nav-links{display:none;}
     .menu-toggle{display:flex;}
     .navbar{padding-top:13px;padding-bottom:13px;}
-    .hero{padding-top:30px;padding-bottom:70px;}
+    /* Ảnh KV (SonThanThuyQuai.jpg) khổ ngang ~16:9, khung hero trên mobile lại
+       rất cao/hẹp — object-fit:cover phải cắt gần hết 2 bên (2 nhân vật ở rìa
+       ảnh) để lấp đầy chiều cao. Hạ min-height để khung gần tỉ lệ ảnh hơn,
+       đỡ cắt mất 2 nhân vật. */
+    .hero{padding-top:30px;padding-bottom:70px;min-height:min(60vh,460px);}
     .section-title{font-size:24px;}
     .news-grid{grid-template-columns:1fr;}
     /* margin-left/top cố định của hero-eyebrow được canh mắt cho màn desktop —

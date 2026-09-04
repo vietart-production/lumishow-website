@@ -363,7 +363,9 @@
     .nav-links{display:none;}
     .menu-toggle{display:flex;}
     .navbar{padding-top:13px;padding-bottom:13px;}
-    .about-hero{padding-top:40px;padding-bottom:44px;}
+    /* Video trailer khổ ngang, khung hero mobile lại cao/hẹp — object-fit:cover
+       phải cắt bớt 2 bên để lấp đầy. Hạ min-height gần tỉ lệ video hơn, đỡ cắt. */
+    .about-hero{padding-top:40px;padding-bottom:44px;min-height:min(48vh,300px);}
     .journey-row{grid-template-columns:1fr;}
     .journey-line,.journey-row::before{display:none;}
     .journey-media{min-height:220px;aspect-ratio:4/3;}
@@ -378,9 +380,9 @@
     }
   }
   @media (max-width:560px){
-    .ah-actions{flex-direction:column;width:100%;max-width:320px;margin:0 auto;}
+    .ah-actions{flex-direction:column;align-items:center;width:100%;max-width:320px;margin:0 auto;}
     .btn-outline-light{width:100%;justify-content:center;}
-    .ah-actions .btn-watch-video{justify-content:center;}
+    .ah-actions .btn-watch-video{width:100%;justify-content:center;}
   }
   @media (max-width:480px){
     :root{--gutter:14px;}
