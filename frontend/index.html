@@ -171,9 +171,11 @@
   .hero-bg-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;}
   .hero-bg-overlay{
     position:absolute;inset:0;pointer-events:none;
-    background:linear-gradient(90deg,var(--overlay-strong) 0%,var(--overlay-mid) 45%,var(--overlay-soft) 100%);
+    background:
+      linear-gradient(0deg,var(--overlay-strong) 0%,transparent 32%),
+      linear-gradient(90deg,var(--overlay-strong) 0%,var(--overlay-mid) 45%,var(--overlay-soft) 100%);
     box-shadow:inset 0 0 120px 30px rgba(2,8,15,.6);
-    transition:opacity 1.4s ease;
+    transition:opacity 1.4s ease,background .3s ease;
   }
   .hero-bg-overlay.dim{opacity:.5;}
   .hero-inner{
@@ -443,8 +445,14 @@
     /* Ảnh KV (SonThanThuyQuai.jpg) khổ ngang ~16:9, khung hero trên mobile lại
        rất cao/hẹp — object-fit:cover phải cắt gần hết 2 bên (2 nhân vật ở rìa
        ảnh) để lấp đầy chiều cao. Hạ min-height để khung gần tỉ lệ ảnh hơn,
-       đỡ cắt mất 2 nhân vật. */
-    .hero{padding-top:30px;padding-bottom:70px;min-height:min(60vh,460px);}
+       đỡ cắt mất 2 nhân vật. Khi hạ chiều cao, ảnh không còn bị cắt theo chiều
+       dọc nữa (hiện trọn cả phần chân/nền phía dưới) — tăng vùng gradient tối
+       ở đáy để che phần đó và giữ chữ LumiShow dễ đọc. */
+    .hero{padding-top:30px;padding-bottom:70px;min-height:min(52vh,400px);}
+    .hero-bg-overlay{background:
+      linear-gradient(0deg,var(--overlay-strong) 0%,var(--overlay-strong) 12%,transparent 50%),
+      linear-gradient(90deg,var(--overlay-strong) 0%,var(--overlay-mid) 45%,var(--overlay-soft) 100%);
+    }
     .section-title{font-size:24px;}
     .news-grid{grid-template-columns:1fr;}
     /* margin-left/top cố định của hero-eyebrow được canh mắt cho màn desktop —
