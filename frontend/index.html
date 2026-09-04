@@ -443,6 +443,12 @@
     .hero{padding-top:30px;padding-bottom:70px;}
     .section-title{font-size:24px;}
     .news-grid{grid-template-columns:1fr;}
+    /* margin-left/top cố định của hero-eyebrow được canh mắt cho màn desktop —
+       trên điện thoại tạo cảm giác chữ bị lệch/trôi khỏi lề, cỡ chữ cũng quá to
+       so với bề rộng màn hình. Bỏ offset, giảm cỡ chữ theo vw. */
+    .hero-eyebrow,.hero-eyebrow-2{margin-left:0;top:0;}
+    .hero-eyebrow{font-size:clamp(19px,6vw,25px);}
+    .hero-eyebrow-2{font-size:clamp(16px,5vw,23px);margin-top:4px;}
     /* Thu nhỏ cụm nav-right + nút CTA để không bị cắt khi màn hình hẹp */
     .nav-right{gap:clamp(3px,1.6vw,8px);}
     .btn-primary{
