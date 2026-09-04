@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Mặc định từ chối mọi thứ — toàn bộ ghi/đọc thật (shows, showtimes,
+    // seats, holds, orders) chỉ đi qua Admin SDK ở backend Node, không cần
+    // Security Rules (Admin SDK bỏ qua rules hoàn toàn). Chỉ mở đúng phần
+    // client Unity cần: đọc + check-in vé.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // App soát vé (Unity) đọc + check-in vé qua Firebase Client SDK, có bật
+    // Anonymous Auth. Chỉ cho phép:
+    //  - đọc (để tìm vé theo ticketCode)
+    //  - update đúng 2 field checkedIn/checkedInAt, và chỉ theo chiều
+    //    false -> true (không cho tự "un-checkin" hay sửa field khác như
+    //    price/customerName qua client — chống giả mạo nếu thiết bị bị lộ).
+    match /tickets/{ticketId} {
+      allow read: if request.auth != null;
+
+      allow update: if request.auth != null
+        && resource.data.checkedIn == false
+        && request.resource.data.checkedIn == true
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['checkedIn', 'checkedInAt']);
+
+      allow create, delete: if false;
+    }
+  }
+}
