@@ -159,7 +159,7 @@
     text-align:center;
   }
   .ah-bg{position:absolute;inset:0;z-index:0;overflow:hidden;background:#05070a;}
-  .ah-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;}
+  .ah-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;border:0;pointer-events:none;}
   .ah-bg-overlay{position:absolute;inset:0;
     background:
       linear-gradient(180deg,rgba(3,7,10,.05) 0%,rgba(3,7,10,.15) 62%,rgba(3,7,10,.92) 100%),
@@ -206,7 +206,7 @@
   .video-modal.open{display:flex;}
   .video-modal-backdrop{position:absolute;inset:0;background:rgba(2,5,9,.9);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
   .video-modal-inner{position:relative;z-index:1;width:100%;max-width:960px;aspect-ratio:16/9;background:#000;border-radius:var(--r-md);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.6);}
-  .video-modal-inner video{width:100%;height:100%;display:block;}
+  .video-modal-inner video,.video-modal-inner iframe{width:100%;height:100%;display:block;border:0;}
   .video-modal-close{position:absolute;top:-44px;right:0;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .2s;}
   .video-modal-close:hover{background:rgba(255,255,255,.22);}
 
@@ -453,9 +453,9 @@
 <!-- ============ ABOUT HERO ============ -->
 <section class="about-hero">
   <div class="ah-bg">
-    <video class="ah-bg-img" autoplay muted loop playsinline>
-      <source src="video/Trailer_SonThanThuyQuai.mp4" type="video/mp4">
-    </video>
+    <!-- Video trailer nhúng từ YouTube (id IzLuGDKJ-lE) thay vì file mp4 121MB
+         host trực tiếp, tránh tốn băng thông Firebase Hosting mỗi lượt xem trang. -->
+    <iframe class="ah-bg-img" src="https://www.youtube-nocookie.com/embed/IzLuGDKJ-lE?autoplay=1&mute=1&loop=1&playlist=IzLuGDKJ-lE&controls=0&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&showinfo=0" title="Trailer Sơn Thần Thủy Quái" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin"></iframe>
     <div class="ah-bg-overlay"></div>
   </div>
   <div class="ah-inner">
@@ -477,9 +477,7 @@
   <div class="video-modal-backdrop" id="videoModalBackdrop"></div>
   <div class="video-modal-inner">
     <button class="video-modal-close" id="videoModalClose" aria-label="Đóng">&times;</button>
-    <video id="videoModalPlayer" controls playsinline>
-      <source src="video/Trailer_SonThanThuyQuai.mp4" type="video/mp4">
-    </video>
+    <iframe id="videoModalPlayer" src="" title="Trailer Sơn Thần Thủy Quái" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
   </div>
 </div>
 
@@ -759,12 +757,11 @@
 
   function openVideoModal(){
     videoModal.classList.add('open');
-    videoModalPlayer.currentTime = 0;
-    videoModalPlayer.play().catch(() => {});
+    videoModalPlayer.src = 'https://www.youtube-nocookie.com/embed/IzLuGDKJ-lE?autoplay=1&playsinline=1&rel=0&modestbranding=1';
   }
   function closeVideoModal(){
     videoModal.classList.remove('open');
-    videoModalPlayer.pause();
+    videoModalPlayer.src = '';
   }
   heroWatchBtn?.addEventListener('click', openVideoModal);
   videoModalBackdrop?.addEventListener('click', closeVideoModal);
