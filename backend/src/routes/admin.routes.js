@@ -6,8 +6,11 @@ const router = express.Router();
 const {
     checkPin,
     cancelTicketBySeat,
-    createManualTicket
+    createManualTicket,
+    listUpcomingShowtimes
 } = require("../services/admin.service");
+
+const SHOW_ID = "son-than-thuy-quai";
 
 // Giới hạn chặt — đây là endpoint nhạy cảm nhất hệ thống (huỷ/tạo vé bằng
 // tay), PIN chỉ 7 số nên cần chặn dò mật khẩu tích cực hơn rate-limit chung.
@@ -41,6 +44,36 @@ function requirePin(req, res, next) {
 
 router.post("/admin/verify-pin", requirePin, (req, res) => {
     return res.status(200).json({ success: true });
+});
+
+// ==========================================
+// POST /api/admin/showtimes/list
+// body: { password }
+// Trả về các suất diễn sắp tới (mùa diễn kéo dài nhiều tháng, mỗi ngày
+// trong tuần giờ diễn khác nhau — xem seedSeats.js) để app Unity cho nhân
+// viên chọn, không phải gõ tay showtimeId.
+// ==========================================
+
+router.post("/admin/showtimes/list", requirePin, async (req, res) => {
+
+    try {
+
+        const showtimes = await listUpcomingShowtimes({ showId: SHOW_ID, limit: 10 });
+
+        return res.status(200).json({
+            success: true,
+            showtimes
+        });
+
+    } catch (error) {
+
+        console.error("ADMIN LIST SHOWTIMES ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể lấy danh sách suất diễn"
+        });
+    }
 });
 
 // ==========================================

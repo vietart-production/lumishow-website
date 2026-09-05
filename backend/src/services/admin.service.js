@@ -1,4 +1,7 @@
 const { db } = require("../config/firebase");
+const { FieldPath } = require("firebase-admin/firestore");
+
+const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
 
 // ==========================================
 // PIN ADMIN — kiểm tra ở SERVER, không hardcode trong app Unity (APK có
@@ -196,8 +199,54 @@ async function createManualTicket({
     };
 }
 
+// ==========================================
+// LIỆT KÊ SUẤT DIỄN SẮP TỚI — cho app Unity chọn thay vì nhân viên phải tự
+// tính lịch/gõ tay showtimeId. Mùa diễn kéo dài nhiều tháng, mỗi ngày trong
+// tuần có giờ diễn riêng (xem seedSeats.js), không thể hardcode 1 suất cố
+// định như trước nữa. showtimeId dạng "YYYY-MM-DD_HH:MM" nên so sánh chuỗi
+// == so sánh thời gian thật, dùng thẳng documentId() để sắp xếp/lọc, không
+// cần field ngày riêng hay composite index.
+// ==========================================
+
+function formatShowtimeLabel(showtimeId) {
+
+    const [datePart, timePart] = showtimeId.split("_");
+    const [y, m, d] = datePart.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+
+    const dow = DOW_NAMES[date.getDay()];
+    const dd = String(d).padStart(2, "0");
+    const mm = String(m).padStart(2, "0");
+
+    return `${dow}, ${dd}/${mm}/${y} · ${timePart}`;
+}
+
+async function listUpcomingShowtimes({ showId, limit = 10 }) {
+
+    if (!showId) {
+        throw new Error("Thiếu showId");
+    }
+
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    const snap = await db
+        .collection("shows").doc(showId)
+        .collection("showtimes")
+        .orderBy(FieldPath.documentId())
+        .startAt(todayKey)
+        .limit(limit)
+        .get();
+
+    return snap.docs.map((doc) => ({
+        showtimeId: doc.id,
+        label: formatShowtimeLabel(doc.id)
+    }));
+}
+
 module.exports = {
     checkPin,
     cancelTicketBySeat,
-    createManualTicket
+    createManualTicket,
+    listUpcomingShowtimes
 };
