@@ -121,9 +121,7 @@ async function seedShowAndShowtime(showtimeId) {
 
     await showRef.set({
         name: "Sơn Thần Thủy Quái",
-        status: "active",
-        reserved: 0,
-        sold: 0
+        status: "active"
     }, { merge: true });
 
 
@@ -131,22 +129,29 @@ async function seedShowAndShowtime(showtimeId) {
         .collection("showtimes")
         .doc(showtimeId);
 
-    await showtimeRef.set({
-        status: "OPEN"
-    }, { merge: true });
+    // Đọc trước để biết showtime đã tồn tại chưa — CHỈ set status "OPEN" khi
+    // tạo mới. Nếu showtime đã có sẵn (kể cả từng bị đổi sang trạng thái khác
+    // bởi 1 tính năng admin nào đó sau này, ví dụ đóng suất/huỷ suất), chạy
+    // lại script sẽ không âm thầm ép nó về "OPEN" nữa.
+    const showtimeSnap = await showtimeRef.get();
 
-    console.log(`Đã tạo/cập nhật show "${SHOW_ID}" và showtime "${showtimeId}".`);
+    if (!showtimeSnap.exists) {
+        await showtimeRef.set({ status: "OPEN" });
+        console.log(`Đã tạo showtime "${showtimeId}" (status OPEN).`);
+    } else {
+        console.log(`Showtime "${showtimeId}" đã tồn tại, giữ nguyên status hiện tại.`);
+    }
 
-    return showtimeRef;
+    return { showtimeRef, showtimeSnap };
 }
 
 
-async function seedSeatsForShowtime(showtimeRef, showtimeId, seats) {
+async function seedSeatsForShowtime(showtimeRef, showtimeSnap, showtimeId, seats) {
 
-    // Cờ seatsSeeded đánh dấu suất này đã seed đủ ghế — bỏ qua ngay từ 1 lần
-    // đọc showtime doc, khỏi phải đọc lại toàn bộ collection seats (1181 doc)
-    // mỗi lần chạy lại script, ví dụ khi chỉ thêm suất diễn mới ở cuối mùa.
-    const showtimeSnap = await showtimeRef.get();
+    // Cờ seatsSeeded đánh dấu suất này đã seed đủ ghế — bỏ qua ngay từ dữ liệu
+    // đã đọc sẵn ở seedShowAndShowtime, khỏi phải đọc lại toàn bộ collection
+    // seats (1181 doc) mỗi lần chạy lại script, ví dụ khi chỉ thêm suất diễn
+    // mới ở cuối mùa.
     const showtimeData = showtimeSnap.data() || {};
 
     if (showtimeData.seatsSeeded === true && showtimeData.seatCount === seats.length) {
@@ -202,8 +207,8 @@ async function seedSeats() {
     console.log(`Chuẩn bị seed ${showtimeIds.length} suất diễn.`);
 
     for (const showtimeId of showtimeIds) {
-        const showtimeRef = await seedShowAndShowtime(showtimeId);
-        await seedSeatsForShowtime(showtimeRef, showtimeId, seats);
+        const { showtimeRef, showtimeSnap } = await seedShowAndShowtime(showtimeId);
+        await seedSeatsForShowtime(showtimeRef, showtimeSnap, showtimeId, seats);
     }
 
 
