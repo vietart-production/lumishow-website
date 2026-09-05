@@ -395,7 +395,8 @@
     background:#0a0d10;color:inherit;
   }
   .news-slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease;}
-  .news-slide:hover img{transform:scale(1.03);}
+  .news-slide iframe{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border:0;pointer-events:none;transition:transform .6s ease;}
+  .news-slide:hover img,.news-slide:hover iframe{transform:scale(1.03);}
   .news-slide-scrim{position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,7,6,.85) 0%,rgba(3,7,6,.4) 42%,transparent 68%);pointer-events:none;}
   .news-slide-badge{position:absolute;top:16px;left:18px;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--white);background:rgba(0,0,0,.45);padding:5px 11px;border-radius:var(--r-pill);text-transform:uppercase;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
   .news-slide-content{position:absolute;left:0;right:0;bottom:0;padding:clamp(16px,3vw,28px) clamp(18px,3.4vw,30px) clamp(16px,2.6vw,24px);}
@@ -950,11 +951,11 @@
       desc: 'Xiếc mạo hiểm đẳng cấp: những pha không chiến xé gió của Sơn Thần cùng màn thủy chiến ma mị của Thủy Quái khiến bạn không thể rời mắt dù chỉ 1 giây!'
     },
     {
-      img: 'image/SonThanThuyQuai.jpg',
-      href: '#',
-      date: '12.08', cat: 'Rạp Xiếc Trung Ương',
-      title: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit sed do eiusmod tempor incididunt.',
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
+      youtubeId: 'Xo8B3rfir-k',
+      href: 'https://www.facebook.com/reel/1653055076528474',
+      date: '05.09', cat: 'Rạp Xiếc Trung Ương',
+      title: 'TEASER SHOW DIỄN XIẾC SƠN THẦN - THỦY QUÁI 🎭',
+      desc: 'LumiShow mang tới góc nhìn mới của câu chuyện Sơn Tinh - Thủy Tinh, kết hợp nghệ thuật Xiếc và công nghệ trình chiếu hiện đại. Công diễn từ 25.09.2026 tại Rạp Xiếc Trung Ương, 67-69 Trần Nhân Tông, Hà Nội.'
     }
   ];
 
@@ -969,7 +970,9 @@
 
     const slideHtml = n => `
       <a class="news-slide" href="${n.href}" target="_blank" rel="noopener">
-        <img src="${n.img}" alt="${escapeHtml(n.title)}" loading="lazy">
+        ${n.youtubeId
+          ? `<iframe src="https://www.youtube-nocookie.com/embed/${n.youtubeId}?controls=0&modestbranding=1&rel=0" title="${escapeHtml(n.title)}" loading="lazy" allow="encrypted-media; picture-in-picture"></iframe>`
+          : `<img src="${n.img}" alt="${escapeHtml(n.title)}" loading="lazy">`}
         <div class="news-slide-scrim"></div>
         <div class="news-slide-badge">${n.date} · ${escapeHtml(n.cat)}</div>
         <div class="news-slide-content">
