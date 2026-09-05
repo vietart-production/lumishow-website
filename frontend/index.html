@@ -983,7 +983,13 @@
           </div>
         </div>
       </a>`;
-    const cloneOf = n => slideHtml(n).replace('class="news-slide"', 'class="news-slide news-slide-clone" aria-hidden="true" tabindex="-1"');
+    // Clone chỉ để hé lộ ở mép track (không phải slide chính đang tương tác) —
+    // nếu là mục video thì dùng ảnh thumbnail tĩnh thay vì iframe sống, tránh
+    // load 2 iframe YouTube cùng lúc cho cùng 1 video ngay khi vào trang.
+    const thumbnailOnly = n => n.youtubeId
+      ? { ...n, youtubeId: undefined, img: `https://img.youtube.com/vi/${n.youtubeId}/hqdefault.jpg` }
+      : n;
+    const cloneOf = n => slideHtml(thumbnailOnly(n)).replace('class="news-slide"', 'class="news-slide news-slide-clone" aria-hidden="true" tabindex="-1"');
 
     // Nhân bản slide cuối chèn lên đầu, slide đầu chèn xuống cuối — để lúc nào cũng có
     // 1 slide hé lộ ở cả 2 mép, và cuộn/next/prev qua 2 đầu sẽ vòng lại như carousel vô tận.
