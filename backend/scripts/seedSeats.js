@@ -9,7 +9,13 @@ const SEAT_TIERS = require("./seatTiers.json");
 
 const SHOW_ID = "son-than-thuy-quai";
 
-const SHOWTIME_ID = "2026-09-25_20:00";
+const SEASON_START = new Date(2026, 8, 25);
+const SEASON_END = new Date(2026, 11, 27);
+const SHOWTIMES_BY_DAY = {
+    0: ["10:00", "16:30"],
+    5: ["20:00"],
+    6: ["16:30", "20:00"]
+};
 
 
 // ==========================================
@@ -85,12 +91,31 @@ function buildSeats() {
     return seats;
 }
 
+function buildShowtimeIds() {
+    const showtimeIds = [];
+
+    for (const date = new Date(SEASON_START); date <= SEASON_END; date.setDate(date.getDate() + 1)) {
+        const times = SHOWTIMES_BY_DAY[date.getDay()] || [];
+        const dateKey = [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, "0"),
+            String(date.getDate()).padStart(2, "0")
+        ].join("-");
+
+        for (const time of times) {
+            showtimeIds.push(`${dateKey}_${time}`);
+        }
+    }
+
+    return showtimeIds;
+}
+
 
 // ==========================================
 // ĐẨY GHẾ LÊN FIRESTORE
 // ==========================================
 
-async function seedShowAndShowtime() {
+async function seedShowAndShowtime(showtimeId) {
 
     const showRef = db.collection("shows").doc(SHOW_ID);
 
@@ -104,65 +129,81 @@ async function seedShowAndShowtime() {
 
     const showtimeRef = showRef
         .collection("showtimes")
-        .doc(SHOWTIME_ID);
+        .doc(showtimeId);
 
     await showtimeRef.set({
         status: "OPEN"
     }, { merge: true });
 
-    console.log(`Đã tạo/cập nhật show "${SHOW_ID}" và showtime "${SHOWTIME_ID}".`);
+    console.log(`Đã tạo/cập nhật show "${SHOW_ID}" và showtime "${showtimeId}".`);
+
+    return showtimeRef;
 }
 
 
-async function seedSeats() {
+async function seedSeatsForShowtime(showtimeRef, showtimeId, seats) {
 
-    await seedShowAndShowtime();
+    // Cờ seatsSeeded đánh dấu suất này đã seed đủ ghế — bỏ qua ngay từ 1 lần
+    // đọc showtime doc, khỏi phải đọc lại toàn bộ collection seats (1181 doc)
+    // mỗi lần chạy lại script, ví dụ khi chỉ thêm suất diễn mới ở cuối mùa.
+    const showtimeSnap = await showtimeRef.get();
+    const showtimeData = showtimeSnap.data() || {};
 
-    const seats = buildSeats();
+    if (showtimeData.seatsSeeded === true && showtimeData.seatCount === seats.length) {
+        console.log(`Suất ${showtimeId}: đã seed đủ ${seats.length} ghế từ trước, bỏ qua.`);
+        return;
+    }
 
-    console.log(`Đã tạo ${seats.length} ghế trong bộ nhớ.`);
+    const seatsCollection = showtimeRef.collection("seats");
 
+    // Chỉ tạo ghế còn thiếu để chạy lại script không xoá trạng thái HELD/SOLD.
+    const existingSnapshot = await seatsCollection.get();
+    const existingSeatCodes = new Set(existingSnapshot.docs.map((doc) => doc.id));
+    const missingSeats = seats.filter((seat) => !existingSeatCodes.has(seat.seatCode));
 
-    const seatsCollection = db
-        .collection("shows")
-        .doc(SHOW_ID)
-        .collection("showtimes")
-        .doc(SHOWTIME_ID)
-        .collection("seats");
-
-
-    // Firestore batch tối đa 500 operations
+    // Firestore batch tối đa 500 operations; chạy từng suất theo 3 batch song song.
     const BATCH_SIZE = 400;
+    const writes = [];
 
-
-    for (let i = 0; i < seats.length; i += BATCH_SIZE) {
-
+    for (let i = 0; i < missingSeats.length; i += BATCH_SIZE) {
         const batch = db.batch();
-
-        const chunk = seats.slice(i, i + BATCH_SIZE);
-
+        const chunk = missingSeats.slice(i, i + BATCH_SIZE);
 
         for (const seat of chunk) {
-
-            const seatRef = seatsCollection.doc(seat.seatCode);
-
-            batch.set(seatRef, {
+            batch.create(seatsCollection.doc(seat.seatCode), {
                 ...seat,
-
                 createdAt: FieldValue.serverTimestamp(),
                 updatedAt: FieldValue.serverTimestamp()
             });
         }
 
+        writes.push(batch.commit());
+    }
 
-        await batch.commit();
+    await Promise.all(writes);
 
-        console.log(
-            `Đã ghi ghế ${i + 1} → ${Math.min(
-                i + BATCH_SIZE,
-                seats.length
-            )}`
-        );
+    // Đánh dấu đã seed đủ để lần chạy sau bỏ qua suất này ngay từ đầu.
+    await showtimeRef.set({
+        seatsSeeded: true,
+        seatCount: seats.length
+    }, { merge: true });
+
+    console.log(
+        `Suất ${showtimeId}: đã có ${existingSeatCodes.size}, tạo thêm ${missingSeats.length} ghế.`
+    );
+}
+
+
+async function seedSeats() {
+    const seats = buildSeats();
+    const showtimeIds = buildShowtimeIds();
+
+    console.log(`Đã tạo ${seats.length} ghế trong bộ nhớ.`);
+    console.log(`Chuẩn bị seed ${showtimeIds.length} suất diễn.`);
+
+    for (const showtimeId of showtimeIds) {
+        const showtimeRef = await seedShowAndShowtime(showtimeId);
+        await seedSeatsForShowtime(showtimeRef, showtimeId, seats);
     }
 
 
@@ -171,7 +212,7 @@ async function seedSeats() {
     console.log("SEED GHẾ THÀNH CÔNG");
     console.log("=================================");
     console.log(`Show: ${SHOW_ID}`);
-    console.log(`Showtime: ${SHOWTIME_ID}`);
+    console.log(`Số suất diễn: ${showtimeIds.length}`);
     console.log(`Tổng ghế: ${seats.length}`);
     console.log("=================================");
 

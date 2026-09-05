@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node src/index.js",
     "start": "node src/index.js",
-    "seed:seats": "node scripts/seedSeats.js"
+    "seed:seats": "node scripts/seedSeats.js",
+    "seed:season": "node scripts/seedSeats.js"
   },
   "keywords": [],
   "author": "",
