@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Giới thiệu | LumiShow — Sơn Thần Thủy Quái</title>
 <meta name="description" content="Sơn Thần Thủy Quái — truyền thuyết Sơn Tinh, Thủy Tinh được kể lại trong không gian xiếc Panorama 360°. Khám phá hành trình 5 hồi giữa Núi và Nước.">
+<link rel="canonical" href="https://lumishow.vn/gioi-thieu">
 <link rel="icon" type="image/png" href="image/iconlogo-lumishow.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -295,8 +296,6 @@
   .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,187,33,.5));}
   .footer-divider::after{background:linear-gradient(90deg,rgba(251,187,33,.5),transparent);}
   .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;text-align:center;}
-  .footer-motif{opacity:.5;max-width:240px;margin:0 auto;}
-  .footer-motif svg{width:100%;height:auto;display:block;}
 
   .footer-heading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:clamp(12px,1.15vw,14px);letter-spacing:.5px;text-transform:uppercase;color:var(--white);padding-bottom:12px;margin-bottom:16px;}
   .footer-heading::after{content:'';position:absolute;left:0;bottom:0;width:30px;height:2px;background:var(--green);border-radius:2px;}
@@ -344,7 +343,6 @@
     .footer-brand,.footer-contact-block{grid-column:1;}
     .footer-contact-block{max-width:100%;margin-left:0;}
     .footer-brand-inner{max-width:100%;}
-    .footer-motif{display:none;}
   }
   @media (max-width:760px){
     .footer-card{padding:20px 18px 16px;}
@@ -454,7 +452,7 @@
 
   <div class="nav-right">
     <button class="lang-select" id="langToggle" aria-label="Đổi ngôn ngữ"><span id="langLabel">VI</span> <svg class="icon"><use href="#ic-chevdown"/></svg></button>
-    <a href="/#schedule" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
+    <a href="/dat-ve" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
     <button class="menu-toggle" aria-label="Mở menu" id="menuToggle"><svg class="icon"><use href="#ic-menu"/></svg></button>
   </div>
   </div>
@@ -506,9 +504,9 @@
       <div class="overview-copy">
         <span class="eyebrow" data-i18n="ab.ovE">TỔNG QUAN</span>
         <h2 class="ov-title" data-i18n="ab.ovTitle">BƯỚC VÀO BÊN TRONG TRUYỀN THUYẾT</h2>
-        <p>Từ truyền thuyết Sơn Tinh - Thủy Tinh, Sơn thần Thủy quái mở ra một thế giới nơi núi rừng, đại dương và những thế lực huyền bí cùng hiện diện trên sân khấu.</p>
-        <p>Kết hợp giữa xiếc đương đại, kỹ thuật trình diễn trên không, ảo thuật, âm nhạc và 3D Mapping Panorama 360°, show đưa khán giả bước vào hành trình từ đất nước thanh bình đến cuộc đại chiến giữa Đất và Nước.</p>
-        <p>Ở đó, những chuyển động thật của nghệ sĩ xiếc hòa cùng không gian hình ảnh ảo. Núi rừng, đại dương có thể cuộn trào, bão tố có thể bao quanh vòm rạp, biến sân khấu thành một thế giới sống động của truyền thuyết Việt.</p>
+        <p data-i18n="ab.ov1">Từ truyền thuyết Sơn Tinh - Thủy Tinh, Sơn thần Thủy quái mở ra một thế giới nơi núi rừng, đại dương và những thế lực huyền bí cùng hiện diện trên sân khấu.</p>
+        <p data-i18n="ab.ov2">Kết hợp giữa xiếc đương đại, kỹ thuật trình diễn trên không, ảo thuật, âm nhạc và 3D Mapping Panorama 360°, show đưa khán giả bước vào hành trình từ đất nước thanh bình đến cuộc đại chiến giữa Đất và Nước.</p>
+        <p data-i18n="ab.ov3">Ở đó, những chuyển động thật của nghệ sĩ xiếc hòa cùng không gian hình ảnh ảo. Núi rừng, đại dương có thể cuộn trào, bão tố có thể bao quanh vòm rạp, biến sân khấu thành một thế giới sống động của truyền thuyết Việt.</p>
       </div>
       <div class="overview-media">
         <img src="image/SonThanThuyQuaiXanh.jpg" alt="Không gian sân khấu xiếc Panorama 360° — Sơn Thần Thủy Quái">
@@ -535,13 +533,13 @@
 
       <!-- HỒI I -->
       <div class="journey-row">
-        <div class="journey-media"><img src="image/GioiThieu_5Hoi/Hoi_1.png" alt="Hồi I – Đất nước thanh bình"></div>
         <div class="journey-copy">
           <span class="j-num" data-i18n="ab.j1num">Hồi I</span>
           <h3 class="j-title" data-i18n="ab.j1title">Đất nước thanh bình</h3>
-          <p>Thuở các Vua Hùng dựng nước, đất nước yên bình, người dân sống hòa mình cùng núi rừng và thiên nhiên. Công chúa Mỵ Nương xuất hiện trong những màn đu lượn trên cao, giữa bầu trời xanh, chim Lạc và những dãy núi hùng vĩ được mở ra trong không gian Panorama 360°.</p>
-          <p>Khi Vua Hùng mở hội kén rể, Sơn Tinh và Thủy Tinh bước vào cuộc so tài. Những màn hip hop, lăn vòng, thăng bằng và đu dây đôi thể hiện sự đối lập giữa sức mạnh của Núi và Nước bằng chuyển động thật của nghệ sĩ và hình ảnh mapping kỳ ảo trên toàn bộ không gian sân khấu.</p>
+          <p data-i18n="ab.j1p1">Thuở các Vua Hùng dựng nước, đất nước yên bình, người dân sống hòa mình cùng núi rừng và thiên nhiên. Công chúa Mỵ Nương xuất hiện trong những màn đu lượn trên cao, giữa bầu trời xanh, chim Lạc và những dãy núi hùng vĩ được mở ra trong không gian Panorama 360°.</p>
+          <p data-i18n="ab.j1p2">Khi Vua Hùng mở hội kén rể, Sơn Tinh và Thủy Tinh bước vào cuộc so tài. Những màn hip hop, lăn vòng, thăng bằng và đu dây đôi thể hiện sự đối lập giữa sức mạnh của Núi và Nước bằng chuyển động thật của nghệ sĩ và hình ảnh mapping kỳ ảo trên toàn bộ không gian sân khấu.</p>
         </div>
+        <div class="journey-media"><img src="image/GioiThieu_5Hoi/Hoi_1.png" alt="Hồi I – Đất nước thanh bình"></div>
       </div>
 
       <!-- HỒI II -->
@@ -549,21 +547,21 @@
         <div class="journey-copy">
           <span class="j-num" data-i18n="ab.j2num">Hồi II</span>
           <h3 class="j-title" data-i18n="ab.j2title">Giang sơn của Sơn Tinh</h3>
-          <p>Sơn Tinh đưa Mỵ Nương về thăm giang sơn núi rừng. Dân làng mở hội, muông thú cùng xuất hiện trong những tiết mục xiếc vui tươi, từ thăng bằng, nhào lộn đến trình diễn với đạo cụ và cột tre.</p>
-          <p>Panorama 360° đưa khán giả đi qua rừng tre, suối nước, thác và những triền núi đầy sức sống. Nhưng giữa lúc hội vui đang diễn ra, Thủy Tinh bất ngờ xuất hiện, bắt cóc Mỵ Nương và đẩy Sơn Tinh vào cuộc hành trình giải cứu đầy nguy hiểm.</p>
+          <p data-i18n="ab.j2p1">Sơn Tinh đưa Mỵ Nương về thăm giang sơn núi rừng. Dân làng mở hội, muông thú cùng xuất hiện trong những tiết mục xiếc vui tươi, từ thăng bằng, nhào lộn đến trình diễn với đạo cụ và cột tre.</p>
+          <p data-i18n="ab.j2p2">Panorama 360° đưa khán giả đi qua rừng tre, suối nước, thác và những triền núi đầy sức sống. Nhưng giữa lúc hội vui đang diễn ra, Thủy Tinh bất ngờ xuất hiện, bắt cóc Mỵ Nương và đẩy Sơn Tinh vào cuộc hành trình giải cứu đầy nguy hiểm.</p>
         </div>
         <div class="journey-media"><img src="image/GioiThieu_5Hoi/Hoi_2.png" alt="Hồi II – Giang sơn của Sơn Tinh"></div>
       </div>
 
       <!-- HỒI III -->
       <div class="journey-row">
-        <div class="journey-media"><img src="image/GioiThieu_5Hoi/Hoi_3.png" alt="Hồi III – Vương quốc Thủy Tinh"></div>
         <div class="journey-copy">
           <span class="j-num" data-i18n="ab.j3num">Hồi III</span>
           <h3 class="j-title" data-i18n="ab.j3title">Vương quốc Thủy Tinh</h3>
-          <p>Mỵ Nương bị đưa xuống đáy đại dương — một thế giới lung linh nhưng bí ẩn và hiểm nguy. Tấm lưới từ trên cao, những màn đu dây bay và chuyển động hình thể của các thủy quái tạo nên cảm giác như cả sân khấu đang chìm trong nước.</p>
-          <p>Với hình ảnh cung điện Thủy Tinh, sinh vật biển và những dòng nước phát sáng, Mapping Panorama 360° biến vòm rạp thành một vương quốc dưới lòng đại dương. Giữa vẻ đẹp mê hoặc ấy, Mỵ Nương phải đối mặt với sự bạo ngược của Thủy Tinh và tìm cách giữ vững lòng mình.</p>
+          <p data-i18n="ab.j3p1">Mỵ Nương bị đưa xuống đáy đại dương — một thế giới lung linh nhưng bí ẩn và hiểm nguy. Tấm lưới từ trên cao, những màn đu dây bay và chuyển động hình thể của các thủy quái tạo nên cảm giác như cả sân khấu đang chìm trong nước.</p>
+          <p data-i18n="ab.j3p2">Với hình ảnh cung điện Thủy Tinh, sinh vật biển và những dòng nước phát sáng, Mapping Panorama 360° biến vòm rạp thành một vương quốc dưới lòng đại dương. Giữa vẻ đẹp mê hoặc ấy, Mỵ Nương phải đối mặt với sự bạo ngược của Thủy Tinh và tìm cách giữ vững lòng mình.</p>
         </div>
+        <div class="journey-media"><img src="image/GioiThieu_5Hoi/Hoi_3.png" alt="Hồi III – Vương quốc Thủy Tinh"></div>
       </div>
 
       <!-- HỒI IV -->
@@ -571,23 +569,23 @@
         <div class="journey-copy">
           <span class="j-num" data-i18n="ab.j4num">Hồi IV</span>
           <h3 class="j-title" data-i18n="ab.j4title">Đại dương cuộn sóng</h3>
-          <p>Sơn Tinh cùng muông thú tiến vào đại dương để giải cứu Mỵ Nương. Cuộc giải cứu trở thành trận đại chiến giữa đất và nước, với những màn nhào lộn, bay đu dây và đối kháng trên không.</p>
-          <p>Thủy Tinh làm nước dâng cao. Sơn Tinh nâng núi chống lại sóng dữ. Trong tiếng sấm, mưa bão và ánh sáng chuyển động, Panorama 360° mở rộng trận chiến ra khắp vòm rạp — nơi núi, nước, nghệ sĩ và hình ảnh cùng chuyển động trong một cao trào sử thi.</p>
-          <p>Cuối cùng, Thủy Tinh bị đánh bại. Mỵ Nương được giải cứu, còn thế giới đại dương dần lắng xuống sau cơn bão.</p>
+          <p data-i18n="ab.j4p1">Sơn Tinh cùng muông thú tiến vào đại dương để giải cứu Mỵ Nương. Cuộc giải cứu trở thành trận đại chiến giữa đất và nước, với những màn nhào lộn, bay đu dây và đối kháng trên không.</p>
+          <p data-i18n="ab.j4p2">Thủy Tinh làm nước dâng cao. Sơn Tinh nâng núi chống lại sóng dữ. Trong tiếng sấm, mưa bão và ánh sáng chuyển động, Panorama 360° mở rộng trận chiến ra khắp vòm rạp — nơi núi, nước, nghệ sĩ và hình ảnh cùng chuyển động trong một cao trào sử thi.</p>
+          <p data-i18n="ab.j4p3">Cuối cùng, Thủy Tinh bị đánh bại. Mỵ Nương được giải cứu, còn thế giới đại dương dần lắng xuống sau cơn bão.</p>
         </div>
         <div class="journey-media"><img src="image/GioiThieu_5Hoi/Hoi_4.png" alt="Hồi IV – Đại dương cuộn sóng"></div>
       </div>
 
       <!-- HỒI V -->
       <div class="journey-row">
-        <div class="journey-media"><img src="image/GioiThieu_5Hoi/Hoi_5.png" alt="Hồi V – Huyền thoại Đất - Nước"></div>
         <div class="journey-copy">
           <span class="j-num" data-i18n="ab.j5num">Hồi V</span>
           <h3 class="j-title" data-i18n="ab.j5title">Huyền thoại Đất - Nước</h3>
-          <p>Sơn Tinh đưa Mỵ Nương trở về. Vua Hùng tổ chức lễ cưới trong niềm vui của dân làng, muông thú và cây rừng.</p>
-          <p>Không gian sân khấu chuyển sang sắc màu rực rỡ. Các nghệ sĩ cùng hòa vào màn múa kết, trong khi hình ảnh núi rừng, hoa cỏ và muông thú mở ra khắp Panorama 360°.</p>
-          <p>Câu chuyện khép lại bằng một thông điệp: Đất và Nước không chỉ là hai thế lực đối đầu, mà còn là hai nguồn sống tạo nên sự trường tồn của dân tộc. Sức mạnh của con người nằm ở lòng dũng cảm, sự đoàn kết và khả năng sống hài hòa với thiên nhiên.</p>
+          <p data-i18n="ab.j5p1">Sơn Tinh đưa Mỵ Nương trở về. Vua Hùng tổ chức lễ cưới trong niềm vui của dân làng, muông thú và cây rừng.</p>
+          <p data-i18n="ab.j5p2">Không gian sân khấu chuyển sang sắc màu rực rỡ. Các nghệ sĩ cùng hòa vào màn múa kết, trong khi hình ảnh núi rừng, hoa cỏ và muông thú mở ra khắp Panorama 360°.</p>
+          <p data-i18n="ab.j5p3">Câu chuyện khép lại bằng một thông điệp: Đất và Nước không chỉ là hai thế lực đối đầu, mà còn là hai nguồn sống tạo nên sự trường tồn của dân tộc. Sức mạnh của con người nằm ở lòng dũng cảm, sự đoàn kết và khả năng sống hài hòa với thiên nhiên.</p>
         </div>
+        <div class="journey-media"><img src="image/GioiThieu_5Hoi/Hoi_5.png" alt="Hồi V – Huyền thoại Đất - Nước"></div>
       </div>
     </div>
   </div>
@@ -597,11 +595,11 @@
 <section class="closing-section">
   <div class="container closing-inner">
     <span class="eyebrow" data-i18n="ab.lkE">Lời kết</span>
-    <h2 class="lk-title">Một câu chuyện về<br>Đất và Nước.</h2>
-    <p>Sơn thần Thủy quái là một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh. Nơi kỹ thuật xiếc, chuyển động trên không và ảo thuật gặp gỡ âm nhạc, ánh sáng và công nghệ 3D Mapping Panorama 360°.</p>
-    <p>Trải nghiệm không gian từ núi rừng đến đại dương, từ bình yên đến bão tố, khán giả được mời bước vào bên trong một truyền thuyết Việt sống động, kỳ ảo và chưa từng được kể theo cách này.</p>
-    <p class="lk-tagline">Một trải nghiệm xiếc 360°. Một truyền thuyết được đánh thức bằng nghệ thuật và công nghệ.</p>
-    <a href="/#schedule" class="btn-primary"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+    <h2 class="lk-title" data-i18n="ab.lkTitle">Một câu chuyện về<br>Đất và Nước.</h2>
+    <p data-i18n="ab.lk1">Sơn thần Thủy quái là một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh. Nơi kỹ thuật xiếc, chuyển động trên không và ảo thuật gặp gỡ âm nhạc, ánh sáng và công nghệ 3D Mapping Panorama 360°.</p>
+    <p data-i18n="ab.lk2">Trải nghiệm không gian từ núi rừng đến đại dương, từ bình yên đến bão tố, khán giả được mời bước vào bên trong một truyền thuyết Việt sống động, kỳ ảo và chưa từng được kể theo cách này.</p>
+    <p class="lk-tagline" data-i18n="ab.lkTag">Một trải nghiệm xiếc 360°. Một truyền thuyết được đánh thức bằng nghệ thuật và công nghệ.</p>
+    <a href="/dat-ve" class="btn-primary"><span data-i18n="hero.cta">Đặt vé ngay</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
   </div>
 </section>
 
@@ -616,13 +614,6 @@
           <img class="footer-logo" src="image/logo-lumishow.png" alt="LumiShow">
           <div class="footer-divider"><span class="footer-divider-star"></span></div>
           <p class="footer-desc" data-i18n="footer.desc">LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.</p>
-          <div class="footer-motif">
-            <svg viewBox="0 0 290 165" fill="none" aria-hidden="true">
-              <polyline points="4,105 30,55 56,90 84,30 112,82 140,18 168,74 196,50 222,98" stroke="rgba(251,187,33,.55)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4,118 C38,98 74,138 110,118 C146,98 182,138 218,118 C242,105 258,111 276,114" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M14,138 C48,120 84,156 120,138 C156,120 192,156 228,138 C250,127 262,132 278,135" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-          </div>
         </div>
       </div>
 
@@ -678,7 +669,7 @@
         <div class="footer-icon footer-icon--ghost"><svg class="icon"><use href="#ic-headset"/></svg></div>
         <div class="footer-support-text">
           <div class="footer-label" data-i18n="footer.support">HỖ TRỢ KHÁCH HÀNG</div>
-          <div class="footer-value" data-i18n="footer.supportHours">9:00 - 18:00 (Thứ 2 - Thứ 7)</div>
+          <div class="footer-value" data-i18n="footer.supportHours">9:00 - 21:00 (Thứ 2 - Chủ Nhật)</div>
         </div>
       </div>
 
@@ -704,9 +695,6 @@
   menuToggle?.addEventListener('click', () => mobileNav.classList.toggle('open'));
 
   // ============ ĐỔI NGÔN NGỮ (VI / EN) ============
-  // Ghi chú: phần khung (menu, nút, nhãn) hỗ trợ song ngữ đầy đủ.
-  // Phần nội dung truyền thuyết (đoạn văn tường thuật 5 Hồi, Tổng quan, Lời kết)
-  // giữ nguyên tiếng Việt như nội dung gốc được cung cấp.
   const I18N = {
     vi: {
       'nav.home':'Trang chủ', 'nav.about':'Giới thiệu', 'nav.contact':'Liên hệ', 'nav.cta':'ĐẶT VÉ NGAY',
@@ -716,15 +704,42 @@
       'ab.heroSub':'Truyền thuyết Việt trong không gian xiếc Panorama 360°',
       'ab.heroBtn1':'Khám phá câu chuyện',
       'ab.ovE':'Tổng quan', 'ab.ovTitle':'Bước vào bên trong truyền thuyết',
+      'ab.ov1':'Từ truyền thuyết Sơn Tinh - Thủy Tinh, Sơn thần Thủy quái mở ra một thế giới nơi núi rừng, đại dương và những thế lực huyền bí cùng hiện diện trên sân khấu.',
+      'ab.ov2':'Kết hợp giữa xiếc đương đại, kỹ thuật trình diễn trên không, ảo thuật, âm nhạc và 3D Mapping Panorama 360°, show đưa khán giả bước vào hành trình từ đất nước thanh bình đến cuộc đại chiến giữa Đất và Nước.',
+      'ab.ov3':'Ở đó, những chuyển động thật của nghệ sĩ xiếc hòa cùng không gian hình ảnh ảo. Núi rừng, đại dương có thể cuộn trào, bão tố có thể bao quanh vòm rạp, biến sân khấu thành một thế giới sống động của truyền thuyết Việt.',
       'ab.f1':'Xiếc đương đại', 'ab.f2':'Trình diễn trên không', 'ab.f3':'Ảo thuật',
       'ab.f4':'Âm nhạc & ánh sáng', 'ab.f5':'3D Mapping Panorama 360°',
       'ab.journeyTitle':'Hành trình 5 Hồi',
       'ab.j1num':'Hồi I', 'ab.j1title':'Đất nước thanh bình',
+      'ab.j1p1':'Thuở các Vua Hùng dựng nước, đất nước yên bình, người dân sống hòa mình cùng núi rừng và thiên nhiên. Công chúa Mỵ Nương xuất hiện trong những màn đu lượn trên cao, giữa bầu trời xanh, chim Lạc và những dãy núi hùng vĩ được mở ra trong không gian Panorama 360°.',
+      'ab.j1p2':'Khi Vua Hùng mở hội kén rể, Sơn Tinh và Thủy Tinh bước vào cuộc so tài. Những màn hip hop, lăn vòng, thăng bằng và đu dây đôi thể hiện sự đối lập giữa sức mạnh của Núi và Nước bằng chuyển động thật của nghệ sĩ và hình ảnh mapping kỳ ảo trên toàn bộ không gian sân khấu.',
       'ab.j2num':'Hồi II', 'ab.j2title':'Giang sơn của Sơn Tinh',
+      'ab.j2p1':'Sơn Tinh đưa Mỵ Nương về thăm giang sơn núi rừng. Dân làng mở hội, muông thú cùng xuất hiện trong những tiết mục xiếc vui tươi, từ thăng bằng, nhào lộn đến trình diễn với đạo cụ và cột tre.',
+      'ab.j2p2':'Panorama 360° đưa khán giả đi qua rừng tre, suối nước, thác và những triền núi đầy sức sống. Nhưng giữa lúc hội vui đang diễn ra, Thủy Tinh bất ngờ xuất hiện, bắt cóc Mỵ Nương và đẩy Sơn Tinh vào cuộc hành trình giải cứu đầy nguy hiểm.',
       'ab.j3num':'Hồi III', 'ab.j3title':'Vương quốc Thủy Tinh',
+      'ab.j3p1':'Mỵ Nương bị đưa xuống đáy đại dương — một thế giới lung linh nhưng bí ẩn và hiểm nguy. Tấm lưới từ trên cao, những màn đu dây bay và chuyển động hình thể của các thủy quái tạo nên cảm giác như cả sân khấu đang chìm trong nước.',
+      'ab.j3p2':'Với hình ảnh cung điện Thủy Tinh, sinh vật biển và những dòng nước phát sáng, Mapping Panorama 360° biến vòm rạp thành một vương quốc dưới lòng đại dương. Giữa vẻ đẹp mê hoặc ấy, Mỵ Nương phải đối mặt với sự bạo ngược của Thủy Tinh và tìm cách giữ vững lòng mình.',
       'ab.j4num':'Hồi IV', 'ab.j4title':'Đại dương cuộn sóng',
+      'ab.j4p1':'Sơn Tinh cùng muông thú tiến vào đại dương để giải cứu Mỵ Nương. Cuộc giải cứu trở thành trận đại chiến giữa đất và nước, với những màn nhào lộn, bay đu dây và đối kháng trên không.',
+      'ab.j4p2':'Thủy Tinh làm nước dâng cao. Sơn Tinh nâng núi chống lại sóng dữ. Trong tiếng sấm, mưa bão và ánh sáng chuyển động, Panorama 360° mở rộng trận chiến ra khắp vòm rạp — nơi núi, nước, nghệ sĩ và hình ảnh cùng chuyển động trong một cao trào sử thi.',
+      'ab.j4p3':'Cuối cùng, Thủy Tinh bị đánh bại. Mỵ Nương được giải cứu, còn thế giới đại dương dần lắng xuống sau cơn bão.',
       'ab.j5num':'Hồi V', 'ab.j5title':'Huyền thoại Đất - Nước',
-      'ab.lkE':'Lời kết'
+      'ab.j5p1':'Sơn Tinh đưa Mỵ Nương trở về. Vua Hùng tổ chức lễ cưới trong niềm vui của dân làng, muông thú và cây rừng.',
+      'ab.j5p2':'Không gian sân khấu chuyển sang sắc màu rực rỡ. Các nghệ sĩ cùng hòa vào màn múa kết, trong khi hình ảnh núi rừng, hoa cỏ và muông thú mở ra khắp Panorama 360°.',
+      'ab.j5p3':'Câu chuyện khép lại bằng một thông điệp: Đất và Nước không chỉ là hai thế lực đối đầu, mà còn là hai nguồn sống tạo nên sự trường tồn của dân tộc. Sức mạnh của con người nằm ở lòng dũng cảm, sự đoàn kết và khả năng sống hài hòa với thiên nhiên.',
+      'ab.lkE':'Lời kết',
+      'ab.lkTitle':'Một câu chuyện về<br>Đất và Nước.',
+      'ab.lk1':'Sơn thần Thủy quái là một cách kể mới về truyền thuyết Sơn Tinh - Thủy Tinh. Nơi kỹ thuật xiếc, chuyển động trên không và ảo thuật gặp gỡ âm nhạc, ánh sáng và công nghệ 3D Mapping Panorama 360°.',
+      'ab.lk2':'Trải nghiệm không gian từ núi rừng đến đại dương, từ bình yên đến bão tố, khán giả được mời bước vào bên trong một truyền thuyết Việt sống động, kỳ ảo và chưa từng được kể theo cách này.',
+      'ab.lkTag':'Một trải nghiệm xiếc 360°. Một truyền thuyết được đánh thức bằng nghệ thuật và công nghệ.',
+      'footer.desc':'LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.',
+      'footer.contactHeading':'LIÊN HỆ VỚI CHÚNG TÔI',
+      'footer.socialHeading':'KẾT NỐI VỚI LUMISHOW',
+      'footer.support':'HỖ TRỢ KHÁCH HÀNG',
+      'footer.supportHours':'9:00 - 21:00 (Thứ 2 - Chủ Nhật)',
+      'footer.ctaText':'Sẵn sàng kiến tạo những trải nghiệm sân khấu đột phá cùng LumiShow?',
+      'footer.ctaBtn':'LIÊN HỆ HỢP TÁC',
+      'footer.copyright':'© 2026 LumiShow. All rights reserved.'
     },
     en: {
       'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact', 'nav.cta':'BOOK NOW',
@@ -734,15 +749,42 @@
       'ab.heroSub':'A Vietnamese legend inside a 360° panoramic circus',
       'ab.heroBtn1':'Explore the story',
       'ab.ovE':'Overview', 'ab.ovTitle':'Step inside the legend',
+      'ab.ov1':'Inspired by the legend of Son Tinh - Thuy Tinh, Son Than Thuy Quai opens a world where mountains, ocean and mythical forces all come alive on stage.',
+      'ab.ov2':'Blending contemporary circus, aerial performance, illusion, music and 3D Mapping Panorama 360°, the show takes audiences on a journey from a peaceful land to the great battle between Earth and Water.',
+      'ab.ov3':'There, the real movements of circus artists merge with a world of projected imagery. Mountains and ocean can surge, storms can sweep across the entire dome, turning the stage into a living world straight out of Vietnamese legend.',
       'ab.f1':'Contemporary circus', 'ab.f2':'Aerial performance', 'ab.f3':'Illusion & magic',
       'ab.f4':'Music & light', 'ab.f5':'3D Mapping Panorama 360°',
       'ab.journeyTitle':'A journey in 5 acts',
       'ab.j1num':'Act I', 'ab.j1title':'A land at peace',
+      'ab.j1p1':'In the age of the Hung Kings, the land is at peace, and people live in harmony with the mountains and forests. Princess My Nuong appears in soaring aerial silks, set against a blue sky, Lac birds and majestic mountain ranges unfolding across the 360° Panorama space.',
+      'ab.j1p2':'When the Hung King holds a contest to choose a son-in-law, Son Tinh and Thuy Tinh compete for the princess’s hand. Hip hop, Cyr wheel, balancing and duo aerial straps capture the clash between the power of Mountain and Water, through the artists’ real movements and dazzling mapping visuals across the entire stage.',
       'ab.j2num':'Act II', 'ab.j2title':'The mountain realm',
+      'ab.j2p1':'Son Tinh brings My Nuong home to his mountain realm. Villagers hold a festival, and forest creatures join in playful circus acts — from balancing and acrobatics to prop performances and bamboo pole routines.',
+      'ab.j2p2':'The 360° Panorama carries the audience through bamboo forests, streams, waterfalls and lush mountain slopes. But in the middle of the celebration, Thuy Tinh suddenly appears, abducts My Nuong, and forces Son Tinh into a perilous rescue.',
       'ab.j3num':'Act III', 'ab.j3title':'The water kingdom',
+      'ab.j3p1':'My Nuong is taken to the bottom of the ocean — a world both dazzling and dangerous. Aerial netting, flying silks and the sinuous movements of water creatures make the entire stage feel as though it is sinking underwater.',
+      'ab.j3p2':'With images of Thuy Tinh’s palace, sea creatures and glowing currents, the 360° Mapping Panorama transforms the dome into an undersea kingdom. Amid all that mesmerizing beauty, My Nuong must face Thuy Tinh’s cruelty and find the strength to hold on to who she is.',
       'ab.j4num':'Act IV', 'ab.j4title':'The ocean at war',
+      'ab.j4p1':'Son Tinh and the forest creatures march into the ocean to rescue My Nuong. The rescue becomes an epic battle between earth and water, filled with acrobatics, flying silks and aerial combat.',
+      'ab.j4p2':'Thuy Tinh raises the floodwaters. Son Tinh lifts the mountains to hold back the raging waves. Amid thunder, storm and shifting light, the 360° Panorama spreads the battle across the entire dome — where mountain, water, artists and imagery move together in an epic climax.',
+      'ab.j4p3':'In the end, Thuy Tinh is defeated. My Nuong is rescued, and the ocean world gradually settles after the storm.',
       'ab.j5num':'Act V', 'ab.j5title':'The legend of land & water',
-      'ab.lkE':'Closing'
+      'ab.j5p1':'Son Tinh brings My Nuong home. The Hung King holds a wedding celebration, joined by villagers, forest creatures and the woods themselves.',
+      'ab.j5p2':'The stage bursts into radiant color. Artists come together for a closing dance, while images of mountains, flowers and wildlife bloom across the 360° Panorama.',
+      'ab.j5p3':'The story closes with a message: Earth and Water are not only two opposing forces, but two sources of life that sustain a nation. Humanity’s strength lies in courage, unity, and the ability to live in harmony with nature.',
+      'ab.lkE':'Closing',
+      'ab.lkTitle':'A story of<br>Earth and Water.',
+      'ab.lk1':'Son Than Thuy Quai is a new way of telling the legend of Son Tinh - Thuy Tinh — where circus technique, aerial movement and illusion meet music, light and 3D Mapping Panorama 360° technology.',
+      'ab.lk2':'Journeying from mountains to ocean, from peace to storm, audiences are invited to step inside a Vietnamese legend that is vivid, fantastical, and never told quite this way before.',
+      'ab.lkTag':'A 360° circus experience. A legend awakened through art and technology.',
+      'footer.desc':'LumiShow produces stage shows with 3D Mapping, stage visuals and cutting-edge projection technology.',
+      'footer.contactHeading':'CONTACT US',
+      'footer.socialHeading':'CONNECT WITH LUMISHOW',
+      'footer.support':'CUSTOMER SUPPORT',
+      'footer.supportHours':'9:00 AM - 9:00 PM (Mon - Sun)',
+      'footer.ctaText':'Ready to create groundbreaking stage experiences with LumiShow?',
+      'footer.ctaBtn':'PARTNER WITH US',
+      'footer.copyright':'© 2026 LumiShow. All rights reserved.'
     }
   };
 
@@ -755,7 +797,7 @@
     const dict = I18N[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const val = dict[el.dataset.i18n];
-      if (val) el.textContent = val;
+      if (val) el.innerHTML = val;
     });
     if (langLabel) langLabel.textContent = lang.toUpperCase();
     document.documentElement.lang = lang;

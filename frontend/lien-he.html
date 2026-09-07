@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Liên hệ | LumiShow</title>
 <meta name="description" content="Liên hệ và nhận tư vấn từ LumiShow — đơn vị tiên phong trong sáng tạo nghệ thuật đương đại.">
+<link rel="canonical" href="https://lumishow.vn/lien-he">
 <link rel="icon" type="image/png" href="image/iconlogo-lumishow.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -282,8 +283,6 @@
   .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,187,33,.5));}
   .footer-divider::after{background:linear-gradient(90deg,rgba(251,187,33,.5),transparent);}
   .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;text-align:center;}
-  .footer-motif{opacity:.5;max-width:240px;margin:0 auto;}
-  .footer-motif svg{width:100%;height:auto;display:block;}
 
   .footer-heading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:clamp(12px,1.15vw,14px);letter-spacing:.5px;text-transform:uppercase;color:var(--white);padding-bottom:12px;margin-bottom:16px;}
   .footer-heading::after{content:'';position:absolute;left:0;bottom:0;width:30px;height:2px;background:var(--green);border-radius:2px;}
@@ -331,7 +330,6 @@
     .footer-brand,.footer-contact-block{grid-column:1;}
     .footer-contact-block{max-width:100%;margin-left:0;}
     .footer-brand-inner{max-width:100%;}
-    .footer-motif{display:none;}
   }
   @media (max-width:760px){
     .nav-links{display:none;}
@@ -398,7 +396,7 @@
 
     <div class="nav-right">
       <button class="lang-select" id="langToggle" aria-label="Đổi ngôn ngữ"><span id="langLabel">VI</span> <svg class="icon"><use href="#ic-chevdown"/></svg></button>
-      <a href="/#schedule" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
+      <a href="/dat-ve" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
       <button class="menu-toggle" aria-label="Mở menu" id="menuToggle"><svg class="icon"><use href="#ic-menu"/></svg></button>
     </div>
   </div>
@@ -509,13 +507,6 @@
           <img class="footer-logo" src="image/logo-lumishow.png" alt="LumiShow">
           <div class="footer-divider"><span class="footer-divider-star"></span></div>
           <p class="footer-desc" data-i18n="footer.desc">LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.</p>
-          <div class="footer-motif">
-            <svg viewBox="0 0 290 165" fill="none" aria-hidden="true">
-              <polyline points="4,105 30,55 56,90 84,30 112,82 140,18 168,74 196,50 222,98" stroke="rgba(251,187,33,.55)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4,118 C38,98 74,138 110,118 C146,98 182,138 218,118 C242,105 258,111 276,114" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M14,138 C48,120 84,156 120,138 C156,120 192,156 228,138 C250,127 262,132 278,135" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-          </div>
         </div>
       </div>
 
@@ -571,7 +562,7 @@
         <div class="footer-icon footer-icon--ghost"><svg class="icon"><use href="#ic-headset"/></svg></div>
         <div class="footer-support-text">
           <div class="footer-label" data-i18n="footer.support">HỖ TRỢ KHÁCH HÀNG</div>
-          <div class="footer-value" data-i18n="footer.supportHours">9:00 - 18:00 (Thứ 2 - Thứ 7)</div>
+          <div class="footer-value" data-i18n="footer.supportHours">9:00 - 21:00 (Thứ 2 - Chủ Nhật)</div>
         </div>
       </div>
 
@@ -615,7 +606,7 @@
       'footer.desc':'LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.',
       'footer.contactHeading':'LIÊN HỆ VỚI CHÚNG TÔI',
       'footer.socialHeading':'KẾT NỐI VỚI LUMISHOW', 'footer.support':'Hỗ trợ khách hàng',
-      'footer.supportHours':'9:00 - 18:00 (Thứ 2 - Thứ 7)',
+      'footer.supportHours':'9:00 - 21:00 (Thứ 2 - Chủ Nhật)',
       'footer.ctaText':'Sẵn sàng kiến tạo những trải nghiệm sân khấu đột phá cùng LumiShow?',
       'footer.ctaBtn':'Liên hệ hợp tác', 'footer.copyright':'© 2026 LumiShow. All rights reserved.'
     },
@@ -636,7 +627,7 @@
       'footer.desc':'LumiShow is a show production company specializing in 3D Mapping, stage graphics and modern projection technology.',
       'footer.contactHeading':'CONTACT US',
       'footer.socialHeading':'CONNECT WITH LUMISHOW', 'footer.support':'Customer support',
-      'footer.supportHours':'9:00 AM - 6:00 PM (Mon - Sat)',
+      'footer.supportHours':'9:00 AM - 9:00 PM (Mon - Sun)',
       'footer.ctaText':'Ready to create breakthrough stage experiences with LumiShow?',
       'footer.ctaBtn':'Get in touch', 'footer.copyright':'© 2026 LumiShow. All rights reserved.'
     }

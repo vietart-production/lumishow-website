@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chọn ghế — Sơn Thần Thủy Quái | LumiShow</title>
 <meta name="description" content="Chọn ghế và đặt vé vở diễn Sơn Thần Thủy Quái tại Rạp Xiếc Trung Ương.">
+<link rel="canonical" href="https://lumishow.vn/dat-ve">
 <link rel="icon" type="image/png" href="image/iconlogo-lumishow.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -98,7 +99,8 @@
   .qty-val{font-family:var(--font-heading);font-size:30px;font-weight:800;line-height:1;background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
   .qty-hint{margin-top:8px;color:var(--gray-dim);font-size:12.5px;}
 
-  /* Hạng vé — chỉ tên + màu, không có giá */
+  /* Hạng vé — tên + màu + giá (giá chỉ để khách xem tổng quan, số tiền
+     thật vẫn luôn tính theo từng ghế) */
   .tier-list{display:flex;flex-direction:column;gap:2px;}
   .tier{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--r-sm);cursor:pointer;transition:background .2s;}
   .tier:hover{background:rgba(255,255,255,.04);}
@@ -109,7 +111,8 @@
   .tier input:checked + .tier-box svg{opacity:1;}
   .tier input:focus-visible + .tier-box{outline:2px solid var(--green);outline-offset:2px;}
   .tier-dot{width:12px;height:12px;border-radius:50%;background:var(--tier-c);flex-shrink:0;box-shadow:0 0 10px color-mix(in srgb,var(--tier-c) 60%,transparent);}
-  .tier-name{font-size:14px;font-weight:700;letter-spacing:.2px;}
+  .tier-name{font-size:14px;font-weight:700;letter-spacing:.2px;flex:1;min-width:0;}
+  .tier-price{font-size:12.5px;font-weight:600;color:var(--gray);white-space:nowrap;}
 
   /* Chú thích trạng thái */
   .legend{display:flex;flex-direction:column;gap:9px;}
@@ -408,8 +411,6 @@
   .footer-divider::before,.footer-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,187,33,.5));}
   .footer-divider::after{background:linear-gradient(90deg,rgba(251,187,33,.5),transparent);}
   .footer-desc{color:var(--gray);font-size:clamp(12px,1.05vw,13.5px);line-height:1.75;margin-bottom:18px;text-align:center;}
-  .footer-motif{opacity:.5;max-width:240px;margin:0 auto;}
-  .footer-motif svg{width:100%;height:auto;display:block;}
 
   .footer-heading{position:relative;font-family:var(--font-heading);font-weight:700;font-size:clamp(12px,1.15vw,14px);letter-spacing:.5px;text-transform:uppercase;color:var(--white);padding-bottom:12px;margin-bottom:16px;}
   .footer-heading::after{content:'';position:absolute;left:0;bottom:0;width:30px;height:2px;background:var(--green);border-radius:2px;}
@@ -457,7 +458,6 @@
     .footer-brand,.footer-contact-block{grid-column:1;}
     .footer-contact-block{max-width:100%;margin-left:0;}
     .footer-brand-inner{max-width:100%;}
-    .footer-motif{display:none;}
   }
   @media (max-width:760px){
     .footer-card{padding:20px 18px 16px;}
@@ -520,9 +520,9 @@
   <div class="nav-inner">
     <a href="/" class="logo"><img class="logo-lumishow" src="image/logo-lumishow.png" alt="LumiShow"></a>
     <nav class="nav-links">
-      <a href="/">Trang chủ</a>
-      <a href="/gioi-thieu">Giới thiệu</a>
-      <a href="/lien-he">Liên hệ</a>
+      <a href="/" data-i18n="nav.home">Trang chủ</a>
+      <a href="/gioi-thieu" data-i18n="nav.about">Giới thiệu</a>
+      <a href="/lien-he" data-i18n="nav.contact">Liên hệ</a>
     </nav>
     <div class="nav-right">
       <button class="lang-select" id="langToggle" aria-label="Đổi ngôn ngữ"><span id="langLabel">VI</span> <svg class="icon"><use href="#ic-chevdown"/></svg></button>
@@ -531,9 +531,9 @@
   </div>
 </header>
 <nav class="mobile-nav" id="mobileNav">
-  <a href="/">Trang chủ</a>
-  <a href="/gioi-thieu">Giới thiệu</a>
-  <a href="/lien-he">Liên hệ</a>
+  <a href="/" data-i18n="nav.home">Trang chủ</a>
+  <a href="/gioi-thieu" data-i18n="nav.about">Giới thiệu</a>
+  <a href="/lien-he" data-i18n="nav.contact">Liên hệ</a>
 </nav>
 
 <section class="show-bar">
@@ -751,13 +751,6 @@
           <img class="footer-logo" src="image/logo-lumishow.png" alt="LumiShow">
           <div class="footer-divider"><span class="footer-divider-star"></span></div>
           <p class="footer-desc" data-i18n="footer.desc">LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.</p>
-          <div class="footer-motif">
-            <svg viewBox="0 0 290 165" fill="none" aria-hidden="true">
-              <polyline points="4,105 30,55 56,90 84,30 112,82 140,18 168,74 196,50 222,98" stroke="rgba(251,187,33,.55)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4,118 C38,98 74,138 110,118 C146,98 182,138 218,118 C242,105 258,111 276,114" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M14,138 C48,120 84,156 120,138 C156,120 192,156 228,138 C250,127 262,132 278,135" stroke="rgba(251,187,33,.4)" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-          </div>
         </div>
       </div>
 
@@ -813,7 +806,7 @@
         <div class="footer-icon footer-icon--ghost"><svg class="icon"><use href="#ic-headset"/></svg></div>
         <div class="footer-support-text">
           <div class="footer-label" data-i18n="footer.support">HỖ TRỢ KHÁCH HÀNG</div>
-          <div class="footer-value" data-i18n="footer.supportHours">9:00 - 18:00 (Thứ 2 - Thứ 7)</div>
+          <div class="footer-value" data-i18n="footer.supportHours">9:00 - 21:00 (Thứ 2 - Chủ Nhật)</div>
         </div>
       </div>
 
@@ -2052,7 +2045,7 @@ function handleSeatTap(node){
 }
 
 /* =========================================================
-   10. LỌC HẠNG VÉ (legend, không hiện giá)
+   10. LỌC HẠNG VÉ (legend — có giá để khách xem tổng quan)
    ========================================================= */
 function renderTiers(){
   const wrap = document.getElementById('tierList');
@@ -2064,7 +2057,8 @@ function renderTiers(){
     label.innerHTML =
       '<input type="checkbox" value="' + key + '">' +
       '<span class="tier-box"><svg viewBox="0 0 24 24" class="icon-stroke" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6.5"/></svg></span>' +
-      '<span class="tier-dot"></span><span class="tier-name">' + t.name + '</span>';
+      '<span class="tier-dot"></span><span class="tier-name">' + t.name + '</span>' +
+      '<span class="tier-price">' + fmtVND(t.price) + '</span>';
     label.querySelector('input').addEventListener('change', e => {
       e.target.checked ? activeTiers.add(key) : activeTiers.delete(key);
       applyTierFilter();
@@ -2833,17 +2827,56 @@ function toast(msg, kind){
 }
 
 /* =========================================================
-   14. HEADER
+   14. HEADER — đổi ngôn ngữ (VI / EN)
+   Ghi chú: chỉ khung trang (nav, footer) hỗ trợ song ngữ ở đây. Toàn bộ
+   luồng chọn ghế/thanh toán bên dưới (thẻ ghế, modal thanh toán, màn hình
+   xác nhận…) vẫn đang tiếng Việt — cần một đợt làm riêng do khối lượng
+   chuỗi text nằm rải rác trong JS khá lớn.
    ========================================================= */
 document.getElementById('menuToggle').addEventListener('click',
   () => document.getElementById('mobileNav').classList.toggle('open'));
 
+const I18N = {
+  vi: {
+    'nav.home':'Trang chủ', 'nav.about':'Giới thiệu', 'nav.contact':'Liên hệ',
+    'footer.desc':'LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.',
+    'footer.contactHeading':'LIÊN HỆ VỚI CHÚNG TÔI',
+    'footer.socialHeading':'KẾT NỐI VỚI LUMISHOW',
+    'footer.support':'HỖ TRỢ KHÁCH HÀNG',
+    'footer.supportHours':'9:00 - 21:00 (Thứ 2 - Chủ Nhật)',
+    'footer.ctaText':'Sẵn sàng kiến tạo những trải nghiệm sân khấu đột phá cùng LumiShow?',
+    'footer.ctaBtn':'LIÊN HỆ HỢP TÁC',
+    'footer.copyright':'© 2026 LumiShow. All rights reserved.',
+    'contact.address':'Địa chỉ', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
+    'contact.addressVal':'67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội'
+  },
+  en: {
+    'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact',
+    'footer.desc':'LumiShow produces stage shows with 3D Mapping, stage visuals and cutting-edge projection technology.',
+    'footer.contactHeading':'CONTACT US',
+    'footer.socialHeading':'CONNECT WITH LUMISHOW',
+    'footer.support':'CUSTOMER SUPPORT',
+    'footer.supportHours':'9:00 AM - 9:00 PM (Mon - Sun)',
+    'footer.ctaText':'Ready to create groundbreaking stage experiences with LumiShow?',
+    'footer.ctaBtn':'PARTNER WITH US',
+    'footer.copyright':'© 2026 LumiShow. All rights reserved.',
+    'contact.address':'Address', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
+    'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi'
+  }
+};
+
 let currentLang = 'vi';
-document.getElementById('langToggle').addEventListener('click', () => {
-  currentLang = currentLang === 'vi' ? 'en' : 'vi';
-  document.getElementById('langLabel').textContent = currentLang.toUpperCase();
-  document.documentElement.lang = currentLang;
-});
+function setLang(lang){
+  currentLang = lang;
+  const dict = I18N[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const val = dict[el.dataset.i18n];
+    if (val) el.textContent = val;
+  });
+  document.getElementById('langLabel').textContent = lang.toUpperCase();
+  document.documentElement.lang = lang;
+}
+document.getElementById('langToggle').addEventListener('click', () => setLang(currentLang === 'vi' ? 'en' : 'vi'));
 
 /* =========================================================
    15. KHỞI ĐỘNG
