@@ -79,7 +79,7 @@
   .show-inner{max-width:var(--container);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
   .show-id{display:flex;align-items:center;gap:16px;min-width:0;}
   .show-poster{width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid var(--line-2);flex-shrink:0;background:var(--card-bg);}
-  .show-name{font-family:var(--font-heading);font-size:clamp(17px,3.4vw,22px);font-weight:800;letter-spacing:.4px;line-height:1.2;}
+  .show-name{font-family:var(--font-heading);font-size:clamp(17px,3.4vw,22px);font-weight:800;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}
   .show-when{display:flex;align-items:center;gap:8px;color:var(--gray);font-size:13.5px;margin-top:4px;}
   .show-when .icon{width:15px;height:15px;}
   .show-venue{display:flex;align-items:center;gap:8px;color:var(--gray);font-size:13.5px;letter-spacing:.4px;text-transform:uppercase;font-weight:600;}
@@ -541,7 +541,7 @@
     <div class="show-id">
       <img class="show-poster" src="image/News/news0_rxtw_12_8.jpg" alt="Sơn Thần Thủy Quái">
       <div>
-        <h1 class="show-name">SƠN THẦN THỦY QUÁI</h1>
+        <h1 class="show-name" data-i18n="show.name">Sơn Thần Thủy Quái</h1>
         <div class="show-when"><svg class="icon"><use href="#ic-calendar"/></svg><span id="showWhen">—</span></div>
       </div>
     </div>
@@ -993,12 +993,15 @@ const ST = {
   SOLD:'SOLD'
 };
 
-// Hạng vé: tên + màu để làm chú thích. Giá gắn theo từng ghế, không hiện ở block Hạng vé.
+// Hạng vé: tên (song ngữ) + màu để làm chú thích. Giá gắn theo từng ghế, không hiện ở block Hạng vé.
 const TIERS = {
-  'son-than':  { name:'Sơn Thần',  color:'#7CFF5A', price:300000 },
-  'thuy-quai': { name:'Thủy Quái', color:'#23B6FF', price:250000 },
-  'mi-nuong':  { name:'Mị Nương',  color:'#FFD15A', price:200000 }
+  'son-than':  { name:{vi:'Sơn Thần',  en:'Son Than'},  color:'#7CFF5A', price:300000 },
+  'thuy-quai': { name:{vi:'Thủy Quái', en:'Thuy Quai'}, color:'#23B6FF', price:250000 },
+  'mi-nuong':  { name:{vi:'Mị Nương',  en:'Mi Nuong'},  color:'#FFD15A', price:200000 }
 };
+// Tên hạng ghế theo ngôn ngữ hiện tại (currentLang khai báo cuối file) — dùng ở mọi nơi
+// hiển thị tên hạng thay vì đọc thẳng TIERS[x].name (giờ là object {vi,en}).
+const tierName = key => TIERS[key].name[currentLang] || TIERS[key].name.vi;
 
 /* ---------- Hình học khán phòng (bám theo sơ đồ thật của Rạp Xiếc Trung Ương) ----------
    Góc θ tính theo chiều kim đồng hồ, mốc 0° ở hướng 12 giờ (hậu trường).
@@ -1545,6 +1548,14 @@ function drawArena(){
    sẵn trong DOM nên tự động nằm ĐÈ LÊN TRÊN khung tĩnh cũ (thứ tự phần tử
    trong SVG quyết định lớp trên/dưới, phần tử thêm sau luôn vẽ đè lên).
    ========================================================= */
+// Nhãn "Cửa thoát hiểm - WC" / "Lối vào cửa khán giả" vẽ đè lên sơ đồ — đổi
+// theo ngôn ngữ được vì đây là <text> do JS dựng (khác với chữ nhúng trong
+// ảnh nền tĩnh #arenaArt, không đổi được).
+const safetyBoxLabels = [];
+function updateSafetyBoxLabels(){
+  safetyBoxLabels.forEach(el => { el.textContent = t(el.dataset.i18nMap); });
+}
+
 function drawSafetyBoxes(){
   function ringPolygon(rows, angleA, angleB){
     const p1 = rows.map(row => polar(row.r, angleA(row)));
@@ -1579,8 +1590,9 @@ function drawSafetyBoxes(){
     const angleMid = nearRows.reduce((sum, row) => sum + (fe(row) + rs(row)) / 2, 0) / nearRows.length;
     const [wx, wy] = polar(rMid, angleMid);
     const label = mk('text',{x:wx, y:wy, class:'safe-box-label'});
-    label.textContent = 'CỬA THOÁT HIỂM - WC';
+    label.dataset.i18nMap = 'map.exitWc';
     gArena.appendChild(label);
+    safetyBoxLabels.push(label);
   });
 
   /* Khối "Lối vào cửa khán giả" — khe thật giữa 2 nửa ghế (lẻ/chẵn) của mỗi hàng, quanh
@@ -1592,8 +1604,11 @@ function drawSafetyBoxes(){
     return Math.min(pxMargin, gapWidth * 0.38);
   };
   { const [lx,ly] = polar((nearRows[0].r + nearRows[nearRows.length - 1].r) / 2 + 20, 180);
-    const t = mk('text',{x:lx,y:ly,class:'safe-box-label vertical'});
-    t.textContent = 'LỐI VÀO CỬA KHÁN GIẢ'; gArena.appendChild(t); }
+    const el = mk('text',{x:lx,y:ly,class:'safe-box-label vertical'});
+    el.dataset.i18nMap = 'map.entrance';
+    gArena.appendChild(el);
+    safetyBoxLabels.push(el); }
+  updateSafetyBoxLabels();
 }
 
 function drawSeats(){
@@ -1715,7 +1730,7 @@ function renderSummary(){
     const tier = document.createElement('span'); tier.className = 'sr-tier';
     tier.textContent = bad
       ? (seatStates[id] === ST.SOLD ? t('msg.seatSold') : t('msg.seatHeldOther'))
-      : t('tier.prefix') + TIERS[s.tier].name;
+      : t('tier.prefix') + tierName(s.tier);
     const price = document.createElement('span'); price.className = 'sr-price'; price.textContent = fmtVND(s.price);
     row.append(dot, code, tier, price);
 
@@ -1727,7 +1742,7 @@ function renderSummary(){
       x.addEventListener('click', () => {
         if (bad){ removeSeat(id); return; }            // ghế đã hỏng: gỡ luôn, không cần hỏi
         confirmDialog({
-          title:t('confirm.removeSeatTitle', { id: s.id, tier: TIERS[s.tier].name, price: fmtVND(s.price) }),
+          title:t('confirm.removeSeatTitle', { id: s.id, tier: tierName(s.tier), price: fmtVND(s.price) }),
           body:t('confirm.removeSeatBody'),
           okText:t('modal.removeSeat'),
           onOk:() => { removeSeat(id); toast(t('msg.seatRemoved', { id: s.id })); }
@@ -1798,7 +1813,7 @@ function updateSeatCard(id){
   const tier = TIERS[s.tier];
   const st = seatStates[id];
   card.style.setProperty('--sc-c', tier.color);
-  document.getElementById('scTier').textContent = t('tier.prefix') + tier.name;
+  document.getElementById('scTier').textContent = t('tier.prefix') + tierName(s.tier);
   document.getElementById('scSeat').textContent = s.id;
   document.getElementById('scWhere').textContent = t('sc.where', { row: s.row, num: s.num });
   document.getElementById('scPrice').innerHTML = fmtVND(s.price) + '<small>' + t('sc.perTicket') + '</small>';
@@ -1847,7 +1862,7 @@ document.getElementById('scBtn').addEventListener('click', () => {
   if (seatStates[id] === ST.SELECTED_BY_ME){
     const s = SEAT_BY_ID.get(id);
     confirmDialog({
-      title:t('confirm.removeSeatTitle', { id, tier: TIERS[s.tier].name, price: fmtVND(s.price) }),
+      title:t('confirm.removeSeatTitle', { id, tier: tierName(s.tier), price: fmtVND(s.price) }),
       body:t('confirm.removeSeatBody'),
       okText:t('modal.removeSeat'),
       onOk:() => { removeSeat(id); toast(t('msg.seatRemoved', { id })); }
@@ -2064,9 +2079,9 @@ function renderTiers(){
     label.className = 'tier';
     label.style.setProperty('--tier-c', t.color);
     label.innerHTML =
-      '<input type="checkbox" value="' + key + '">' +
+      '<input type="checkbox" value="' + key + '"' + (activeTiers.has(key) ? ' checked' : '') + '>' +
       '<span class="tier-box"><svg viewBox="0 0 24 24" class="icon-stroke" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6.5"/></svg></span>' +
-      '<span class="tier-dot"></span><span class="tier-name">' + t.name + '</span>' +
+      '<span class="tier-dot"></span><span class="tier-name">' + tierName(key) + '</span>' +
       '<span class="tier-price">' + fmtVND(t.price) + '</span>';
     label.querySelector('input').addEventListener('change', e => {
       e.target.checked ? activeTiers.add(key) : activeTiers.delete(key);
@@ -2184,14 +2199,14 @@ function buildOrder(customer){
   const valid = selectedSeats.filter(id => !invalidSeats.has(id));
   return {
     code: makeOrderCode(),
-    show: 'Sơn Thần Thủy Quái',
+    show: t('show.name'),
     showKey: currentShowKey(),
     showWhen: fmtDT(),
     venue: 'Rạp Xiếc Trung Ương — 67-69 Trần Nhân Tông, Hà Nội',
     customer,
     seats: valid.map(id => {
       const s = SEAT_BY_ID.get(id);
-      return { id:s.id, row:s.row, num:s.num, tier:s.tier, tierName:TIERS[s.tier].name, price:s.price };
+      return { id:s.id, row:s.row, num:s.num, tier:s.tier, tierName:tierName(s.tier), price:s.price };
     }),
     total: totalAmount(),
     status: 'PENDING_PAYMENT',
@@ -2212,7 +2227,7 @@ function renderOrderBox(){
 
   let html =
     '<div class="co-order-title">' + t('co.orderTitle') + '</div>' +
-    '<div class="co-order-row"><b>Sơn Thần Thủy Quái</b><span class="co-or-right">' + fmtDT() + '</span></div>' +
+    '<div class="co-order-row"><b>' + t('show.name') + '</b><span class="co-or-right">' + fmtDT() + '</span></div>' +
     '<div class="co-order-row">' + t('co.selectedSeats') + '<span class="co-or-right">' + (seatList || '—') + '</span></div>' +
     '<div class="co-order-row">' + t('co.qty') + '<span class="co-or-right">' + valid.length + ' ' + t('co.qtyUnit') + '</span></div>';
 
@@ -2858,6 +2873,9 @@ const I18N = {
     'contact.addressVal':'67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội',
 
     'show.venue':'Rạp Xiếc Trung Ương — 67-69 Trần Nhân Tông, Hà Nội',
+    'show.name':'Sơn Thần Thủy Quái',
+    'map.exitWc':'CỬA THOÁT HIỂM - WC',
+    'map.entrance':'LỐI VÀO CỬA KHÁN GIẢ',
     'sidebar.qty':'Số lượng vé',
     'sidebar.qtyHint':'Số vé thay đổi theo số ghế bạn chọn trên sơ đồ.',
     'sidebar.changeShow':'Đổi suất diễn',
@@ -2972,6 +2990,9 @@ const I18N = {
     'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi',
 
     'show.venue':'Rạp Xiếc Trung Ương — 67-69 Tran Nhan Tong, Hanoi',
+    'show.name':'Son Than Thuy Quai',
+    'map.exitWc':'EMERGENCY EXIT - WC',
+    'map.entrance':'AUDIENCE ENTRANCE',
     'sidebar.qty':'Number of tickets',
     'sidebar.qtyHint':'Ticket count follows the seats you select on the map.',
     'sidebar.changeShow':'Change showtime',
@@ -3097,10 +3118,13 @@ function setLang(lang){
   document.documentElement.lang = lang;
 
   // Vẽ lại phần nội dung động phụ thuộc ngôn ngữ (đã render trước đó bằng
-  // ngôn ngữ cũ) — lịch diễn (MONTHS/DOWS), summary ghế, thẻ ghế đang mở,
-  // và panel thanh toán nếu đang mở (setStep tự renderOrderBox/renderBankBox).
+  // ngôn ngữ cũ) — hạng vé, lịch diễn (MONTHS/DOWS), summary ghế, thẻ ghế
+  // đang mở, nhãn an toàn trên sơ đồ, và panel thanh toán nếu đang mở
+  // (setStep tự renderOrderBox/renderBankBox).
+  renderTiers();
   renderSchedule();
   renderSummary();
+  updateSafetyBoxLabels();
   if (activeSeat) updateSeatCard(activeSeat);
   if (coOverlay.classList.contains('show')) setStep(coStep);
 }
