@@ -365,7 +365,13 @@
     .navbar{padding-top:13px;padding-bottom:13px;}
     /* Video trailer khổ ngang, khung hero mobile lại cao/hẹp — object-fit:cover
        phải cắt bớt 2 bên để lấp đầy. Hạ min-height gần tỉ lệ video hơn, đỡ cắt. */
-    .about-hero{padding-top:40px;padding-bottom:44px;min-height:min(48vh,300px);}
+    /* .about-hero có aspect-ratio:16/9 ở rule gốc (cho desktop). Kết hợp với
+       min-height cố định ở đây, trình duyệt tính NGƯỢC chiều rộng từ chiều
+       cao theo tỉ lệ đó (vd cao 300px → rộng 533px) thay vì lấp đầy viewport
+       — mọi layout con bên trong (.ah-inner, .ah-actions...) tính % theo con
+       số sai này, gây lệch/tràn trên màn hình hẹp. Tắt aspect-ratio ở mobile
+       để chiều rộng luôn theo viewport thật, chiều cao chỉ do min-height quyết định. */
+    .about-hero{aspect-ratio:auto;padding-top:40px;padding-bottom:44px;min-height:min(48vh,300px);}
     .journey-row{grid-template-columns:1fr;}
     .journey-line,.journey-row::before{display:none;}
     .journey-media{min-height:220px;aspect-ratio:4/3;}
@@ -384,7 +390,12 @@
        .ah-actions{width:100%} bên dưới tính % theo 1 giá trị auto, không
        ổn định — ép width:100% ở đây để có mốc rõ ràng cho .ah-actions
        và margin:auto của nó bám vào, căn giữa mới chắc chắn đúng. */
-    .ah-inner{width:100%;}
+    /* min-width:0: .ah-inner là flex item của .about-hero — mặc định flex
+       item có min-width:auto, không co nhỏ hơn nội dung bên trong (nút
+       "Khám phá câu chuyện" không xuống dòng) nếu sau này nội dung dài hơn
+       độ rộng cho phép. Phòng hờ, không phải nguyên nhân chính của lỗi lệch
+       (xem giải thích ở .about-hero bên trên — aspect-ratio mới là gốc). */
+    .ah-inner{width:100%;min-width:0;}
     .ah-actions{flex-direction:column;align-items:center;width:100%;max-width:320px;margin:0 auto;}
     .btn-outline-light{width:100%;justify-content:center;}
     .ah-actions .btn-watch-video{width:100%;justify-content:center;}

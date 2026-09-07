@@ -449,17 +449,18 @@
     .nav-links{display:none;}
     .menu-toggle{display:flex;}
     .navbar{padding-top:13px;padding-bottom:13px;}
-    /* Ảnh KV (SonThanThuyQuai.jpg) khổ ngang ~16:9, khung hero trên mobile lại
-       rất cao/hẹp — object-fit:cover phải cắt gần hết 2 bên (2 nhân vật ở rìa
-       ảnh) để lấp đầy chiều cao. Hạ min-height để khung gần tỉ lệ ảnh hơn,
-       đỡ cắt mất 2 nhân vật. Khi hạ chiều cao, ảnh không còn bị cắt theo chiều
-       dọc nữa (hiện trọn cả phần chân/nền phía dưới) — tăng vùng gradient tối
-       ở đáy để che phần đó và giữ chữ LumiShow dễ đọc. */
-    .hero{padding-top:30px;padding-bottom:70px;min-height:min(52vh,400px);}
-    .hero-bg-overlay{background:
-      linear-gradient(0deg,var(--overlay-strong) 0%,var(--overlay-strong) 12%,transparent 50%),
-      linear-gradient(90deg,var(--overlay-strong) 0%,var(--overlay-mid) 45%,var(--overlay-soft) 100%);
-    }
+    /* Ảnh KV (SonThanThuyQuai.jpg) khổ ngang đúng 16:9, khung hero trên mobile
+       hẹp/cao nên object-fit:cover từng phải cắt 2 bên để lấp đầy chiều cao —
+       dù đã hạ min-height ở lần sửa trước, vẫn còn crop. Cách hết crop dứt
+       điểm: bỏ kiểu "chữ đè lên ảnh" trên mobile, chuyển .hero-bg thành khối
+       bình thường với aspect-ratio đúng bằng ảnh (không còn absolute/inset:0
+       phủ full hero nữa) — ảnh hiện nguyên vẹn 100% không cắt bên nào. Chữ
+       "LumiShow / Nơi ánh sáng kể câu chuyện" dời xuống nằm dưới ảnh, trên nền
+       tối sẵn có của .hero thay vì overlay lên ảnh.  */
+    .hero{display:block;padding:0 0 32px;min-height:0;background:#07090a;}
+    .hero-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9;overflow:hidden;}
+    .hero-inner{padding:22px var(--gutter) 0;}
+    .hero-bg-overlay{background:linear-gradient(180deg,transparent 78%,#07090a 100%);box-shadow:none;}
     .section-title{font-size:24px;}
     .news-grid{grid-template-columns:1fr;}
     /* margin-left/top cố định của hero-eyebrow được canh mắt cho màn desktop —
