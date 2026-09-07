@@ -299,6 +299,12 @@
   .co-err{display:none;color:var(--danger);font-size:12px;font-weight:600;margin-top:6px;}
   .co-err.show{display:block;}
   .co-hint{color:var(--gray-dim);font-size:12px;margin-top:7px;line-height:1.5;}
+  .co-coupon-row{display:flex;gap:10px;}
+  .co-coupon-row .co-field{flex:1 1 auto;min-width:0;}
+  .co-coupon-row .btn-ghost{flex:0 0 auto;}
+  .co-coupon-msg{display:block;font-size:12px;font-weight:600;margin-top:7px;min-height:15px;color:var(--gray-dim);}
+  .co-coupon-msg.ok{color:var(--green);}
+  .co-coupon-msg.warn{color:var(--danger);}
 
   .co-order{margin-top:20px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.02);}
   .co-order-title{font-size:11.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gray-dim);font-weight:700;margin-bottom:10px;}
@@ -874,6 +880,14 @@
             <span class="co-err" id="errEmail">Email chưa hợp lệ.</span>
             <span class="co-hint">Vé điện tử và các thông báo về tình trạng đặt vé sẽ được gửi tới email này.</span>
           </div>
+          <div class="co-field-wrap full">
+            <label class="co-label" for="coCoupon">Mã giảm giá (nếu có)</label>
+            <div class="co-coupon-row">
+              <input class="co-field" id="coCoupon" type="text" placeholder="Nhập mã giảm giá" autocomplete="off" maxlength="30">
+              <button type="button" class="btn-ghost" id="coCouponApply">Áp dụng</button>
+            </div>
+            <span class="co-coupon-msg" id="coCouponMsg"></span>
+          </div>
         </div>
         <div class="co-order" id="coOrder"></div>
       </section>
@@ -1190,13 +1204,16 @@ async function fetchHoldStatus(holdId) {
 }
 
 /* Tạo đơn hàng + payment link PayOS thật cho hold đang giữ. Server tự tính
-   lại tiền từ giá ghế thật, không tin số client. */
-async function createPaymentOnServer(holdId, customer) {
+   lại tiền từ giá ghế thật (và validate lại coupon nếu có), không tin số
+   client gửi lên. */
+async function createPaymentOnServer(holdId, customer, couponCode) {
   if (TEST_MODE) {
     return {
       orderId: 'test_order_' + Date.now(),
       orderCode: Date.now(),
+      subtotal: 0,
       amount: 0,
+      coupon: couponCode ? { code: couponCode, percentOff: 10, discount: 0 } : null,
       checkoutUrl: '#',
       qrCode: '',
       qrCodeDataUrl: ''
@@ -1210,7 +1227,8 @@ async function createPaymentOnServer(holdId, customer) {
       holdId,
       customerName: customer.name,
       customerPhone: customer.phone,
-      customerEmail: customer.email
+      customerEmail: customer.email,
+      couponCode: couponCode || undefined
     })
   });
 
@@ -1225,7 +1243,35 @@ async function createPaymentOnServer(holdId, customer) {
     throw new Error(result.message || 'Không thể tạo thanh toán. Vui lòng thử lại.');
   }
 
-  return result.order; // { orderId, orderCode, amount, checkoutUrl, qrCode, qrCodeDataUrl }
+  return result.order; // { orderId, orderCode, subtotal, amount, coupon, checkoutUrl, qrCode, qrCodeDataUrl }
+}
+
+/* Kiểm tra mã giảm giá — chỉ để hiện % giảm ngay khi khách bấm "Áp dụng",
+   KHÔNG phải bước tính tiền cuối cùng (server tính lại thật ở bước tạo
+   thanh toán, xem createPaymentOnServer). */
+async function validateCouponOnServer(code) {
+  if (TEST_MODE) {
+    return { success: true, valid: true, code, percentOff: 10 };
+  }
+
+  const response = await fetch(`${API_BASE_URL}/coupons/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code })
+  });
+
+  let result;
+  try {
+    result = await response.json();
+  } catch (e) {
+    throw new Error('Không thể kết nối hệ thống.');
+  }
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || 'Mã giảm giá không hợp lệ.');
+  }
+
+  return result; // { success, valid, code, percentOff }
 }
 
 /* Hỏi trạng thái thanh toán — dùng để poll trong lúc chưa có domain đăng ký
@@ -2118,6 +2164,7 @@ const coTitle     = document.getElementById('coTitle');
 
 let coStep = 1;
 let currentOrder = null;   // đơn hàng của phiên giữ ghế hiện tại
+let appliedCoupon = null;  // { code, percentOff } sau khi bấm "Áp dụng" thành công — chỉ để ước tính hiển thị, server luôn validate + tính lại
 
 const fmtDT = () => document.getElementById('showWhen').textContent;
 
@@ -2154,13 +2201,63 @@ function renderOrderBox(){
   const box = document.getElementById('coOrder');
   const valid = selectedSeats.filter(id => !invalidSeats.has(id));
   const seatList = valid.map(id => SEAT_BY_ID.get(id).id).join(', ');
-  box.innerHTML =
+  const subtotal = totalAmount();
+  // Chỉ là ước tính hiển thị trước khi tạo payment — số tiền thật do server
+  // tính lại (kèm validate lại coupon) ngay khi bấm "Tiếp tục thanh toán".
+  const discount = appliedCoupon ? Math.round(subtotal * appliedCoupon.percentOff / 100) : 0;
+  const total = subtotal - discount;
+
+  let html =
     '<div class="co-order-title">Đơn hàng của bạn</div>' +
     '<div class="co-order-row"><b>Sơn Thần Thủy Quái</b><span class="co-or-right">' + fmtDT() + '</span></div>' +
     '<div class="co-order-row">Ghế đã chọn<span class="co-or-right">' + (seatList || '—') + '</span></div>' +
-    '<div class="co-order-row">Số lượng<span class="co-or-right">' + valid.length + ' vé</span></div>' +
-    '<div class="co-order-total"><span>Tổng tiền</span><b>' + fmtVND(totalAmount()) + '</b></div>';
+    '<div class="co-order-row">Số lượng<span class="co-or-right">' + valid.length + ' vé</span></div>';
+
+  if (appliedCoupon){
+    html +=
+      '<div class="co-order-row">Tạm tính<span class="co-or-right">' + fmtVND(subtotal) + '</span></div>' +
+      '<div class="co-order-row">Mã ' + appliedCoupon.code + ' (-' + appliedCoupon.percentOff + '%)<span class="co-or-right">-' + fmtVND(discount) + '</span></div>';
+  }
+
+  html += '<div class="co-order-total"><span>Tổng tiền</span><b>' + fmtVND(total) + '</b></div>';
+  box.innerHTML = html;
 }
+
+/* Bấm "Áp dụng": chỉ hỏi server % giảm để hiện ước tính ngay, không tính
+   tiền cuối cùng ở đây. Ô trống + bấm Áp dụng = bỏ mã đang dùng. */
+document.getElementById('coCouponApply').addEventListener('click', async () => {
+  const input = document.getElementById('coCoupon');
+  const msg = document.getElementById('coCouponMsg');
+  const btn = document.getElementById('coCouponApply');
+  const code = input.value.trim().toUpperCase();
+
+  if (!code){
+    appliedCoupon = null;
+    msg.textContent = 'Đã bỏ mã giảm giá.';
+    msg.className = 'co-coupon-msg';
+    renderOrderBox();
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = 'Đang kiểm tra…';
+  msg.className = 'co-coupon-msg';
+
+  try {
+    const result = await validateCouponOnServer(code);
+    appliedCoupon = { code: result.code || code, percentOff: result.percentOff };
+    input.value = appliedCoupon.code;
+    msg.textContent = 'Áp dụng thành công — giảm ' + appliedCoupon.percentOff + '%.';
+    msg.className = 'co-coupon-msg ok';
+  } catch (error) {
+    appliedCoupon = null;
+    msg.textContent = error.message || 'Mã giảm giá không hợp lệ.';
+    msg.className = 'co-coupon-msg warn';
+  }
+
+  btn.disabled = false;
+  renderOrderBox();
+});
 
 /* Hiện thông tin thanh toán PayOS thật (mã đơn, số tiền server tính, link
    mở trang thanh toán PayOS — trang đó tự hiển thị QR thật). */
@@ -2169,9 +2266,18 @@ function renderBankBox(){
   const qr = document.getElementById('coQr');
 
   const rows = [
-    { k:'Mã đơn',   v: currentOrder && currentOrder.orderCode ? String(currentOrder.orderCode) : '', copy:true },
-    { k:'Số tiền',  v: currentOrder ? fmtVND(currentOrder.total) : '', copy:true, raw: currentOrder ? String(currentOrder.total) : '' }
+    { k:'Mã đơn',   v: currentOrder && currentOrder.orderCode ? String(currentOrder.orderCode) : '', copy:true }
   ];
+
+  // Chỉ hiện tạm tính/giảm giá nếu server xác nhận coupon thật sự được áp
+  // dụng (currentOrder.coupon do server trả về, không phải appliedCoupon
+  // ước tính ở bước 1 — coupon có thể đã bị server từ chối).
+  if (currentOrder && currentOrder.coupon && currentOrder.coupon.percentOff){
+    rows.push({ k:'Tạm tính', v: fmtVND(currentOrder.subtotal) });
+    rows.push({ k:'Mã ' + currentOrder.coupon.code + ' (-' + currentOrder.coupon.percentOff + '%)', v: '-' + fmtVND(currentOrder.coupon.discount) });
+  }
+
+  rows.push({ k:'Số tiền', v: currentOrder ? fmtVND(currentOrder.total) : '', copy:true, raw: currentOrder ? String(currentOrder.total) : '' });
 
   wrap.innerHTML = '';
   rows.forEach(r => {
@@ -2376,9 +2482,11 @@ coNextBtn.addEventListener('click', async () => {
     coNextBtn.disabled = true;
     let payment;
     try {
-      payment = await createPaymentOnServer(currentOrder.holdId, customer);
+      payment = await createPaymentOnServer(currentOrder.holdId, customer, appliedCoupon ? appliedCoupon.code : null);
     } catch (error) {
       coNextBtn.disabled = false;
+      // Coupon có thể vừa hết hạn/hết lượt đúng lúc này — server từ chối
+      // thẳng thay vì âm thầm tính giá gốc, khách cần biết để bỏ mã/thử mã khác.
       toast(error.message || 'Không thể tạo thanh toán. Vui lòng thử lại.', 'warn');
       return;
     }
@@ -2388,6 +2496,8 @@ coNextBtn.addEventListener('click', async () => {
     currentOrder.checkoutUrl = payment.checkoutUrl;
     currentOrder.qrCode = payment.qrCode;
     currentOrder.qrCodeDataUrl = payment.qrCodeDataUrl;
+    currentOrder.subtotal = payment.subtotal;
+    currentOrder.coupon = payment.coupon; // sự thật từ server — có thể null dù đã "Áp dụng" ở bước 1
     if (payment.amount) currentOrder.total = payment.amount; // tiền thật từ server, không dùng số tự tính ở client
 
     try { sessionStorage.setItem(SAVED_ORDER_KEY, JSON.stringify(currentOrder)); } catch(e){}

@@ -34,14 +34,16 @@ router.post("/payments/create", paymentLimiter, async (req, res) => {
             holdId,
             customerName,
             customerPhone,
-            customerEmail
+            customerEmail,
+            couponCode
         } = req.body;
 
         const result = await createPaymentForHold({
             holdId,
             customerName,
             customerPhone,
-            customerEmail
+            customerEmail,
+            couponCode
         });
 
         return res.status(201).json({

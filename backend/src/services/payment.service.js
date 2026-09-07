@@ -9,8 +9,10 @@ const crypto = require("crypto");
 const QRCode = require("qrcode");
 
 const { db } = require("../config/firebase");
+const { FieldValue } = require("firebase-admin/firestore");
 const { getHoldStatus } = require("./booking.service");
 const { sendTicketEmail } = require("./email.service");
+const { applyCouponToAmount } = require("./coupon.service");
 
 const payos = new PayOS({
     clientId: process.env.PAYOS_CLIENT_ID,
@@ -32,7 +34,8 @@ async function createPaymentForHold({
     holdId,
     customerName,
     customerPhone,
-    customerEmail
+    customerEmail,
+    couponCode
 }) {
 
     if (!holdId || !customerName || !customerPhone || !customerEmail) {
@@ -61,7 +64,7 @@ async function createPaymentForHold({
         seatRefs.map((ref) => ref.get())
     );
 
-    let amount = 0;
+    let subtotal = 0;
 
     seatDocs.forEach((doc, i) => {
 
@@ -69,8 +72,25 @@ async function createPaymentForHold({
             throw new Error(`Ghế ${hold.seatIds[i]} không tồn tại`);
         }
 
-        amount += doc.data().price;
+        subtotal += doc.data().price;
     });
+
+    // Coupon (nếu có) — validate lại từ đầu ngay tại đây (không tin trạng
+    // thái đã kiểm tra ở bước "Áp dụng" trước đó, coupon có thể vừa hết
+    // hạn/hết lượt trong lúc khách điền form) rồi tính amount từ subtotal
+    // vừa tính ở trên (giá ghế thật, không phải số client gửi).
+    let amount = subtotal;
+    let coupon = null;
+
+    if (couponCode) {
+        const applied = await applyCouponToAmount(couponCode, subtotal);
+        amount = applied.amount;
+        coupon = {
+            code: applied.code,
+            percentOff: applied.percentOff,
+            discount: applied.discount
+        };
+    }
 
     const orderCode = Date.now();
     const orderId = `order_${crypto.randomUUID()}`;
@@ -86,7 +106,9 @@ async function createPaymentForHold({
         seatIds: hold.seatIds,
 
         orderCode,
+        subtotal,
         amount,
+        coupon,
 
         customerName,
         customerPhone,
@@ -144,7 +166,9 @@ async function createPaymentForHold({
     return {
         orderId,
         orderCode,
+        subtotal,
         amount,
+        coupon,
         checkoutUrl: paymentLink.checkoutUrl,
         qrCode: paymentLink.qrCode,
         qrCodeDataUrl
@@ -196,6 +220,20 @@ async function finalizeOrderAsPaid(orderRef) {
         const seatDocs = await Promise.all(
             seatRefs.map((ref) => transaction.get(ref))
         );
+
+        // Coupon (nếu đơn có áp) — đọc trong transaction (bắt buộc đọc trước
+        // khi ghi) để tăng usedCount đúng lúc đơn PAID thật, không phải lúc
+        // tạo payment link. Nếu coupon doc đã bị xoá (hiếm, admin tự xoá)
+        // thì bỏ qua bước tăng, không chặn việc chốt đơn — tiền khách đã
+        // trả thật, không thể vì thiếu 1 con số thống kê mà huỷ đơn.
+        let couponRef = null;
+        let couponExists = false;
+
+        if (order.coupon && order.coupon.code) {
+            couponRef = db.collection("coupons").doc(order.coupon.code);
+            const couponSnap = await transaction.get(couponRef);
+            couponExists = couponSnap.exists;
+        }
 
         const now = new Date();
 
@@ -275,6 +313,17 @@ async function finalizeOrderAsPaid(orderRef) {
                 ticketCode
             });
         });
+
+        // ==========================================
+        // 5. Coupon → tăng usedCount (chỉ khi đơn thật sự PAID)
+        // ==========================================
+
+        if (couponRef && couponExists) {
+            transaction.update(couponRef, {
+                usedCount: FieldValue.increment(1),
+                updatedAt: now
+            });
+        }
 
         emailPayload = {
             order: {

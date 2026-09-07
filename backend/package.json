@@ -7,7 +7,8 @@
     "dev": "node src/index.js",
     "start": "node src/index.js",
     "seed:seats": "node scripts/seedSeats.js",
-    "seed:season": "node scripts/seedSeats.js"
+    "seed:season": "node scripts/seedSeats.js",
+    "coupons": "node scripts/manageCoupons.js"
   },
   "keywords": [],
   "author": "",
