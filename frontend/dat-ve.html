@@ -545,7 +545,7 @@
         <div class="show-when"><svg class="icon"><use href="#ic-calendar"/></svg><span id="showWhen">—</span></div>
       </div>
     </div>
-    <div class="show-venue"><svg class="icon"><use href="#ic-map-pin"/></svg><span>Rạp Xiếc Trung Ương — 67-69 Trần Nhân Tông, Hà Nội</span></div>
+    <div class="show-venue"><svg class="icon"><use href="#ic-map-pin"/></svg><span data-i18n="show.venue">Rạp Xiếc Trung Ương — 67-69 Trần Nhân Tông, Hà Nội</span></div>
   </div>
 </section>
 
@@ -555,14 +555,14 @@
       <div class="panel">
         <div class="block">
           <div class="qty-row">
-            <span class="qty-label">Số lượng vé</span>
+            <span class="qty-label" data-i18n="sidebar.qty">Số lượng vé</span>
             <span class="qty-val" id="qtyVal">0</span>
           </div>
-          <p class="qty-hint">Số vé thay đổi theo số ghế bạn chọn trên sơ đồ.</p>
+          <p class="qty-hint" data-i18n="sidebar.qtyHint">Số vé thay đổi theo số ghế bạn chọn trên sơ đồ.</p>
         </div>
 
         <div class="block">
-          <div class="block-title">Đổi suất diễn</div>
+          <div class="block-title" data-i18n="sidebar.changeShow">Đổi suất diễn</div>
           <div class="week-head">
             <button class="week-nav-btn" id="weekPrev" aria-label="Tuần trước"><svg class="icon"><use href="#ic-chev-left"/></svg></button>
             <div class="week-title" id="weekLabel"></div>
@@ -575,16 +575,16 @@
 
       <div class="panel">
         <div class="block">
-          <div class="block-title">Hạng vé</div>
+          <div class="block-title" data-i18n="sidebar.tier">Hạng vé</div>
           <div class="tier-list" id="tierList"></div>
         </div>
 
         <div class="block">
-          <div class="block-title">Trạng thái ghế</div>
+          <div class="block-title" data-i18n="sidebar.seatStatus">Trạng thái ghế</div>
           <div class="legend">
-            <div class="legend-item"><span class="legend-swatch mine"></span> Ghế bạn đang chọn</div>
-            <div class="legend-item"><span class="legend-swatch" style="background:#fff"></span> Người khác đang thanh toán</div>
-            <div class="legend-item"><span class="legend-swatch" style="background:var(--seat-sold)"></span> Đã bán</div>
+            <div class="legend-item"><span class="legend-swatch mine"></span> <span data-i18n="legend.mine">Ghế bạn đang chọn</span></div>
+            <div class="legend-item"><span class="legend-swatch" style="background:#fff"></span> <span data-i18n="legend.heldOther">Người khác đang thanh toán</span></div>
+            <div class="legend-item"><span class="legend-swatch" style="background:var(--seat-sold)"></span> <span data-i18n="legend.sold">Đã bán</span></div>
           </div>
         </div>
       </div>
@@ -593,9 +593,9 @@
 
   <section class="panel map-panel">
     <div class="map-topbar">
-      <div class="map-hint"><svg class="icon"><use href="#ic-cursor"/></svg><span>Chạm vào ghế để xem giá · Kéo để di chuyển · Cuộn để phóng to</span></div>
+      <div class="map-hint"><svg class="icon"><use href="#ic-cursor"/></svg><span data-i18n="map.hint">Chạm vào ghế để xem giá · Kéo để di chuyển · Cuộn để phóng to</span></div>
       <div class="map-tools">
-        <span class="map-avail">Còn trống: <b id="availCount">—</b></span>
+        <span class="map-avail"><span data-i18n="map.avail">Còn trống:</span> <b id="availCount">—</b></span>
       </div>
     </div>
     <div class="map-stage" id="mapStage">
@@ -711,7 +711,7 @@
         <div class="sc-where" id="scWhere">—</div>
         <div class="sc-price" id="scPrice">—</div>
         <div class="sc-state" id="scState">—</div>
-        <button class="sc-btn" id="scBtn">Thêm vé</button>
+        <button class="sc-btn" id="scBtn" data-i18n="sc.addTicket">Thêm vé</button>
       </div>
     </div>
   </section>
@@ -721,20 +721,20 @@
   <div class="summary-inner">
     <div class="hold-bar" id="holdBar">
       <svg class="icon"><use href="#ic-clock"/></svg>
-      <span>Ghế đang được giữ cho bạn. Hoàn tất thanh toán trước khi hết giờ.</span>
+      <span data-i18n="holdbar.text">Ghế đang được giữ cho bạn. Hoàn tất thanh toán trước khi hết giờ.</span>
       <span class="hold-time" id="holdTime">07:00</span>
     </div>
-    <div class="sum-label">Ghế đã chọn</div>
+    <div class="sum-label" data-i18n="sum.selected">Ghế đã chọn</div>
     <div class="sum-rows" id="sumRows"></div>
-    <div class="sum-empty" id="sumEmpty">Chưa chọn ghế nào — hãy chạm vào một ghế trên sơ đồ.</div>
+    <div class="sum-empty" id="sumEmpty" data-i18n="sum.empty">Chưa chọn ghế nào — hãy chạm vào một ghế trên sơ đồ.</div>
     <div class="sum-foot">
       <div class="sum-total">
-        <div class="sum-label">Tổng tiền</div>
+        <div class="sum-label" data-i18n="sum.total">Tổng tiền</div>
         <div class="sum-amount" id="sumAmount">0 ₫</div>
       </div>
       <div class="sum-actions">
-        <button class="btn-ghost" id="cancelHoldBtn" style="display:none">Hủy giữ ghế</button>
-        <button class="btn-primary" id="checkoutBtn" disabled><span id="checkoutLabel">Giữ ghế &amp; thanh toán</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></button>
+        <button class="btn-ghost" id="cancelHoldBtn" style="display:none" data-i18n="sum.cancelHold">Hủy giữ ghế</button>
+        <button class="btn-primary" id="checkoutBtn" disabled><span id="checkoutLabel" data-i18n="sum.checkoutHold">Giữ ghế &amp; thanh toán</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></button>
       </div>
     </div>
   </div>
@@ -827,11 +827,11 @@
 
 <div class="overlay" id="overlay">
   <div class="modal" role="dialog" aria-modal="true">
-    <h3 id="mTitle">Xác nhận</h3>
+    <h3 id="mTitle" data-i18n="modal.confirmTitle">Xác nhận</h3>
     <p id="mBody">—</p>
     <div class="modal-actions">
-      <button class="m-cancel" id="mCancel">Giữ lại</button>
-      <button class="m-ok" id="mOk">Bỏ ghế</button>
+      <button class="m-cancel" id="mCancel" data-i18n="modal.keep">Giữ lại</button>
+      <button class="m-ok" id="mOk" data-i18n="modal.removeSeat">Bỏ ghế</button>
     </div>
   </div>
 </div>
@@ -843,13 +843,13 @@
     <button class="co-close" id="coClose" aria-label="Đóng">×</button>
 
     <div class="co-head">
-      <h3 id="coTitle">Thông tin người đặt vé</h3>
+      <h3 id="coTitle" data-i18n="co.custInfo">Thông tin người đặt vé</h3>
       <div class="co-steps">
-        <span class="co-step active" data-step="1"><i>1</i><span class="co-step-label">Thông tin</span></span>
+        <span class="co-step active" data-step="1"><i>1</i><span class="co-step-label" data-i18n="co.step1">Thông tin</span></span>
         <span class="co-step-sep"></span>
-        <span class="co-step" data-step="2"><i>2</i><span class="co-step-label">Thanh toán</span></span>
+        <span class="co-step" data-step="2"><i>2</i><span class="co-step-label" data-i18n="co.step2">Thanh toán</span></span>
         <span class="co-step-sep"></span>
-        <span class="co-step" data-step="3"><i>3</i><span class="co-step-label">Hoàn tất</span></span>
+        <span class="co-step" data-step="3"><i>3</i><span class="co-step-label" data-i18n="co.step3">Hoàn tất</span></span>
       </div>
     </div>
 
@@ -858,26 +858,26 @@
       <section class="co-view" id="coView1">
         <div class="co-grid">
           <div class="co-field-wrap">
-            <label class="co-label" for="coName">Họ và tên *</label>
-            <input class="co-field" id="coName" type="text" placeholder="Nguyễn Văn A" autocomplete="name">
-            <span class="co-err" id="errName">Vui lòng nhập họ và tên.</span>
+            <label class="co-label" for="coName" data-i18n="co.name">Họ và tên *</label>
+            <input class="co-field" id="coName" type="text" placeholder="Nguyễn Văn A" data-i18n-ph="co.namePh" autocomplete="name">
+            <span class="co-err" id="errName" data-i18n="co.nameErr">Vui lòng nhập họ và tên.</span>
           </div>
           <div class="co-field-wrap">
-            <label class="co-label" for="coPhone">Số điện thoại *</label>
+            <label class="co-label" for="coPhone" data-i18n="co.phone">Số điện thoại *</label>
             <input class="co-field" id="coPhone" type="tel" placeholder="09xx xxx xxx" autocomplete="tel">
-            <span class="co-err" id="errPhone">Số điện thoại chưa hợp lệ.</span>
+            <span class="co-err" id="errPhone" data-i18n="co.phoneErr">Số điện thoại chưa hợp lệ.</span>
           </div>
           <div class="co-field-wrap full">
-            <label class="co-label" for="coEmail">Email *</label>
-            <input class="co-field" id="coEmail" type="email" placeholder="ban@example.com" autocomplete="email">
-            <span class="co-err" id="errEmail">Email chưa hợp lệ.</span>
-            <span class="co-hint">Vé điện tử và các thông báo về tình trạng đặt vé sẽ được gửi tới email này.</span>
+            <label class="co-label" for="coEmail" data-i18n="co.email">Email *</label>
+            <input class="co-field" id="coEmail" type="email" placeholder="ban@example.com" data-i18n-ph="co.emailPh" autocomplete="email">
+            <span class="co-err" id="errEmail" data-i18n="co.emailErr">Email chưa hợp lệ.</span>
+            <span class="co-hint" data-i18n="co.emailHint">Vé điện tử và các thông báo về tình trạng đặt vé sẽ được gửi tới email này.</span>
           </div>
           <div class="co-field-wrap full">
-            <label class="co-label" for="coCoupon">Mã giảm giá (nếu có)</label>
+            <label class="co-label" for="coCoupon" data-i18n="co.coupon">Mã giảm giá (nếu có)</label>
             <div class="co-coupon-row">
-              <input class="co-field" id="coCoupon" type="text" placeholder="Nhập mã giảm giá" autocomplete="off" maxlength="30">
-              <button type="button" class="btn-ghost" id="coCouponApply">Áp dụng</button>
+              <input class="co-field" id="coCoupon" type="text" placeholder="Nhập mã giảm giá" data-i18n-ph="co.couponPh" autocomplete="off" maxlength="30">
+              <button type="button" class="btn-ghost" id="coCouponApply" data-i18n="co.apply">Áp dụng</button>
             </div>
             <span class="co-coupon-msg" id="coCouponMsg"></span>
           </div>
@@ -889,17 +889,17 @@
       <section class="co-view" id="coView2" hidden>
         <div class="co-hold" id="coHoldBar">
           <svg class="icon"><use href="#ic-clock"/></svg>
-          <span>Ghế đang được giữ cho bạn. Hoàn tất chuyển khoản trước khi hết giờ.</span>
+          <span data-i18n="co.holdText2">Ghế đang được giữ cho bạn. Hoàn tất chuyển khoản trước khi hết giờ.</span>
           <span class="co-count" id="coCount">10:00</span>
         </div>
 
         <div class="co-pay">
-          <div class="co-qr" id="coQr">Mã QR thanh toán<br>sẽ hiển thị tại đây</div>
+          <div class="co-qr" id="coQr" data-i18n="co.qrPlaceholder">Mã QR thanh toán<br>sẽ hiển thị tại đây</div>
           <div class="co-bank" id="coBank"></div>
           <div class="co-pay-link" id="coPayLink"></div>
         </div>
 
-        <p class="co-payhint">
+        <p class="co-payhint" data-i18n="co.payhint">
           Vui lòng chuyển khoản <b>đúng số tiền</b> và <b>đúng nội dung</b> ở trên để hệ thống tự động đối soát.
           Sau khi chuyển khoản, bấm <b>“Tôi đã chuyển khoản”</b> — chúng tôi sẽ xác nhận và gửi vé qua email cho bạn.
         </p>
@@ -908,15 +908,15 @@
       <!-- ---- BƯỚC 3: hoàn tất ---- -->
       <section class="co-view co-done" id="coView3" hidden>
         <div class="co-done-mark"><svg class="icon"><use href="#ic-check-big"/></svg></div>
-        <h4 id="coDoneTitle">Đã ghi nhận yêu cầu đặt vé</h4>
+        <h4 id="coDoneTitle" data-i18n="co.doneTitle">Đã ghi nhận yêu cầu đặt vé</h4>
         <div class="co-code" id="coDoneCode">—</div>
         <p id="coDoneBody">—</p>
       </section>
     </div>
 
     <div class="co-foot">
-      <button class="btn-ghost" id="coBack">Quay lại</button>
-      <button class="btn-primary" id="coNext"><span id="coNextLabel">Tiếp tục thanh toán</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></button>
+      <button class="btn-ghost" id="coBack" data-i18n="co.back">Quay lại</button>
+      <button class="btn-primary" id="coNext"><span id="coNextLabel" data-i18n="co.continuePay">Tiếp tục thanh toán</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></button>
     </div>
   </div>
 </div>
@@ -1063,6 +1063,15 @@ const rad = d => d * Math.PI / 180;
 const polar = (r, deg) => [CX + r * Math.sin(rad(deg)), CY - r * Math.cos(rad(deg))];
 const fmtVND = n => n.toLocaleString('vi-VN') + ' ₫';
 
+/* Dịch UI theo ngôn ngữ hiện tại (I18N/currentLang khai báo cuối file, xem mục 14) —
+   an toàn gọi ở bất cứ đâu vì chỉ được gọi từ handler/hàm chạy sau khi cả file đã nạp
+   xong. Hỗ trợ nội suy đơn giản kiểu {name} qua tham số vars. */
+function t(key, vars){
+  let s = (I18N[currentLang] && I18N[currentLang][key]) || I18N.vi[key] || key;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : ''));
+  return s;
+}
+
 /* Toạ độ ghế thật, lấy từ sơ đồ gốc của rạp (SoDoRapXiec.html — xiecvietnam.vn,
    cùng địa chỉ 67-69 Trần Nhân Tông với suất diễn này), đã quy đổi sang hệ toạ độ
    CX=680,CY=680 bằng đúng phép biến đổi translate(26.276,33.895) scale(1.01587)
@@ -1161,11 +1170,11 @@ async function createHoldOnServer(showtimeId, seatIds) {
   try {
     result = await response.json();
   } catch (e) {
-    throw new Error('Không thể kết nối hệ thống đặt vé. Vui lòng thử lại.');
+    throw new Error(t('err.connBookingRetry'));
   }
 
   if (!response.ok || !result.success) {
-    throw new Error(result.message || 'Không thể giữ ghế. Vui lòng thử lại.');
+    throw new Error(result.message || t('err.holdFail'));
   }
 
   return result.hold; // { holdId, expiresAt, seatIds }
@@ -1186,11 +1195,11 @@ async function fetchHoldStatus(holdId) {
   try {
     result = await response.json();
   } catch (e) {
-    throw new Error('Không thể kết nối hệ thống đặt vé.');
+    throw new Error(t('err.connBooking'));
   }
 
   if (!response.ok || !result.success) {
-    throw new Error(result.message || 'Không thể kiểm tra trạng thái giữ ghế.');
+    throw new Error(result.message || t('err.holdStatusFail'));
   }
 
   return result; // { status: 'ACTIVE'|'EXPIRED'|'NOT_FOUND', ... }
@@ -1229,11 +1238,11 @@ async function createPaymentOnServer(holdId, customer, couponCode) {
   try {
     result = await response.json();
   } catch (e) {
-    throw new Error('Không thể kết nối hệ thống thanh toán.');
+    throw new Error(t('err.connPayment'));
   }
 
   if (!response.ok || !result.success) {
-    throw new Error(result.message || 'Không thể tạo thanh toán. Vui lòng thử lại.');
+    throw new Error(result.message || t('err.paymentCreateFail'));
   }
 
   return result.order; // { orderId, orderCode, subtotal, amount, coupon, checkoutUrl, qrCode, qrCodeDataUrl }
@@ -1257,11 +1266,11 @@ async function validateCouponOnServer(code) {
   try {
     result = await response.json();
   } catch (e) {
-    throw new Error('Không thể kết nối hệ thống.');
+    throw new Error(t('err.conn'));
   }
 
   if (!response.ok || !result.success) {
-    throw new Error(result.message || 'Mã giảm giá không hợp lệ.');
+    throw new Error(result.message || t('err.couponInvalidFull'));
   }
 
   return result; // { success, valid, code, percentOff }
@@ -1280,11 +1289,11 @@ async function fetchPaymentStatus(orderId) {
   try {
     result = await response.json();
   } catch (e) {
-    throw new Error('Không thể kết nối hệ thống thanh toán.');
+    throw new Error(t('err.connPayment'));
   }
 
   if (!response.ok || !result.success) {
-    throw new Error(result.message || 'Không thể kiểm tra trạng thái thanh toán.');
+    throw new Error(result.message || t('err.paymentStatusFail'));
   }
 
   return result; // { orderStatus, paymentStatus }
@@ -1308,13 +1317,13 @@ async function fetchSeatStates(showtimeId) {
   );
 
   if (!response.ok) {
-    throw new Error(`Không thể tải dữ liệu ghế. HTTP ${response.status}`);
+    throw new Error(`${t('err.seatLoadFail')} HTTP ${response.status}`);
   }
 
   const result = await response.json();
 
   if (!result.success || !result.seats) {
-    throw new Error(result.message || "Dữ liệu ghế không hợp lệ");
+    throw new Error(result.message || t('err.seatDataInvalid'));
   }
 
   const states = {};
@@ -1632,7 +1641,7 @@ function paintAllSeats(){
 function updateAvailCount(){
   let n = 0;
   for (const id in seatStates) if (seatStates[id] === ST.AVAILABLE) n++;
-  document.getElementById('availCount').textContent = n.toLocaleString('vi-VN') + ' ghế';
+  document.getElementById('availCount').textContent = n.toLocaleString('vi-VN') + ' ' + t('seat.availUnit');
 }
 
 let activeTiers = new Set();
@@ -1648,12 +1657,12 @@ function applyTierFilter(){
 function isMine(id){ return seatStates[id] === ST.SELECTED_BY_ME || seatStates[id] === ST.HELD_BY_ME; }
 
 function addSeat(id){
-  if (holdSession){ toast('Đang trong phiên giữ ghế. Hãy hủy giữ ghế nếu muốn đổi.', 'warn'); return; }
+  if (holdSession){ toast(t('msg.holdActive'), 'warn'); return; }
   const st = seatStates[id];
-  if (st === ST.SOLD){ toast('Ghế này đã được bán rồi!', 'warn'); return; }
-  if (st === ST.HELD_BY_OTHER){ toast('Ghế này đang được người khác thanh toán.', 'warn'); return; }
+  if (st === ST.SOLD){ toast(t('msg.seatSold'), 'warn'); return; }
+  if (st === ST.HELD_BY_OTHER){ toast(t('msg.seatHeldOther'), 'warn'); return; }
   if (st !== ST.AVAILABLE) return;
-  if (selectedSeats.length >= MAX_SEATS){ toast('Mỗi lần đặt tối đa ' + MAX_SEATS + ' ghế.', 'warn'); return; }
+  if (selectedSeats.length >= MAX_SEATS){ toast(t('msg.maxSeats', { n: MAX_SEATS }), 'warn'); return; }
 
   seatStates[id] = ST.SELECTED_BY_ME;
   selectedSeats.push(id);
@@ -1662,7 +1671,7 @@ function addSeat(id){
 }
 
 function removeSeat(id){
-  if (holdSession){ toast('Đang trong phiên giữ ghế. Hãy hủy giữ ghế nếu muốn đổi.', 'warn'); return; }
+  if (holdSession){ toast(t('msg.holdActive'), 'warn'); return; }
   const i = selectedSeats.indexOf(id);
   if (i === -1) return;
   selectedSeats.splice(i, 1);
@@ -1705,8 +1714,8 @@ function renderSummary(){
     const code = document.createElement('span'); code.className = 'sr-seat'; code.textContent = s.id;
     const tier = document.createElement('span'); tier.className = 'sr-tier';
     tier.textContent = bad
-      ? (seatStates[id] === ST.SOLD ? 'Ghế này đã được bán rồi!' : 'Ghế này đang được người khác thanh toán.')
-      : 'Hạng ' + TIERS[s.tier].name;
+      ? (seatStates[id] === ST.SOLD ? t('msg.seatSold') : t('msg.seatHeldOther'))
+      : t('tier.prefix') + TIERS[s.tier].name;
     const price = document.createElement('span'); price.className = 'sr-price'; price.textContent = fmtVND(s.price);
     row.append(dot, code, tier, price);
 
@@ -1718,10 +1727,10 @@ function renderSummary(){
       x.addEventListener('click', () => {
         if (bad){ removeSeat(id); return; }            // ghế đã hỏng: gỡ luôn, không cần hỏi
         confirmDialog({
-          title:'Xác nhận bỏ Ghế ' + s.id + ' (hạng ' + TIERS[s.tier].name + ' · ' + fmtVND(s.price) + ')?',
-          body:'Ghế sẽ được trả lại cho người khác đặt.',
-          okText:'Bỏ ghế',
-          onOk:() => { removeSeat(id); toast('Đã bỏ ghế ' + s.id + '.'); }
+          title:t('confirm.removeSeatTitle', { id: s.id, tier: TIERS[s.tier].name, price: fmtVND(s.price) }),
+          body:t('confirm.removeSeatBody'),
+          okText:t('modal.removeSeat'),
+          onOk:() => { removeSeat(id); toast(t('msg.seatRemoved', { id: s.id })); }
         });
       });
       row.append(x);
@@ -1740,10 +1749,10 @@ function refreshCheckoutBtn(){
   const label = document.getElementById('checkoutLabel');
   const validCount = selectedSeats.filter(id => !invalidSeats.has(id)).length;
   if (holdSession){
-    label.textContent = 'Thanh toán ngay';
+    label.textContent = t('sum.checkoutNow');
     btn.disabled = validCount === 0 || invalidSeats.size > 0;
   } else {
-    label.textContent = 'Giữ ghế & thanh toán';
+    label.textContent = t('sum.checkoutHold');
     // Điều kiện: có ít nhất 1 ghế hợp lệ và không còn ghế mất hiệu lực trong summary
     btn.disabled = validCount === 0 || invalidSeats.size > 0;
   }
@@ -1765,8 +1774,8 @@ function applyStateUpdate(updates){
       next === ST.SOLD ? lostSold++ : lostHeld++;
     }
   }
-  if (lostSold) toast('Ghế này đã được bán rồi! Vui lòng chọn ghế khác.', 'warn');
-  if (lostHeld) toast('Ghế này đang được người khác thanh toán.', 'warn');
+  if (lostSold) toast(t('msg.seatSoldChooseAnother'), 'warn');
+  if (lostHeld) toast(t('msg.seatHeldOther'), 'warn');
   if (lostSold + lostHeld){
     if (holdSession) endHold(false);
     if (activeSeat && invalidSeats.has(activeSeat)) updateSeatCard(activeSeat);
@@ -1789,10 +1798,10 @@ function updateSeatCard(id){
   const tier = TIERS[s.tier];
   const st = seatStates[id];
   card.style.setProperty('--sc-c', tier.color);
-  document.getElementById('scTier').textContent = 'Hạng ' + tier.name;
+  document.getElementById('scTier').textContent = t('tier.prefix') + tier.name;
   document.getElementById('scSeat').textContent = s.id;
-  document.getElementById('scWhere').textContent = 'Hàng ' + s.row + ' · Ghế số ' + s.num;
-  document.getElementById('scPrice').innerHTML = fmtVND(s.price) + '<small>/ vé</small>';
+  document.getElementById('scWhere').textContent = t('sc.where', { row: s.row, num: s.num });
+  document.getElementById('scPrice').innerHTML = fmtVND(s.price) + '<small>' + t('sc.perTicket') + '</small>';
 
   const stateEl = document.getElementById('scState');
   const btn = document.getElementById('scBtn');
@@ -1801,23 +1810,23 @@ function updateSeatCard(id){
   btn.disabled = false;
 
   if (st === ST.SELECTED_BY_ME){
-    stateEl.textContent = 'Đã chọn'; stateEl.classList.add('ok');
-    btn.textContent = 'Bỏ ghế này'; btn.classList.add('remove');
+    stateEl.textContent = t('seat.selected'); stateEl.classList.add('ok');
+    btn.textContent = t('sc.removeThis'); btn.classList.add('remove');
   } else if (st === ST.HELD_BY_ME){
-    stateEl.textContent = 'Đang giữ cho bạn'; stateEl.classList.add('ok');
-    btn.textContent = 'Đang giữ ghế'; btn.disabled = true;
+    stateEl.textContent = t('seat.heldMe'); stateEl.classList.add('ok');
+    btn.textContent = t('sc.holding'); btn.disabled = true;
   } else if (st === ST.HELD_BY_OTHER){
-    stateEl.textContent = 'Người khác đang thanh toán'; stateEl.classList.add('warn');
-    btn.textContent = 'Không thể chọn'; btn.disabled = true;
+    stateEl.textContent = t('seat.heldOther'); stateEl.classList.add('warn');
+    btn.textContent = t('sc.cannotSelect'); btn.disabled = true;
   } else if (st === ST.SOLD){
-    stateEl.textContent = 'Đã bán'; stateEl.classList.add('warn');
-    btn.textContent = 'Không thể chọn'; btn.disabled = true;
+    stateEl.textContent = t('seat.sold'); stateEl.classList.add('warn');
+    btn.textContent = t('sc.cannotSelect'); btn.disabled = true;
   } else {
-    stateEl.textContent = 'Còn trống';
+    stateEl.textContent = t('seat.available');
     if (holdSession){
-      btn.textContent = 'Đang giữ ghế khác'; btn.disabled = true;
+      btn.textContent = t('sc.holdingOther'); btn.disabled = true;
     } else {
-      btn.textContent = 'Thêm vé';
+      btn.textContent = t('sc.addTicket');
     }
   }
 }
@@ -1838,10 +1847,10 @@ document.getElementById('scBtn').addEventListener('click', () => {
   if (seatStates[id] === ST.SELECTED_BY_ME){
     const s = SEAT_BY_ID.get(id);
     confirmDialog({
-      title:'Xác nhận bỏ Ghế ' + id + ' (hạng ' + TIERS[s.tier].name + ' · ' + fmtVND(s.price) + ')?',
-      body:'Ghế sẽ được trả lại cho người khác đặt.',
-      okText:'Bỏ ghế',
-      onOk:() => { removeSeat(id); toast('Đã bỏ ghế ' + id + '.'); }
+      title:t('confirm.removeSeatTitle', { id, tier: TIERS[s.tier].name, price: fmtVND(s.price) }),
+      body:t('confirm.removeSeatBody'),
+      okText:t('modal.removeSeat'),
+      onOk:() => { removeSeat(id); toast(t('msg.seatRemoved', { id })); }
     });
   } else {
     addSeat(id);
@@ -2037,9 +2046,9 @@ function handleSeatTap(node){
   if (!node){ closeSeatCard(); return; }
   const id = node.dataset.id;
   const st = seatStates[id];
-  if (st === ST.SOLD){ toast('Ghế này đã được bán rồi!', 'warn'); closeSeatCard(); return; }
-  if (st === ST.HELD_BY_OTHER){ toast('Ghế này đang được người khác thanh toán.', 'warn'); closeSeatCard(); return; }
-  if (st === ST.SELECTED_BY_ME){ removeSeat(id); closeSeatCard(); toast('Đã bỏ ghế ' + id + '.'); return; }
+  if (st === ST.SOLD){ toast(t('msg.seatSold'), 'warn'); closeSeatCard(); return; }
+  if (st === ST.HELD_BY_OTHER){ toast(t('msg.seatHeldOther'), 'warn'); closeSeatCard(); return; }
+  if (st === ST.SELECTED_BY_ME){ removeSeat(id); closeSeatCard(); toast(t('msg.seatRemoved', { id })); return; }
   focusSeat(id, 2.4);
   openSeatCard(id);
 }
@@ -2087,7 +2096,7 @@ function startHold(serverExpiresAt){
   tickHold();
   holdSession.timerId = setInterval(tickHold, 1000);
   syncAll();
-  toast('Đã giữ ' + valid.length + ' ghế trong ' + Math.round(HOLD_SECONDS/60) + ' phút.');
+  toast(t('msg.holdCreated', { n: valid.length, min: Math.round(HOLD_SECONDS/60) }));
 }
 function tickHold(){
   if (!holdSession) return;
@@ -2105,7 +2114,7 @@ function tickHold(){
     endHold(true);
     if (expired){ expired.status = 'EXPIRED'; sendBookingEmail('HOLD_EXPIRED', expired); }
     closeCheckout();
-    toast('Hết thời gian giữ ghế. Ghế đã được trả lại.', 'warn');
+    toast(t('msg.holdExpired'), 'warn');
   }
 }
 function endHold(release){
@@ -2124,22 +2133,22 @@ function endHold(release){
 }
 cancelHoldBtn.addEventListener('click', () => {
   confirmDialog({
-    title:'Hủy giữ ghế?',
-    body:'Toàn bộ ghế đang giữ sẽ được trả lại cho người khác đặt.',
-    okText:'Hủy giữ ghế',
+    title:t('confirm.cancelHoldTitle'),
+    body:t('confirm.cancelHoldBody'),
+    okText:t('btn.cancelHold'),
     onOk:() => {
       if (currentOrder){ currentOrder.status = 'CANCELLED'; currentOrder = null; }
       endHold(true);
       closeCheckout();
-      toast('Đã hủy phiên giữ ghế.');
+      toast(t('msg.holdCancelled'));
     }
   });
 });
 
 document.getElementById('checkoutBtn').addEventListener('click', () => {
-  if (invalidSeats.size > 0){ toast('Hãy gỡ ghế không còn hợp lệ khỏi danh sách.', 'warn'); return; }
+  if (invalidSeats.size > 0){ toast(t('msg.removeInvalid'), 'warn'); return; }
   const valid = selectedSeats.filter(id => !invalidSeats.has(id));
-  if (!valid.length){ toast('Bạn chưa chọn ghế nào.', 'warn'); return; }
+  if (!valid.length){ toast(t('msg.noSeatsSelected'), 'warn'); return; }
 
   // Đang giữ ghế rồi → mở thẳng lại bước chuyển khoản
   if (holdSession && currentOrder){ openCheckout(2); return; }
@@ -2202,18 +2211,18 @@ function renderOrderBox(){
   const total = subtotal - discount;
 
   let html =
-    '<div class="co-order-title">Đơn hàng của bạn</div>' +
+    '<div class="co-order-title">' + t('co.orderTitle') + '</div>' +
     '<div class="co-order-row"><b>Sơn Thần Thủy Quái</b><span class="co-or-right">' + fmtDT() + '</span></div>' +
-    '<div class="co-order-row">Ghế đã chọn<span class="co-or-right">' + (seatList || '—') + '</span></div>' +
-    '<div class="co-order-row">Số lượng<span class="co-or-right">' + valid.length + ' vé</span></div>';
+    '<div class="co-order-row">' + t('co.selectedSeats') + '<span class="co-or-right">' + (seatList || '—') + '</span></div>' +
+    '<div class="co-order-row">' + t('co.qty') + '<span class="co-or-right">' + valid.length + ' ' + t('co.qtyUnit') + '</span></div>';
 
   if (appliedCoupon){
     html +=
-      '<div class="co-order-row">Tạm tính<span class="co-or-right">' + fmtVND(subtotal) + '</span></div>' +
-      '<div class="co-order-row">Mã ' + appliedCoupon.code + ' (-' + appliedCoupon.percentOff + '%)<span class="co-or-right">-' + fmtVND(discount) + '</span></div>';
+      '<div class="co-order-row">' + t('co.subtotal') + '<span class="co-or-right">' + fmtVND(subtotal) + '</span></div>' +
+      '<div class="co-order-row">' + t('co.couponLabel', { code: appliedCoupon.code, pct: appliedCoupon.percentOff }) + '<span class="co-or-right">-' + fmtVND(discount) + '</span></div>';
   }
 
-  html += '<div class="co-order-total"><span>Tổng tiền</span><b>' + fmtVND(total) + '</b></div>';
+  html += '<div class="co-order-total"><span>' + t('sum.total') + '</span><b>' + fmtVND(total) + '</b></div>';
   box.innerHTML = html;
 }
 
@@ -2227,25 +2236,25 @@ document.getElementById('coCouponApply').addEventListener('click', async () => {
 
   if (!code){
     appliedCoupon = null;
-    msg.textContent = 'Đã bỏ mã giảm giá.';
+    msg.textContent = t('co.couponRemoved');
     msg.className = 'co-coupon-msg';
     renderOrderBox();
     return;
   }
 
   btn.disabled = true;
-  msg.textContent = 'Đang kiểm tra…';
+  msg.textContent = t('co.checking');
   msg.className = 'co-coupon-msg';
 
   try {
     const result = await validateCouponOnServer(code);
     appliedCoupon = { code: result.code || code, percentOff: result.percentOff };
     input.value = appliedCoupon.code;
-    msg.textContent = 'Áp dụng thành công — giảm ' + appliedCoupon.percentOff + '%.';
+    msg.textContent = t('co.couponOk', { pct: appliedCoupon.percentOff });
     msg.className = 'co-coupon-msg ok';
   } catch (error) {
     appliedCoupon = null;
-    msg.textContent = error.message || 'Mã giảm giá không hợp lệ.';
+    msg.textContent = error.message || t('co.couponInvalid');
     msg.className = 'co-coupon-msg warn';
   }
 
@@ -2260,18 +2269,18 @@ function renderBankBox(){
   const qr = document.getElementById('coQr');
 
   const rows = [
-    { k:'Mã đơn',   v: currentOrder && currentOrder.orderCode ? String(currentOrder.orderCode) : '', copy:true }
+    { k:t('co.orderCode'), v: currentOrder && currentOrder.orderCode ? String(currentOrder.orderCode) : '', copy:true }
   ];
 
   // Chỉ hiện tạm tính/giảm giá nếu server xác nhận coupon thật sự được áp
   // dụng (currentOrder.coupon do server trả về, không phải appliedCoupon
   // ước tính ở bước 1 — coupon có thể đã bị server từ chối).
   if (currentOrder && currentOrder.coupon && currentOrder.coupon.percentOff){
-    rows.push({ k:'Tạm tính', v: fmtVND(currentOrder.subtotal) });
-    rows.push({ k:'Mã ' + currentOrder.coupon.code + ' (-' + currentOrder.coupon.percentOff + '%)', v: '-' + fmtVND(currentOrder.coupon.discount) });
+    rows.push({ k:t('co.subtotal'), v: fmtVND(currentOrder.subtotal) });
+    rows.push({ k:t('co.couponLabel', { code: currentOrder.coupon.code, pct: currentOrder.coupon.percentOff }), v: '-' + fmtVND(currentOrder.coupon.discount) });
   }
 
-  rows.push({ k:'Số tiền', v: currentOrder ? fmtVND(currentOrder.total) : '', copy:true, raw: currentOrder ? String(currentOrder.total) : '' });
+  rows.push({ k:t('co.amount'), v: currentOrder ? fmtVND(currentOrder.total) : '', copy:true, raw: currentOrder ? String(currentOrder.total) : '' });
 
   wrap.innerHTML = '';
   rows.forEach(r => {
@@ -2280,17 +2289,17 @@ function renderBankBox(){
     row.className = 'co-bank-row';
     row.innerHTML =
       '<span class="co-bk">' + r.k + '</span>' +
-      '<span class="co-bv' + (has ? '' : ' empty') + '">' + (has ? r.v : 'Đang cập nhật') + '</span>';
+      '<span class="co-bv' + (has ? '' : ' empty') + '">' + (has ? r.v : t('co.updating')) + '</span>';
     if (has && r.copy){
       const btn = document.createElement('button');
       btn.className = 'co-copy'; btn.type = 'button';
-      btn.setAttribute('aria-label', 'Sao chép ' + r.k);
+      btn.setAttribute('aria-label', t('co.copy') + ' ' + r.k);
       btn.innerHTML = '<svg class="icon"><use href="#ic-copy"/></svg>';
       btn.addEventListener('click', () => {
         const text = r.raw || String(r.v);
         navigator.clipboard?.writeText(text)
-          .then(() => toast('Đã sao chép ' + r.k.toLowerCase() + '.'))
-          .catch(() => toast('Không sao chép được, bạn hãy chép thủ công.', 'warn'));
+          .then(() => toast(t('co.copied', { label: r.k.toLowerCase() })))
+          .catch(() => toast(t('co.copyFail'), 'warn'));
       });
       row.appendChild(btn);
     }
@@ -2298,9 +2307,9 @@ function renderBankBox(){
   });
 
   if (currentOrder && currentOrder.qrCodeDataUrl){
-    qr.innerHTML = '<img src="' + currentOrder.qrCodeDataUrl + '" alt="QR thanh toán PayOS">';
+    qr.innerHTML = '<img src="' + currentOrder.qrCodeDataUrl + '" alt="' + t('co.qrAlt') + '">';
   } else {
-    qr.innerHTML = 'Đang tạo mã QR…';
+    qr.innerHTML = t('co.qrGenerating');
   }
 
   // TẠM ẨN nút mở trang thanh toán PayOS — chỉ dùng QR trong bước test này.
@@ -2308,7 +2317,7 @@ function renderBankBox(){
   const SHOW_PAY_LINK = false;
   const link = document.getElementById('coPayLink');
   if (SHOW_PAY_LINK && currentOrder && currentOrder.checkoutUrl && currentOrder.checkoutUrl !== '#'){
-    link.innerHTML = '<a class="btn-primary" href="' + currentOrder.checkoutUrl + '" target="_blank" rel="noopener">Mở trang thanh toán PayOS</a>';
+    link.innerHTML = '<a class="btn-primary" href="' + currentOrder.checkoutUrl + '" target="_blank" rel="noopener">' + t('co.openPayos') + '</a>';
   } else {
     link.innerHTML = '';
   }
@@ -2358,9 +2367,7 @@ function finishPaidOrder(){
   sendBookingEmail('PAYMENT_CONFIRMED', currentOrder);
 
   document.getElementById('coDoneCode').textContent = currentOrder.code;
-  document.getElementById('coDoneBody').innerHTML =
-    'Thanh toán đã được xác nhận. Chúng tôi đã gửi vé điện tử tới <b>' + currentOrder.customer.email + '</b>. ' +
-    'Vui lòng giữ lại mã đơn ở trên để đối chiếu khi cần.';
+  document.getElementById('coDoneBody').innerHTML = t('co.doneBody', { email: currentOrder.customer.email });
   setStep(3);
 }
 
@@ -2375,23 +2382,23 @@ function setStep(n){
   document.querySelector('.co-body').scrollTop = 0;
 
   if (n === 1){
-    coTitle.textContent = 'Thông tin người đặt vé';
-    coNextLabel.textContent = 'Tiếp tục thanh toán';
-    coBackBtn.textContent = 'Quay lại chọn ghế';
+    coTitle.textContent = t('co.title1');
+    coNextLabel.textContent = t('co.nextLabel1');
+    coBackBtn.textContent = t('co.backLabel1');
     coBackBtn.style.display = '';
     coNextBtn.style.display = '';
     renderOrderBox();
   } else if (n === 2){
-    coTitle.textContent = 'Chuyển khoản thanh toán';
-    coNextLabel.textContent = 'Tôi đã chuyển khoản';
-    coBackBtn.textContent = 'Để sau';
+    coTitle.textContent = t('co.title2');
+    coNextLabel.textContent = t('co.nextLabel2');
+    coBackBtn.textContent = t('co.backLabel2');
     coBackBtn.style.display = '';
     coNextBtn.style.display = '';
     renderBankBox();
   } else {
-    coTitle.textContent = 'Hoàn tất';
+    coTitle.textContent = t('co.title3');
     coBackBtn.style.display = 'none';
-    coNextLabel.textContent = 'Đóng';
+    coNextLabel.textContent = t('co.nextLabel3');
     coNextBtn.style.display = '';
   }
 }
@@ -2437,12 +2444,12 @@ coBackBtn.addEventListener('click', () => closeCheckout());
 coNextBtn.addEventListener('click', async () => {
   /* ---- Bước 1 → 2: xác thực thông tin, giữ ghế, hiện thông tin chuyển khoản ---- */
   if (coStep === 1){
-    if (invalidSeats.size > 0){ toast('Hãy gỡ ghế không còn hợp lệ khỏi danh sách.', 'warn'); closeCheckout(); return; }
+    if (invalidSeats.size > 0){ toast(t('msg.removeInvalid'), 'warn'); closeCheckout(); return; }
     const valid = selectedSeats.filter(id => !invalidSeats.has(id));
-    if (!valid.length){ toast('Bạn chưa chọn ghế nào.', 'warn'); closeCheckout(); return; }
+    if (!valid.length){ toast(t('msg.noSeatsSelected'), 'warn'); closeCheckout(); return; }
 
     const customer = validateCustomer();
-    if (!customer){ toast('Vui lòng kiểm tra lại thông tin đã nhập.', 'warn'); return; }
+    if (!customer){ toast(t('msg.checkInfo'), 'warn'); return; }
 
     const prevHoldId = currentOrder ? currentOrder.holdId : null;
 
@@ -2455,7 +2462,7 @@ coNextBtn.addEventListener('click', async () => {
         hold = await createHoldOnServer(currentShowKey(), valid);
       } catch (error) {
         coNextBtn.disabled = false;
-        toast(error.message || 'Không thể giữ ghế. Vui lòng thử lại.', 'warn');
+        toast(error.message || t('err.holdFail'), 'warn');
         closeCheckout();
         await loadShow();   // ghế có thể đã bị người khác giữ trước — tải lại trạng thái thật
         return;
@@ -2481,7 +2488,7 @@ coNextBtn.addEventListener('click', async () => {
       coNextBtn.disabled = false;
       // Coupon có thể vừa hết hạn/hết lượt đúng lúc này — server từ chối
       // thẳng thay vì âm thầm tính giá gốc, khách cần biết để bỏ mã/thử mã khác.
-      toast(error.message || 'Không thể tạo thanh toán. Vui lòng thử lại.', 'warn');
+      toast(error.message || t('err.paymentCreateFail'), 'warn');
       return;
     }
     coNextBtn.disabled = false;
@@ -2511,7 +2518,7 @@ coNextBtn.addEventListener('click', async () => {
 
   /* ---- Bước 2 → 3: khách bấm kiểm tra ngay (poll nền vẫn chạy song song) ---- */
   if (coStep === 2){
-    if (!holdSession || !currentOrder){ toast('Phiên giữ ghế đã kết thúc.', 'warn'); closeCheckout(); return; }
+    if (!holdSession || !currentOrder){ toast(t('msg.holdSessionEnded'), 'warn'); closeCheckout(); return; }
 
     coNextBtn.disabled = true;
     let statusResult;
@@ -2519,13 +2526,13 @@ coNextBtn.addEventListener('click', async () => {
       statusResult = await fetchPaymentStatus(currentOrder.orderId);
     } catch (error) {
       coNextBtn.disabled = false;
-      toast(error.message || 'Không thể kiểm tra trạng thái. Vui lòng thử lại.', 'warn');
+      toast(error.message || t('err.statusCheckFail'), 'warn');
       return;
     }
     coNextBtn.disabled = false;
 
     if (statusResult.orderStatus !== 'PAID') {
-      toast('Chưa thấy giao dịch. Hệ thống sẽ tự kiểm tra lại — bạn cứ hoàn tất thanh toán rồi chờ.', 'warn');
+      toast(t('msg.noPaymentYet'), 'warn');
       return;
     }
 
@@ -2537,7 +2544,7 @@ coNextBtn.addEventListener('click', async () => {
   /* ---- Bước 3: đóng ---- */
   currentOrder = null;
   closeCheckout();
-  toast('Cảm ơn bạn! Yêu cầu đặt vé đã được ghi nhận.');
+  toast(t('msg.thankYou'));
 });
 
 /* =========================================================
@@ -2553,8 +2560,10 @@ const SHOWTIMES_BY_DAY = [
   ['16:30','20:00'],
   ['10:00','16:30']
 ];
-const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-const DOWS = ['Thứ 6','Thứ 7','Chủ nhật'];
+// Tên tháng/thứ đổi theo ngôn ngữ hiện tại — đọc trực tiếp từ I18N (xem mục 14) thay vì
+// mảng cố định tiếng Việt, để renderSchedule() vẽ đúng ngôn ngữ khi gọi lại từ setLang().
+const MONTHS = new Proxy([], { get: (_, i) => I18N[currentLang].months[i] });
+const DOWS = new Proxy([], { get: (_, i) => I18N[currentLang].dows[i] });
 
 const runs = [];
 for (let d = new Date(SEASON_START); d <= SEASON_END; d.setDate(d.getDate() + 7)){
@@ -2652,16 +2661,16 @@ function switchShow(mutate){
   const go = () => { mutate(); renderSchedule(); loadShow(); };
   if (holdSession){
     confirmDialog({
-      title:'Đổi suất diễn?',
-      body:'Phiên giữ ghế hiện tại sẽ bị hủy và ghế được trả lại.',
-      okText:'Đổi suất',
+      title:t('confirm.changeShowTitle'),
+      body:t('confirm.changeShowBodyHold'),
+      okText:t('btn.changeShow'),
       onOk:() => { endHold(true); go(); }
     });
   } else if (selectedSeats.length){
     confirmDialog({
-      title:'Đổi suất diễn?',
-      body:'Bạn đang chọn ' + selectedSeats.length + ' ghế. Đổi suất sẽ xóa các ghế này.',
-      okText:'Đổi suất',
+      title:t('confirm.changeShowTitle'),
+      body:t('confirm.changeShowBodySeats', { n: selectedSeats.length }),
+      okText:t('btn.changeShow'),
       onOk:go
     });
   } else go();
@@ -2707,10 +2716,7 @@ async function loadShow() {
     paintAllSeats();
     syncAll();
 
-    toast(
-      "Không thể kết nối hệ thống đặt vé. Vui lòng thử lại sau.",
-      "warn"
-    );
+    toast(t('err.loadShowFail'), "warn");
   }
 }
 
@@ -2785,7 +2791,7 @@ async function tryResumeHold(){
   startHold(holdInfo.expiresAt);
   syncAll();
 
-  toast('Đã khôi phục phiên giữ ghế của bạn.');
+  toast(t('msg.holdResumed'));
   openCheckout(2);
 
   return true;
@@ -2797,7 +2803,8 @@ async function tryResumeHold(){
 const overlay = document.getElementById('overlay');
 let pendingOk = null;
 
-function confirmDialog({ title, body, okText = 'Đồng ý', safe = false, onOk }){
+function confirmDialog({ title, body, okText, safe = false, onOk }){
+  okText = okText || t('modal.agree');
   document.getElementById('mTitle').textContent = title;
   document.getElementById('mBody').textContent = body;
   const ok = document.getElementById('mOk');
@@ -2848,7 +2855,108 @@ const I18N = {
     'footer.ctaBtn':'LIÊN HỆ HỢP TÁC',
     'footer.copyright':'© 2026 LumiShow. All rights reserved.',
     'contact.address':'Địa chỉ', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
-    'contact.addressVal':'67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội'
+    'contact.addressVal':'67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội',
+
+    'show.venue':'Rạp Xiếc Trung Ương — 67-69 Trần Nhân Tông, Hà Nội',
+    'sidebar.qty':'Số lượng vé',
+    'sidebar.qtyHint':'Số vé thay đổi theo số ghế bạn chọn trên sơ đồ.',
+    'sidebar.changeShow':'Đổi suất diễn',
+    'sidebar.tier':'Hạng vé',
+    'sidebar.seatStatus':'Trạng thái ghế',
+    'legend.mine':'Ghế bạn đang chọn',
+    'legend.heldOther':'Người khác đang thanh toán',
+    'legend.sold':'Đã bán',
+    'map.hint':'Chạm vào ghế để xem giá · Kéo để di chuyển · Cuộn để phóng to',
+    'map.avail':'Còn trống:',
+    'seat.availUnit':'ghế',
+    'sc.addTicket':'Thêm vé',
+    'holdbar.text':'Ghế đang được giữ cho bạn. Hoàn tất thanh toán trước khi hết giờ.',
+    'sum.selected':'Ghế đã chọn',
+    'sum.empty':'Chưa chọn ghế nào — hãy chạm vào một ghế trên sơ đồ.',
+    'sum.total':'Tổng tiền',
+    'sum.cancelHold':'Hủy giữ ghế',
+    'sum.checkoutHold':'Giữ ghế & thanh toán',
+    'sum.checkoutNow':'Thanh toán ngay',
+    'modal.confirmTitle':'Xác nhận',
+    'modal.keep':'Giữ lại',
+    'modal.removeSeat':'Bỏ ghế',
+    'modal.agree':'Đồng ý',
+    'co.custInfo':'Thông tin người đặt vé',
+    'co.step1':'Thông tin', 'co.step2':'Thanh toán', 'co.step3':'Hoàn tất',
+    'co.name':'Họ và tên *', 'co.namePh':'Nguyễn Văn A', 'co.nameErr':'Vui lòng nhập họ và tên.',
+    'co.phone':'Số điện thoại *', 'co.phoneErr':'Số điện thoại chưa hợp lệ.',
+    'co.email':'Email *', 'co.emailPh':'ban@example.com', 'co.emailErr':'Email chưa hợp lệ.',
+    'co.emailHint':'Vé điện tử và các thông báo về tình trạng đặt vé sẽ được gửi tới email này.',
+    'co.coupon':'Mã giảm giá (nếu có)', 'co.couponPh':'Nhập mã giảm giá', 'co.apply':'Áp dụng',
+    'co.couponRemoved':'Đã bỏ mã giảm giá.',
+    'co.checking':'Đang kiểm tra…',
+    'co.couponOk':'Áp dụng thành công — giảm {pct}%.',
+    'co.couponInvalid':'Mã giảm giá không hợp lệ.',
+    'co.holdText2':'Ghế đang được giữ cho bạn. Hoàn tất chuyển khoản trước khi hết giờ.',
+    'co.qrPlaceholder':'Mã QR thanh toán<br>sẽ hiển thị tại đây',
+    'co.payhint':'Vui lòng chuyển khoản <b>đúng số tiền</b> và <b>đúng nội dung</b> ở trên để hệ thống tự động đối soát. Sau khi chuyển khoản, bấm <b>“Tôi đã chuyển khoản”</b> — chúng tôi sẽ xác nhận và gửi vé qua email cho bạn.',
+    'co.doneTitle':'Đã ghi nhận yêu cầu đặt vé',
+    'co.back':'Quay lại', 'co.continuePay':'Tiếp tục thanh toán',
+    'co.title1':'Thông tin người đặt vé', 'co.title2':'Chuyển khoản thanh toán', 'co.title3':'Hoàn tất',
+    'co.nextLabel1':'Tiếp tục thanh toán', 'co.nextLabel2':'Tôi đã chuyển khoản', 'co.nextLabel3':'Đóng',
+    'co.backLabel1':'Quay lại chọn ghế', 'co.backLabel2':'Để sau',
+    'co.orderTitle':'Đơn hàng của bạn', 'co.selectedSeats':'Ghế đã chọn',
+    'co.qty':'Số lượng', 'co.qtyUnit':'vé', 'co.subtotal':'Tạm tính',
+    'co.couponLabel':'Mã {code} (-{pct}%)',
+    'co.orderCode':'Mã đơn', 'co.amount':'Số tiền', 'co.updating':'Đang cập nhật',
+    'co.copy':'Sao chép',
+    'co.copied':'Đã sao chép {label}.',
+    'co.copyFail':'Không sao chép được, bạn hãy chép thủ công.',
+    'co.qrGenerating':'Đang tạo mã QR…',
+    'co.openPayos':'Mở trang thanh toán PayOS', 'co.qrAlt':'QR thanh toán PayOS',
+    'co.doneBody':'Thanh toán đã được xác nhận. Chúng tôi đã gửi vé điện tử tới <b>{email}</b>. Vui lòng giữ lại mã đơn ở trên để đối chiếu khi cần.',
+
+    'msg.holdActive':'Đang trong phiên giữ ghế. Hãy hủy giữ ghế nếu muốn đổi.',
+    'msg.seatSold':'Ghế này đã được bán rồi!',
+    'msg.seatHeldOther':'Ghế này đang được người khác thanh toán.',
+    'msg.maxSeats':'Mỗi lần đặt tối đa {n} ghế.',
+    'msg.seatSoldChooseAnother':'Ghế này đã được bán rồi! Vui lòng chọn ghế khác.',
+    'msg.seatRemoved':'Đã bỏ ghế {id}.',
+    'tier.prefix':'Hạng ',
+    'confirm.removeSeatTitle':'Xác nhận bỏ Ghế {id} (hạng {tier} · {price})?',
+    'confirm.removeSeatBody':'Ghế sẽ được trả lại cho người khác đặt.',
+    'seat.selected':'Đã chọn', 'seat.heldMe':'Đang giữ cho bạn', 'seat.heldOther':'Người khác đang thanh toán',
+    'seat.sold':'Đã bán', 'seat.available':'Còn trống',
+    'sc.removeThis':'Bỏ ghế này', 'sc.holding':'Đang giữ ghế', 'sc.cannotSelect':'Không thể chọn',
+    'sc.holdingOther':'Đang giữ ghế khác', 'sc.where':'Hàng {row} · Ghế số {num}', 'sc.perTicket':'/ vé',
+    'msg.holdCreated':'Đã giữ {n} ghế trong {min} phút.',
+    'msg.holdExpired':'Hết thời gian giữ ghế. Ghế đã được trả lại.',
+    'confirm.cancelHoldTitle':'Hủy giữ ghế?',
+    'confirm.cancelHoldBody':'Toàn bộ ghế đang giữ sẽ được trả lại cho người khác đặt.',
+    'btn.cancelHold':'Hủy giữ ghế',
+    'msg.holdCancelled':'Đã hủy phiên giữ ghế.',
+    'msg.removeInvalid':'Hãy gỡ ghế không còn hợp lệ khỏi danh sách.',
+    'msg.noSeatsSelected':'Bạn chưa chọn ghế nào.',
+    'msg.checkInfo':'Vui lòng kiểm tra lại thông tin đã nhập.',
+    'err.holdFail':'Không thể giữ ghế. Vui lòng thử lại.',
+    'err.paymentCreateFail':'Không thể tạo thanh toán. Vui lòng thử lại.',
+    'err.statusCheckFail':'Không thể kiểm tra trạng thái. Vui lòng thử lại.',
+    'err.connBookingRetry':'Không thể kết nối hệ thống đặt vé. Vui lòng thử lại.',
+    'err.connBooking':'Không thể kết nối hệ thống đặt vé.',
+    'err.holdStatusFail':'Không thể kiểm tra trạng thái giữ ghế.',
+    'err.connPayment':'Không thể kết nối hệ thống thanh toán.',
+    'err.conn':'Không thể kết nối hệ thống.',
+    'err.couponInvalidFull':'Mã giảm giá không hợp lệ.',
+    'err.paymentStatusFail':'Không thể kiểm tra trạng thái thanh toán.',
+    'err.seatDataInvalid':'Dữ liệu ghế không hợp lệ',
+    'err.seatLoadFail':'Không thể tải dữ liệu ghế.',
+    'msg.noPaymentYet':'Chưa thấy giao dịch. Hệ thống sẽ tự kiểm tra lại — bạn cứ hoàn tất thanh toán rồi chờ.',
+    'msg.holdSessionEnded':'Phiên giữ ghế đã kết thúc.',
+    'msg.thankYou':'Cảm ơn bạn! Yêu cầu đặt vé đã được ghi nhận.',
+    'err.loadShowFail':'Không thể kết nối hệ thống đặt vé. Vui lòng thử lại sau.',
+    'msg.holdResumed':'Đã khôi phục phiên giữ ghế của bạn.',
+    'confirm.changeShowTitle':'Đổi suất diễn?',
+    'confirm.changeShowBodyHold':'Phiên giữ ghế hiện tại sẽ bị hủy và ghế được trả lại.',
+    'confirm.changeShowBodySeats':'Bạn đang chọn {n} ghế. Đổi suất sẽ xóa các ghế này.',
+    'btn.changeShow':'Đổi suất',
+
+    months:['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'],
+    dows:['Thứ 6','Thứ 7','Chủ nhật']
   },
   en: {
     'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact',
@@ -2861,7 +2969,108 @@ const I18N = {
     'footer.ctaBtn':'PARTNER WITH US',
     'footer.copyright':'© 2026 LumiShow. All rights reserved.',
     'contact.address':'Address', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
-    'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi'
+    'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi',
+
+    'show.venue':'Rạp Xiếc Trung Ương — 67-69 Tran Nhan Tong, Hanoi',
+    'sidebar.qty':'Number of tickets',
+    'sidebar.qtyHint':'Ticket count follows the seats you select on the map.',
+    'sidebar.changeShow':'Change showtime',
+    'sidebar.tier':'Seat tiers',
+    'sidebar.seatStatus':'Seat status',
+    'legend.mine':'Seats you selected',
+    'legend.heldOther':'Someone else is paying',
+    'legend.sold':'Sold',
+    'map.hint':'Tap a seat to see the price · Drag to move · Scroll to zoom',
+    'map.avail':'Available:',
+    'seat.availUnit':'seats',
+    'sc.addTicket':'Add ticket',
+    'holdbar.text':'Your seats are being held. Complete payment before time runs out.',
+    'sum.selected':'Selected seats',
+    'sum.empty':'No seats selected yet — tap a seat on the map.',
+    'sum.total':'Total',
+    'sum.cancelHold':'Cancel hold',
+    'sum.checkoutHold':'Hold seats & pay',
+    'sum.checkoutNow':'Pay now',
+    'modal.confirmTitle':'Confirm',
+    'modal.keep':'Keep',
+    'modal.removeSeat':'Remove seat',
+    'modal.agree':'OK',
+    'co.custInfo':'Booking contact info',
+    'co.step1':'Info', 'co.step2':'Payment', 'co.step3':'Done',
+    'co.name':'Full name *', 'co.namePh':'John Smith', 'co.nameErr':'Please enter your full name.',
+    'co.phone':'Phone number *', 'co.phoneErr':'Invalid phone number.',
+    'co.email':'Email *', 'co.emailPh':'you@example.com', 'co.emailErr':'Invalid email address.',
+    'co.emailHint':'Your e-ticket and booking updates will be sent to this email.',
+    'co.coupon':'Discount code (optional)', 'co.couponPh':'Enter discount code', 'co.apply':'Apply',
+    'co.couponRemoved':'Discount code removed.',
+    'co.checking':'Checking…',
+    'co.couponOk':'Applied successfully — {pct}% off.',
+    'co.couponInvalid':'Invalid discount code.',
+    'co.holdText2':'Your seats are being held. Complete the bank transfer before time runs out.',
+    'co.qrPlaceholder':'Payment QR code<br>will appear here',
+    'co.payhint':'Please transfer <b>the exact amount</b> with <b>the exact reference</b> above so the system can auto-match it. After transferring, click <b>“I\'ve transferred”</b> — we\'ll confirm and email your tickets.',
+    'co.doneTitle':'Booking request received',
+    'co.back':'Back', 'co.continuePay':'Continue to payment',
+    'co.title1':'Booking contact info', 'co.title2':'Bank transfer payment', 'co.title3':'Done',
+    'co.nextLabel1':'Continue to payment', 'co.nextLabel2':'I\'ve transferred', 'co.nextLabel3':'Close',
+    'co.backLabel1':'Back to seat selection', 'co.backLabel2':'Later',
+    'co.orderTitle':'Your order', 'co.selectedSeats':'Selected seats',
+    'co.qty':'Quantity', 'co.qtyUnit':'tickets', 'co.subtotal':'Subtotal',
+    'co.couponLabel':'Code {code} (-{pct}%)',
+    'co.orderCode':'Order code', 'co.amount':'Amount', 'co.updating':'Updating',
+    'co.copy':'Copy',
+    'co.copied':'{label} copied.',
+    'co.copyFail':'Couldn’t copy — please copy it manually.',
+    'co.qrGenerating':'Generating QR code…',
+    'co.openPayos':'Open PayOS payment page', 'co.qrAlt':'PayOS payment QR',
+    'co.doneBody':'Payment confirmed. We’ve emailed your e-ticket to <b>{email}</b>. Please keep the order code above for reference.',
+
+    'msg.holdActive':'You already have a hold session. Cancel it first if you want to change seats.',
+    'msg.seatSold':'This seat has already been sold!',
+    'msg.seatHeldOther':'This seat is currently being paid for by someone else.',
+    'msg.maxSeats':'Maximum {n} seats per booking.',
+    'msg.seatSoldChooseAnother':'This seat has already been sold! Please choose another seat.',
+    'msg.seatRemoved':'Seat {id} removed.',
+    'tier.prefix':'Tier ',
+    'confirm.removeSeatTitle':'Remove Seat {id} (tier {tier} · {price})?',
+    'confirm.removeSeatBody':'The seat will be released for others to book.',
+    'seat.selected':'Selected', 'seat.heldMe':'Held for you', 'seat.heldOther':'Someone else is paying',
+    'seat.sold':'Sold', 'seat.available':'Available',
+    'sc.removeThis':'Remove this seat', 'sc.holding':'Holding seat', 'sc.cannotSelect':'Cannot select',
+    'sc.holdingOther':'Holding another seat', 'sc.where':'Row {row} · Seat {num}', 'sc.perTicket':'/ ticket',
+    'msg.holdCreated':'Held {n} seat(s) for {min} minutes.',
+    'msg.holdExpired':'Hold time expired. Seats have been released.',
+    'confirm.cancelHoldTitle':'Cancel hold?',
+    'confirm.cancelHoldBody':'All held seats will be released for others to book.',
+    'btn.cancelHold':'Cancel hold',
+    'msg.holdCancelled':'Hold session cancelled.',
+    'msg.removeInvalid':'Please remove the no-longer-valid seats from your list.',
+    'msg.noSeatsSelected':'You haven’t selected any seats yet.',
+    'msg.checkInfo':'Please check the information you entered.',
+    'err.holdFail':'Could not hold the seats. Please try again.',
+    'err.paymentCreateFail':'Could not create the payment. Please try again.',
+    'err.statusCheckFail':'Could not check the status. Please try again.',
+    'err.connBookingRetry':'Could not connect to the booking system. Please try again.',
+    'err.connBooking':'Could not connect to the booking system.',
+    'err.holdStatusFail':'Could not check the hold status.',
+    'err.connPayment':'Could not connect to the payment system.',
+    'err.conn':'Could not connect to the system.',
+    'err.couponInvalidFull':'Invalid discount code.',
+    'err.paymentStatusFail':'Could not check the payment status.',
+    'err.seatDataInvalid':'Invalid seat data',
+    'err.seatLoadFail':'Could not load seat data.',
+    'msg.noPaymentYet':'No payment detected yet. We’ll keep checking automatically — go ahead and finish the transfer, then wait.',
+    'msg.holdSessionEnded':'The hold session has ended.',
+    'msg.thankYou':'Thank you! Your booking request has been received.',
+    'err.loadShowFail':'Could not connect to the booking system. Please try again later.',
+    'msg.holdResumed':'Your hold session has been restored.',
+    'confirm.changeShowTitle':'Change showtime?',
+    'confirm.changeShowBodyHold':'Your current hold will be cancelled and the seats released.',
+    'confirm.changeShowBodySeats':'You’ve selected {n} seat(s). Changing showtime will clear them.',
+    'btn.changeShow':'Change',
+
+    months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+    dows:['Friday','Saturday','Sunday']
   }
 };
 
@@ -2878,10 +3087,22 @@ function setLang(lang){
   const dict = I18N[lang];
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const val = dict[el.dataset.i18n];
-    if (val) el.textContent = val;
+    if (val) el.innerHTML = val;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const val = dict[el.dataset.i18nPh];
+    if (val) el.setAttribute('placeholder', val);
   });
   document.getElementById('langLabel').textContent = lang.toUpperCase();
   document.documentElement.lang = lang;
+
+  // Vẽ lại phần nội dung động phụ thuộc ngôn ngữ (đã render trước đó bằng
+  // ngôn ngữ cũ) — lịch diễn (MONTHS/DOWS), summary ghế, thẻ ghế đang mở,
+  // và panel thanh toán nếu đang mở (setStep tự renderOrderBox/renderBankBox).
+  renderSchedule();
+  renderSummary();
+  if (activeSeat) updateSeatCard(activeSeat);
+  if (coOverlay.classList.contains('show')) setStep(coStep);
 }
 document.getElementById('langToggle').addEventListener('click', () => setLang(currentLang === 'vi' ? 'en' : 'vi'));
 
