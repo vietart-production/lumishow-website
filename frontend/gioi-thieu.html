@@ -788,12 +788,19 @@
     }
   };
 
+  // Lưu lựa chọn ngôn ngữ vào localStorage để giữ nguyên khi đổi trang/tải lại
+  const LANG_KEY = 'lumishow_lang';
   let currentLang = 'vi';
+  try {
+    const savedLang = localStorage.getItem(LANG_KEY);
+    if (savedLang === 'vi' || savedLang === 'en') currentLang = savedLang;
+  } catch (e) {}
   const langToggle = document.getElementById('langToggle');
   const langLabel = document.getElementById('langLabel');
 
   function setLang(lang){
     currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
     const dict = I18N[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const val = dict[el.dataset.i18n];
@@ -824,6 +831,8 @@
   videoModalBackdrop?.addEventListener('click', closeVideoModal);
   videoModalClose?.addEventListener('click', closeVideoModal);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideoModal(); });
+
+  setLang(currentLang);
 </script>
 </body>
 </html>

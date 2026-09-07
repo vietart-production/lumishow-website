@@ -2865,9 +2865,16 @@ const I18N = {
   }
 };
 
+// Lưu lựa chọn ngôn ngữ vào localStorage để giữ nguyên khi đổi trang/tải lại
+const LANG_KEY = 'lumishow_lang';
 let currentLang = 'vi';
+try {
+  const savedLang = localStorage.getItem(LANG_KEY);
+  if (savedLang === 'vi' || savedLang === 'en') currentLang = savedLang;
+} catch (e) {}
 function setLang(lang){
   currentLang = lang;
+  try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
   const dict = I18N[lang];
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const val = dict[el.dataset.i18n];
@@ -2889,6 +2896,7 @@ drawSafetyBoxes();
   if (!resumed) await loadShow();
 })();
 onViewChange();
+setLang(currentLang);
 </script>
 </body>
 </html>
