@@ -380,6 +380,11 @@
     }
   }
   @media (max-width:560px){
+    /* .ah-inner vốn không có width cụ thể (tự co theo nội dung) nên
+       .ah-actions{width:100%} bên dưới tính % theo 1 giá trị auto, không
+       ổn định — ép width:100% ở đây để có mốc rõ ràng cho .ah-actions
+       và margin:auto của nó bám vào, căn giữa mới chắc chắn đúng. */
+    .ah-inner{width:100%;}
     .ah-actions{flex-direction:column;align-items:center;width:100%;max-width:320px;margin:0 auto;}
     .btn-outline-light{width:100%;justify-content:center;}
     .ah-actions .btn-watch-video{width:100%;justify-content:center;}
