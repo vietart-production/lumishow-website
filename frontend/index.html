@@ -20,6 +20,7 @@
   ul{list-style:none;}
 
   /* ============ FONTS ============ */
+  @font-face{font-family:'FTV Magnetic';src:url('font/1FTV-SS-MAGNETIC.REGULAR.OTF') format('opentype');font-weight:400;font-style:normal;font-display:swap;}
   @font-face{font-family:'FTV Raghlick';src:url('font/1FTV-RAGHLICK.OTF') format('opentype');font-weight:700;font-style:normal;font-display:swap;}
 
   /* ============ TOKENS ============
@@ -96,6 +97,7 @@
     -webkit-backdrop-filter:blur(14px);
     backdrop-filter:blur(14px);
     border-bottom:1px solid var(--line);
+    font-family:'FTV Magnetic','Be Vietnam Pro',sans-serif;
   }
   .nav-inner{
     position:relative;
@@ -363,7 +365,7 @@
   }
 
   /* ============ MOBILE NAV ============ */
-  .mobile-nav{display:none;flex-direction:column;gap:2px;padding:10px var(--gutter) 18px;background:var(--bg-soft);border-bottom:1px solid var(--line);}
+  .mobile-nav{display:none;flex-direction:column;gap:2px;padding:10px var(--gutter) 18px;background:var(--bg-soft);border-bottom:1px solid var(--line);font-family:'FTV Magnetic','Be Vietnam Pro',sans-serif;}
   .mobile-nav a{padding:12px 4px;font-size:15px;color:var(--gray);border-bottom:1px solid var(--line);}
   .mobile-nav a.active{color:var(--white);}
   .mobile-nav.open{display:flex;}
