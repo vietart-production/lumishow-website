@@ -959,7 +959,7 @@
     {
       img: 'image/News/news0_rxtw_12_8.jpg',
       href: 'https://www.facebook.com/photo?fbid=1900682027968983&set=a.742690297101501',
-      date: '12.08', cat: 'Rạp Xiếc Trung Ương',
+      date: '12.08', cat: { vi: 'Rạp Xiếc Trung Ương', en: 'Central Circus' },
       title: {
         vi: 'Siêu phẩm mới sắp ra mắt: “Sơn Thần Thủy Quái” — tác phẩm kinh điển về xiếc và cuộc chiến chưa bao giờ kết thúc.',
         en: 'New spectacular coming soon: “Son Than Thuy Quai” — a circus classic and a battle that never truly ends.'
@@ -972,7 +972,7 @@
     {
       img: 'image/News/news1_rxtw_12_8.jpg',
       href: 'https://www.facebook.com/reel/1363134739318187',
-      date: '12.08', cat: 'Rạp Xiếc Trung Ương',
+      date: '12.08', cat: { vi: 'Rạp Xiếc Trung Ương', en: 'Central Circus' },
       title: {
         vi: 'Các bạn nhỏ đoán xem nhân vật nào trong vở “Sơn Thần Thủy Quái” sẽ xuất hiện vào dịp Trung thu năm nay nhé!',
         en: 'Kids, guess which character from “Son Than Thuy Quai” will appear this Mid-Autumn Festival!'
@@ -985,14 +985,14 @@
     {
       youtubeId: 'Xo8B3rfir-k',
       href: 'https://www.facebook.com/reel/1653055076528474',
-      date: '05.09', cat: 'Lumishow',
+      date: '05.09', cat: { vi: 'Lumishow', en: 'Lumishow' },
       title: {
         vi: 'TEASER SHOW DIỄN XIẾC SƠN THẦN - THỦY QUÁI 🎭',
         en: 'TEASER: SON THAN - THUY QUAI CIRCUS SHOW 🎭'
       },
       desc: {
         vi: 'LumiShow mang tới góc nhìn mới của câu chuyện Sơn Tinh - Thủy Tinh, kết hợp nghệ thuật Xiếc và công nghệ trình chiếu hiện đại. Công diễn từ 25.09.2026 tại Rạp Xiếc Trung Ương, 67-69 Trần Nhân Tông, Hà Nội.',
-        en: 'LumiShow brings a fresh perspective to the legend of Son Tinh - Thuy Tinh, blending circus artistry with cutting-edge projection technology. Opening 25.09.2026 at Rạp Xiếc Trung Ương, 67-69 Tran Nhan Tong, Hanoi.'
+        en: 'LumiShow brings a fresh perspective to the legend of Son Tinh - Thuy Tinh, blending circus artistry with cutting-edge projection technology. Opening 25.09.2026 at the Central Circus, 67-69 Tran Nhan Tong, Hanoi.'
       }
     }
   ];
@@ -1010,10 +1010,15 @@
     newsTrack?.querySelectorAll('.news-slide').forEach(el => {
       const n = NEWS_ITEMS[Number(el.dataset.newsIdx)];
       if (!n) return;
+      const cat = n.cat[currentLang] || n.cat.vi;
       const titleEl = el.querySelector('.news-slide-title');
       if (titleEl) titleEl.textContent = n.title[currentLang];
       const descEl = el.querySelector('.nsg-desc');
       if (descEl) descEl.textContent = n.desc[currentLang];
+      const badgeCatEl = el.querySelector('.news-slide-badge .nb-cat');
+      if (badgeCatEl) badgeCatEl.textContent = cat;
+      const genreCatEl = el.querySelector('.news-slide-genre b');
+      if (genreCatEl) genreCatEl.textContent = cat;
     });
   }
 
@@ -1026,12 +1031,12 @@
           ? `<iframe src="https://www.youtube-nocookie.com/embed/${n.youtubeId}?controls=0&modestbranding=1&rel=0" title="${escapeHtml(n.title.vi)}" loading="lazy" allow="encrypted-media; picture-in-picture"></iframe>`
           : `<img src="${n.img}" alt="${escapeHtml(n.title.vi)}" loading="lazy">`}
         <div class="news-slide-scrim"></div>
-        <div class="news-slide-badge">${n.date} · ${escapeHtml(n.cat)}</div>
+        <div class="news-slide-badge">${n.date} · <span class="nb-cat">${escapeHtml(n.cat.vi)}</span></div>
         <div class="news-slide-content">
           <div class="news-slide-title"></div>
           <div class="news-slide-actions">
             <span class="news-slide-btn"><span data-i18n="news.watchBtn">Xem ngay</span> <svg class="icon" style="width:14px;height:14px"><use href="#ic-arrow-right"/></svg></span>
-            <span class="news-slide-genre"><b>${escapeHtml(n.cat)}</b><span class="nsg-desc"></span></span>
+            <span class="news-slide-genre"><b>${escapeHtml(n.cat.vi)}</b><span class="nsg-desc"></span></span>
           </div>
         </div>
       </a>`;

@@ -599,7 +599,7 @@
       </div>
     </div>
     <div class="map-stage" id="mapStage">
-      <svg id="seatMap" viewBox="0 0 1360 1360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ ghế Rạp Xiếc Trung Ương">
+      <svg id="seatMap" viewBox="0 0 1360 1360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sơ đồ ghế Rạp Xiếc Trung Ương" data-i18n-aria="map.ariaLabel">
         <g id="viewport">
           <g id="arena"><!-- Lớp nền "khu vực ngoài ghế" — nhúng tĩnh từ sodorap.svg (thiết kế chuẩn), căn chỉnh vào hệ toạ độ ghế (CX=680, CY=680, R_OUTER=636) bằng transform bên dưới, không đụng tới logic tính toạ độ ghế thật ở trên. --><g id="arenaArt" fill="none" transform="translate(26.276,33.895) scale(1.01587)"><defs><radialGradient id="stageGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff3b3b" stop-opacity=".16"/><stop offset="1" stop-color="#ff3b3b" stop-opacity="0"/></radialGradient><radialGradient id="stageDisc" cx="50%" cy="42%" r="65%"><stop offset="0" stop-color="#2a1113"/><stop offset="1" stop-color="#0b0d11"/></radialGradient></defs><circle cx="643.489" cy="638.403" r="192" fill="url(#stageGlow)"/><circle cx="643.489" cy="638.403" r="159" fill="url(#stageDisc)"/><path d="M482.981 459.494L474.125 450.673L476.889 447.898C477.477 447.307 478.059 446.953 478.635 446.834C479.21 446.701 479.734 446.72 480.206 446.889C480.671 447.052 481.048 447.277 481.337 447.565C481.593 447.82 481.786 448.11 481.918 448.438C482.043 448.758 482.103 449.092 482.097 449.439C482.758 449.287 483.426 449.299 484.1 449.474C484.768 449.643 485.362 449.986 485.88 450.502C486.385 451.005 486.746 451.613 486.964 452.326C487.181 453.04 487.193 453.789 486.998 454.575C486.803 455.361 486.346 456.115 485.628 456.837L482.981 459.494ZM483.092 456.194L483.857 455.426C484.249 455.033 484.487 454.643 484.572 454.256C484.656 453.857 484.635 453.49 484.51 453.156C484.385 452.809 484.208 452.522 483.978 452.293C483.755 452.071 483.477 451.898 483.142 451.774C482.802 451.644 482.432 451.622 482.033 451.708C481.64 451.787 481.244 452.027 480.846 452.427L480.081 453.195L483.092 456.194ZM478.841 451.96L479.606 451.192C479.913 450.884 480.089 450.563 480.134 450.229C480.179 449.895 480.064 449.59 479.789 449.316C479.5 449.028 479.189 448.908 478.855 448.954C478.528 448.994 478.22 449.159 477.933 449.447L477.129 450.254L478.841 451.96Z" fill="#E6F1EA"/>
 <path d="M466.566 435.701C465.919 436.35 465.197 436.84 464.399 437.169C463.594 437.491 462.766 437.66 461.915 437.675C461.07 437.683 460.248 437.531 459.449 437.218C458.65 436.905 457.932 436.432 457.295 435.798C456.659 435.164 456.183 434.448 455.867 433.65C455.551 432.852 455.396 432.031 455.4 431.186C455.412 430.335 455.58 429.51 455.906 428.71C456.225 427.904 456.708 427.177 457.355 426.527C457.937 425.943 458.581 425.487 459.287 425.158C459.994 424.829 460.723 424.635 461.476 424.574L463.043 427.134C462.394 426.972 461.72 426.967 461.02 427.119C460.313 427.264 459.682 427.616 459.126 428.173C458.597 428.705 458.248 429.318 458.079 430.012C457.91 430.693 457.922 431.377 458.113 432.065C458.297 432.745 458.659 433.353 459.197 433.889C459.728 434.418 460.338 434.777 461.026 434.966C461.713 435.154 462.401 435.166 463.088 435.001C463.775 434.823 464.383 434.468 464.913 433.937C465.461 433.385 465.811 432.759 465.96 432.059C466.109 431.345 466.101 430.664 465.936 430.016L468.502 431.572C468.432 432.325 468.237 433.059 467.918 433.773C467.598 434.475 467.148 435.117 466.566 435.701Z" fill="#E6F1EA"/>
@@ -2202,7 +2202,7 @@ function buildOrder(customer){
     show: t('show.name'),
     showKey: currentShowKey(),
     showWhen: fmtDT(),
-    venue: 'Rạp Xiếc Trung Ương — 67-69 Trần Nhân Tông, Hà Nội',
+    venue: t('show.venue'),
     customer,
     seats: valid.map(id => {
       const s = SEAT_BY_ID.get(id);
@@ -2876,6 +2876,7 @@ const I18N = {
     'show.name':'Sơn Thần Thủy Quái',
     'map.exitWc':'CỬA THOÁT HIỂM - WC',
     'map.entrance':'LỐI VÀO CỬA KHÁN GIẢ',
+    'map.ariaLabel':'Sơ đồ ghế Rạp Xiếc Trung Ương',
     'sidebar.qty':'Số lượng vé',
     'sidebar.qtyHint':'Số vé thay đổi theo số ghế bạn chọn trên sơ đồ.',
     'sidebar.changeShow':'Đổi suất diễn',
@@ -2989,10 +2990,11 @@ const I18N = {
     'contact.address':'Address', 'contact.hotline':'Hotline', 'contact.email':'Email', 'contact.website':'Website',
     'contact.addressVal':'67-69 Tran Nhan Tong St., Hai Ba Trung, Hanoi',
 
-    'show.venue':'Rạp Xiếc Trung Ương — 67-69 Tran Nhan Tong, Hanoi',
+    'show.venue':'Central Circus — 67-69 Tran Nhan Tong, Hanoi',
     'show.name':'Son Than Thuy Quai',
     'map.exitWc':'EMERGENCY EXIT - WC',
     'map.entrance':'AUDIENCE ENTRANCE',
+    'map.ariaLabel':'Central Circus seat map',
     'sidebar.qty':'Number of tickets',
     'sidebar.qtyHint':'Ticket count follows the seats you select on the map.',
     'sidebar.changeShow':'Change showtime',
@@ -3113,6 +3115,10 @@ function setLang(lang){
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const val = dict[el.dataset.i18nPh];
     if (val) el.setAttribute('placeholder', val);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const val = dict[el.dataset.i18nAria];
+    if (val) el.setAttribute('aria-label', val);
   });
   document.getElementById('langLabel').textContent = lang.toUpperCase();
   document.documentElement.lang = lang;
