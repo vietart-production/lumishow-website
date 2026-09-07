@@ -204,12 +204,12 @@
   /* ============ CONTENT ATMOSPHERE (Schedule + News dùng chung 1 lớp background) ============ */
   .content-atmosphere{position:relative;}
   .content-atmosphere::before{
-    content:'';position:absolute;top:-250px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
+    content:'';position:absolute;top:-65px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
     background:
       linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 15%,rgba(0,0,0,.65) 85%,rgba(0,0,0,.92) 100%),
-      radial-gradient(circle at top left,#8F3800 0%,#051B0D 67%);
-    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 250px);
-    mask-image:linear-gradient(180deg,transparent 0,#000 250px);
+      radial-gradient(circle at top left,#8F3800 0%,#3B2206 31%,#261604 47%);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 65px);
+    mask-image:linear-gradient(180deg,transparent 0,#000 65px);
   }
 
   /* ============ SCHEDULE ============ */
@@ -226,6 +226,7 @@
   .schedule-meta{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;color:var(--white);font-weight:700;font-size:14px;}
   .schedule-meta strong{color:var(--white);font-weight:700;}
   .schedule-meta-dot{color:var(--green);}
+  .schedule-premiere{font-style:italic;}
   .schedule-range{margin-top:8px;color:var(--gray-dim);font-size:12.5px;letter-spacing:.5px;}
 
   /* ---- Timeline chọn ngày diễn (Thứ 6 · Thứ 7 · Chủ nhật) ---- */
@@ -242,7 +243,7 @@
   .week-nav-btn:disabled{opacity:.3;pointer-events:none;}
 
   .weekend-track{
-    display:flex;align-items:center;justify-content:center;flex:1 1 auto;min-width:0;
+    display:flex;align-items:center;justify-content:center;flex:0 1 auto;min-width:0;
     overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:20px;
   }
   .weekend-track::-webkit-scrollbar{display:none;}
@@ -257,7 +258,7 @@
     cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s,background .25s;
   }
   .weekend-node:hover{border-color:rgba(255,255,255,.28);background:rgba(14,70,64,.78);transform:translateY(-2px);}
-  .weekend-node.active{background:rgba(91,62,19,.68);border-color:transparent;box-shadow:0 0 0 1.5px var(--green),0 0 34px rgba(242,121,12,.28);}
+  .weekend-node.active{background:rgba(91,62,19,.68);border-color:transparent;box-shadow:0 0 0 1.5px var(--green);}
   .weekend-node .wd-dow{font-size:clamp(9.5px,2.6vw,12px);letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;font-weight:600;white-space:nowrap;}
   .weekend-node.active .wd-dow{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
   .weekend-node .wd-dom{font-family:var(--font-heading);font-size:clamp(22px,7vw,36px);font-weight:800;color:var(--white);line-height:1;margin:6px 0 4px;}
@@ -291,7 +292,7 @@
     border:1px solid rgba(255,255,255,.12);
     border-radius:clamp(14px,1.6vw,22px);
     background:
-      radial-gradient(ellipse 60% 50% at 100% 0%,rgba(214,140,20,.22) 0%,rgba(191,102,18,.10) 35%,transparent 62%),
+      radial-gradient(ellipse 42% 35% at 100% 0%,rgba(130,163,62,.22) 0%,rgba(130,163,62,.10) 35%,transparent 62%),
       radial-gradient(ellipse 55% 45% at 0% 100%,rgba(130,163,62,.13) 0%,rgba(130,163,62,.05) 38%,transparent 65%),
       linear-gradient(180deg,rgba(20,26,22,.5) 0%,rgba(8,11,10,.75) 100%);
     padding:clamp(22px,3vw,38px) clamp(18px,3vw,38px) clamp(16px,2.2vw,24px);
@@ -496,8 +497,8 @@
     .logo-lumishow{height:40px;}
     /* Cho chữ trong nút tự xuống dòng khi không đủ chỗ, thay vì bị cắt mất */
     .btn-primary{white-space:normal;text-align:center;line-height:1.15;word-break:break-word;}
-    /* Padding của weekend-track (chừa chỗ cho glow hover) là giá trị cố định nên trên màn hẹp
-       cộng dồn làm tràn ngang, cuộn mất hẳn nút "next" ra khỏi khung nhìn — giảm lại cho vừa */
+    /* Padding của weekend-track là giá trị cố định nên trên màn hẹp cộng dồn
+       làm tràn ngang, cuộn mất hẳn nút "next" ra khỏi khung nhìn — giảm lại cho vừa */
     .weekend-track{padding:10px;}
   }
   @media (max-width:400px){
@@ -665,7 +666,7 @@
       <span class="eyebrow" data-i18n="sch.eyebrow">Lịch diễn sắp tới</span>
       <h2 class="text-sttq" data-i18n="show.name">Sơn Thần Thủy Quái</h2>
       <div class="schedule-meta">
-        <span data-i18n="sch.premiere">Công chiếu ngày 25.09.2026</span>
+        <span class="schedule-premiere" data-i18n="sch.premiere">Công chiếu ngày 25.09.2026</span>
       </div>
     </div>
 
