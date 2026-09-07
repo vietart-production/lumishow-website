@@ -396,7 +396,10 @@
     width:100%;
     border:1px solid rgba(255,255,255,.12);
     border-radius:clamp(14px,1.6vw,22px);
-    background:linear-gradient(180deg,rgba(20,26,22,.5) 0%,rgba(8,11,10,.75) 100%);
+    background:
+      radial-gradient(ellipse 42% 35% at 100% 0%,rgba(130,163,62,.22) 0%,rgba(130,163,62,.10) 35%,transparent 62%),
+      radial-gradient(ellipse 55% 45% at 0% 100%,rgba(130,163,62,.13) 0%,rgba(130,163,62,.05) 38%,transparent 65%),
+      linear-gradient(180deg,rgba(20,26,22,.5) 0%,rgba(8,11,10,.75) 100%);
     padding:clamp(22px,3vw,38px) clamp(18px,3vw,38px) clamp(16px,2.2vw,24px);
     overflow:hidden;
   }

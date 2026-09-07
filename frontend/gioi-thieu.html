@@ -242,6 +242,10 @@
     background:linear-gradient(180deg,transparent 0%,rgba(251,187,33,.5) 6%,rgba(251,187,33,.5) 94%,transparent 100%);
   }
   .journey-row{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,60px);align-items:center;}
+  /* Zigzag: hồi chẵn (Hồi II, IV) đảo cột bằng order (không đổi DOM) để ảnh luôn theo sau nội dung khi xếp dọc trên mobile.
+     Dùng :nth-child(odd) vì .journey-line đứng trước làm lệch thứ tự child 1 bậc so với thứ tự Hồi. */
+  .journey-row:nth-child(odd) .journey-copy{order:2;}
+  .journey-row:nth-child(odd) .journey-media{order:1;}
   .journey-row::before{
     content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
     width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--gold);
@@ -281,7 +285,10 @@
     width:100%;
     border:1px solid rgba(255,255,255,.12);
     border-radius:clamp(14px,1.6vw,22px);
-    background:linear-gradient(180deg,rgba(20,26,22,.5) 0%,rgba(8,11,10,.75) 100%);
+    background:
+      radial-gradient(ellipse 42% 35% at 100% 0%,rgba(130,163,62,.22) 0%,rgba(130,163,62,.10) 35%,transparent 62%),
+      radial-gradient(ellipse 55% 45% at 0% 100%,rgba(130,163,62,.13) 0%,rgba(130,163,62,.05) 38%,transparent 65%),
+      linear-gradient(180deg,rgba(20,26,22,.5) 0%,rgba(8,11,10,.75) 100%);
     padding:clamp(22px,3vw,38px) clamp(18px,3vw,38px) clamp(16px,2.2vw,24px);
     overflow:hidden;
   }
@@ -371,6 +378,7 @@
        để chiều rộng luôn theo viewport thật, chiều cao chỉ do min-height quyết định. */
     .about-hero{aspect-ratio:auto;padding-top:40px;padding-bottom:44px;min-height:min(48vh,300px);}
     .journey-row{grid-template-columns:1fr;}
+    .journey-row:nth-child(odd) .journey-copy,.journey-row:nth-child(odd) .journey-media{order:0;}
     .journey-line,.journey-row::before{display:none;}
     .journey-media{min-height:220px;aspect-ratio:4/3;}
     .of-item{border-right:none;padding:4px 12px;}
