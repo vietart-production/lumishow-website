@@ -15,7 +15,6 @@ const SUPPORT_HOTLINE = "0869 512 246 (Ms. Chi)";
 // (các file này nặng vài trăm KB tới hơn 1MB, nhúng vào mail sẽ làm mail quá khổ).
 const ASSET_BASE = "https://lumishow.vn/image";
 const HERO_IMG = `${ASSET_BASE}/SonThanThuyQuai.jpg`;
-const TITLE_IMG = `${ASSET_BASE}/textSTTQ.png`;
 const LOGO_IMG = `${ASSET_BASE}/logo-lumishow.png`;
 
 function fmtVND(n) {
@@ -79,7 +78,7 @@ async function buildTicketEmailHtml(order, tickets) {
         <tr>
             <td style="background:#0d1117;text-align:center;padding:24px 24px 20px;">
                 <img src="${LOGO_IMG}" width="200" alt="LumiShow" style="display:block;width:200px;max-width:60%;height:auto;margin:0 auto 18px;">
-                <img src="${TITLE_IMG}" width="320" alt="Sơn Thần Thủy Quái" style="display:block;width:100%;max-width:320px;height:auto;margin:0 auto 10px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:30px;line-height:1.2;letter-spacing:1px;text-transform:uppercase;color:#FFD15A;margin:0 auto 10px;">Sơn Thần Thủy Quái</div>
                 <div style="color:#98a29b;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Show xiếc kết hợp 3D Mapping Panorama 360°</div>
                 <div style="color:#7CFF5A;font-size:11.5px;font-weight:700;margin-top:8px;">◆ &nbsp;LumiShow kết hợp cùng Rạp Xiếc Trung Ương&nbsp; ◆</div>
             </td>
@@ -182,7 +181,7 @@ async function buildTicketEmailHtml(order, tickets) {
                             <p style="font-size:14px;color:#FFD15A;font-weight:800;margin:0 0 16px;">HOTLINE: ${SUPPORT_HOTLINE}</p>
                             <p style="font-size:13px;color:#c9d1cb;margin:0 0 18px;">Chúc bạn có một trải nghiệm đáng nhớ cùng Sơn Thần Thủy Quái.</p>
                             <p style="font-size:13px;color:#c9d1cb;margin:0;">Trân trọng,</p>
-                            <p style="font-family:'Brush Script MT',cursive;font-style:italic;color:#FFD15A;font-size:22px;margin:2px 0 0;">Lumishow</p>
+                            <p style="font-family:Arial,Helvetica,sans-serif;font-style:italic;font-weight:700;color:#FFD15A;font-size:20px;margin:2px 0 0;">Lumishow</p>
                         </td>
                     </tr>
                 </table>
