@@ -611,8 +611,8 @@
 
   <nav class="nav-links">
     <a href="#" class="active" data-i18n="nav.home">Trang chủ</a>
-    <a href="GioiThieu.html" data-i18n="nav.about">Giới thiệu</a>
-    <a href="LienHe.html" data-i18n="nav.contact">Liên hệ</a>
+    <a href="/gioi-thieu" data-i18n="nav.about">Giới thiệu</a>
+    <a href="/lien-he" data-i18n="nav.contact">Liên hệ</a>
   </nav>
 
   <div class="nav-right">
@@ -625,8 +625,8 @@
 
 <nav class="mobile-nav" id="mobileNav">
   <a href="#" class="active" data-i18n="nav.home">Trang chủ</a>
-  <a href="GioiThieu.html" data-i18n="nav.about">Giới thiệu</a>
-  <a href="LienHe.html" data-i18n="nav.contact">Liên hệ</a>
+  <a href="/gioi-thieu" data-i18n="nav.about">Giới thiệu</a>
+  <a href="/lien-he" data-i18n="nav.contact">Liên hệ</a>
 </nav>
 
 <!-- ============ HERO ============ -->
@@ -677,7 +677,7 @@
     </div>
 
     <div class="schedule-cta-row">
-      <a href="BookingTicket.html" class="btn-primary btn-sch-lg" id="scheduleBookBtn"><span>Đặt vé</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
+      <a href="/dat-ve" class="btn-primary btn-sch-lg" id="scheduleBookBtn"><span>Đặt vé</span> <svg class="icon"><use href="#ic-arrow-right"/></svg></a>
     </div>
   </div>
 </section>
@@ -784,7 +784,7 @@
 
       <div class="footer-cta">
         <span data-i18n="footer.ctaText">Sẵn sàng kiến tạo những trải nghiệm sân khấu đột phá cùng LumiShow?</span>
-        <a href="LienHe.html#lhForm" class="footer-cta-btn">
+        <a href="/lien-he#lhForm" class="footer-cta-btn">
           <span data-i18n="footer.ctaBtn">LIÊN HỆ HỢP TÁC</span>
           <svg class="icon"><use href="#ic-arrow-right"/></svg>
         </a>
@@ -903,7 +903,7 @@
 
     if (scheduleBookBtn) {
       scheduleBookBtn.innerHTML = `<span>${dict['sch.book']}</span> <svg class="icon"><use href="#ic-arrow-right"/></svg>`;
-      scheduleBookBtn.href = `BookingTicket.html?date=${isoDate(run[selectedDay])}`;
+      scheduleBookBtn.href = `/dat-ve?date=${isoDate(run[selectedDay])}`;
     }
 
     if (weekPrevBtn) weekPrevBtn.disabled = runIndex === 0;

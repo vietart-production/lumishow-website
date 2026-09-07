@@ -5,10 +5,16 @@
   },
   "hosting": {
     "public": "frontend",
+    "cleanUrls": true,
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "redirects": [
+      { "source": "/GioiThieu.html", "destination": "/gioi-thieu", "type": 301 },
+      { "source": "/LienHe.html", "destination": "/lien-he", "type": 301 },
+      { "source": "/BookingTicket.html", "destination": "/dat-ve", "type": 301 }
     ]
   }
 }
