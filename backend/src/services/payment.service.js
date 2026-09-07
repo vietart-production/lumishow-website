@@ -121,6 +121,27 @@ async function createPaymentForHold({
         updatedAt: now
     });
 
+    // Coupon giảm 100% — không có gì để thanh toán qua PayOS (họ không nhận
+    // payment link 0đ, và về bản chất cũng không có giao dịch tiền nào cả).
+    // Chốt đơn PAID ngay bằng đúng hàm transaction dùng chung với webhook/
+    // poll (chuyển ghế SOLD, tạo vé, tăng usedCount coupon, gửi mail vé
+    // thật) — không tự viết logic "PAID" riêng cho trường hợp này.
+    if (amount === 0) {
+        await finalizeOrderAsPaid(orderRef);
+
+        return {
+            orderId,
+            orderCode,
+            subtotal,
+            amount,
+            coupon,
+            free: true,
+            checkoutUrl: null,
+            qrCode: null,
+            qrCodeDataUrl: null
+        };
+    }
+
     let paymentLink;
 
     try {
@@ -169,6 +190,7 @@ async function createPaymentForHold({
         subtotal,
         amount,
         coupon,
+        free: false,
         checkoutUrl: paymentLink.checkoutUrl,
         qrCode: paymentLink.qrCode,
         qrCodeDataUrl

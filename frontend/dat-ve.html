@@ -2498,9 +2498,16 @@ coNextBtn.addEventListener('click', async () => {
     currentOrder.qrCodeDataUrl = payment.qrCodeDataUrl;
     currentOrder.subtotal = payment.subtotal;
     currentOrder.coupon = payment.coupon; // sự thật từ server — có thể null dù đã "Áp dụng" ở bước 1
-    if (payment.amount) currentOrder.total = payment.amount; // tiền thật từ server, không dùng số tự tính ở client
+    currentOrder.total = payment.amount; // tiền thật từ server, không dùng số tự tính ở client — kể cả khi = 0 (coupon 100%)
 
     try { sessionStorage.setItem(SAVED_ORDER_KEY, JSON.stringify(currentOrder)); } catch(e){}
+
+    // Coupon 100% — server đã chốt đơn PAID ngay khi tạo (không qua PayOS),
+    // nhảy thẳng sang bước hoàn tất thay vì màn chuyển khoản/QR.
+    if (payment.free) {
+      finishPaidOrder();
+      return;
+    }
 
     sendBookingEmail('HOLD_CREATED', currentOrder);      // mail: đã giữ ghế, chờ thanh toán
     setStep(2);

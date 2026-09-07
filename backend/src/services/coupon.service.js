@@ -87,7 +87,10 @@ async function applyCouponToAmount(rawCode, subtotal) {
     const discount = Math.round(subtotal * status.percentOff / 100);
     const amount = subtotal - discount;
 
-    if (amount < MIN_PAYABLE_AMOUNT) {
+    // amount = 0 hợp lệ (coupon 100%) — đơn miễn phí hoàn toàn, không qua
+    // PayOS (xem payment.service.js). Chỉ chặn khoảng giữa 1-999đ: số tiền
+    // dương nhưng quá nhỏ để tạo payment link PayOS có nghĩa.
+    if (amount > 0 && amount < MIN_PAYABLE_AMOUNT) {
         const error = new Error(
             "Mã giảm giá khiến số tiền thanh toán quá thấp, không thể áp dụng."
         );
