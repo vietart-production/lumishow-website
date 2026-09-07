@@ -618,7 +618,7 @@
 
   <div class="nav-right">
     <button class="lang-select" id="langToggle" aria-label="Đổi ngôn ngữ"><span id="langLabel">VI</span> <svg class="icon"><use href="#ic-chevdown"/></svg></button>
-    <a href="#schedule" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
+    <a href="#lich-dien" class="btn-primary"><span data-i18n="nav.cta">ĐẶT VÉ NGAY</span></a>
     <button class="menu-toggle" aria-label="Mở menu" id="menuToggle"><svg class="icon"><use href="#ic-menu"/></svg></button>
   </div>
   </div>
@@ -659,7 +659,7 @@
 <div class="hero-divider"><span></span><i></i><span></span></div>
 
 <!-- ============ SCHEDULE ============ -->
-<section class="schedule-section" id="schedule">
+<section class="schedule-section" id="lich-dien">
   <div class="container">
     <div class="schedule-head">
       <span class="eyebrow" data-i18n="sch.eyebrow">Lịch diễn sắp tới</span>
@@ -921,7 +921,7 @@
 
     if (scheduleBookBtn) {
       scheduleBookBtn.innerHTML = `<span>${dict['sch.book']}</span> <svg class="icon"><use href="#ic-arrow-right"/></svg>`;
-      scheduleBookBtn.href = `/dat-ve?date=${isoDate(run[selectedDay])}`;
+      scheduleBookBtn.href = `/dat-ve?ngay=${isoDate(run[selectedDay])}`;
     }
 
     if (weekPrevBtn) weekPrevBtn.disabled = runIndex === 0;

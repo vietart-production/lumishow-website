@@ -2598,10 +2598,10 @@ function findScheduleIndexByShowKey(showKey){
 }
 
 /* Nhận ngày được chọn sẵn từ lịch diễn ở trang chủ (index.html truyền qua
-   ?date=YYYY-MM-DD). Chỉ set ngày, giữ suất giờ mặc định (đầu tiên) của
+   ?ngay=YYYY-MM-DD). Chỉ set ngày, giữ suất giờ mặc định (đầu tiên) của
    đúng ngày đó vì trang chủ chưa cho chọn suất giờ. */
 (function applyDateFromUrl(){
-  const dateParam = new URLSearchParams(location.search).get('date');
+  const dateParam = new URLSearchParams(location.search).get('ngay');
   if (!dateParam) return;
   const idx = findScheduleIndexByDateKey(dateParam);
   if (idx) {
