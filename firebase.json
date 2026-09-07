@@ -15,6 +15,38 @@
       { "source": "/GioiThieu.html", "destination": "/gioi-thieu", "type": 301 },
       { "source": "/LienHe.html", "destination": "/lien-he", "type": 301 },
       { "source": "/BookingTicket.html", "destination": "/dat-ve", "type": 301 }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(html|xml|txt)",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/gioi-thieu",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/lien-he",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/dat-ve",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
+      }
     ]
   }
 }
