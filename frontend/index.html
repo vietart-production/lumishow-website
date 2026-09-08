@@ -461,13 +461,16 @@
        tối sẵn có của .hero thay vì overlay lên ảnh.  */
     .hero{display:block;padding:0 0 32px;min-height:0;background:#07090a;}
     .hero-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9;overflow:hidden;}
-    .hero-inner{padding:22px var(--gutter) 0;}
+    .hero-inner{padding:22px var(--gutter) 0;margin-top:-36px;}
     .hero-bg-overlay{background:linear-gradient(180deg,transparent 78%,#07090a 100%);box-shadow:none;}
     .section-title{font-size:24px;}
     .news-grid{grid-template-columns:1fr;}
     /* margin-left/top cố định của hero-eyebrow được canh mắt cho màn desktop —
        trên điện thoại tạo cảm giác chữ bị lệch/trôi khỏi lề, cỡ chữ cũng quá to
-       so với bề rộng màn hình. Bỏ offset, giảm cỡ chữ theo vw. */
+       so với bề rộng màn hình. Bỏ offset, giảm cỡ chữ theo vw. Canh giữa .hero-copy
+       vì trên mobile chữ nằm riêng trên nền tối trống, ngay trên .schedule-head và
+       .hero-divider vốn đều canh giữa — để canh trái sẽ trông lệch, mất cân đối. */
+    .hero-copy{text-align:center;}
     .hero-eyebrow,.hero-eyebrow-2{margin-left:0;top:0;}
     .hero-eyebrow{font-size:clamp(19px,6vw,25px);}
     .hero-eyebrow-2{font-size:clamp(16px,5vw,23px);margin-top:4px;}
