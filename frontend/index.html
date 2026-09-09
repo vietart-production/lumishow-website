@@ -175,9 +175,21 @@
   .hero-bg-overlay{
     position:absolute;inset:0;pointer-events:none;
     background:
-      linear-gradient(0deg,var(--overlay-strong) 0%,transparent 32%),
-      linear-gradient(90deg,var(--overlay-strong) 0%,var(--overlay-mid) 45%,var(--overlay-soft) 100%);
-    box-shadow:inset 0 0 120px 30px rgba(2,8,15,.6);
+      /* Đáy hero ngả sang nâu ấm (thay vì đen-lạnh overlay-strong), kéo dài lên cao và
+         dùng đúng tông #3B2206 của .content-atmosphere::before để multiply "nhuộm" màu
+         nâu lên cả phần sáng của ảnh KV (mây/núi) thay vì chỉ ăn ở dải tối đáy ảnh.
+         Nhiều điểm dừng theo đường cong ease-out (thay vì vài điểm dừng độ dốc gãy khúc)
+         để tránh hiệu ứng "Mach band" — mắt thấy vệt ngang giả ở chỗ độ dốc đổi đột ngột,
+         nhất là trên nền trời màu phẳng như ảnh KV này */
+      linear-gradient(0deg,
+        rgba(59,34,6,.6) 0%,rgba(59,34,6,.46) 8%,rgba(59,34,6,.34) 16%,
+        rgba(59,34,6,.23) 24%,rgba(59,34,6,.15) 32%,rgba(59,34,6,.08) 40%,
+        rgba(59,34,6,.04) 48%,rgba(59,34,6,.01) 56%,transparent 64%),
+      linear-gradient(90deg,rgba(3,8,14,.55) 0%,rgba(3,8,14,.26) 45%,rgba(3,8,14,.06) 100%);
+    /* multiply thay vì đè màu phẳng lên ảnh — vùng tối "ăn" theo màu/chi tiết ảnh gốc
+       bên dưới nên mềm và tự nhiên hơn, đỡ tạo cảm giác một lớp màu dán chồng lên */
+    mix-blend-mode:multiply;
+    box-shadow:inset 0 0 100px 20px rgba(2,8,15,.4);
     transition:opacity 1.4s ease,background .3s ease;
   }
   .hero-bg-overlay.dim{opacity:.5;}
@@ -203,12 +215,21 @@
   /* ============ CONTENT ATMOSPHERE (Schedule + News dùng chung 1 lớp background) ============ */
   .content-atmosphere{position:relative;}
   .content-atmosphere::before{
-    content:'';position:absolute;top:-65px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
+    content:'';position:absolute;top:-420px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
     background:
       linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 15%,rgba(0,0,0,.65) 85%,rgba(0,0,0,.92) 100%),
-      radial-gradient(circle at top left,#8F3800 0%,#3B2206 31%,#261604 47%);
-    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 65px);
-    mask-image:linear-gradient(180deg,transparent 0,#000 65px);
+      /* Giữ nguyên tâm quầng sáng nâu (trước ở -65px khi top:-65px) dù kéo dài dải hoà trộn,
+         để không đổi hướng "nở" của quầng sáng, chỉ đổi độ dài mờ dần */
+      radial-gradient(circle at left 355px,#8F3800 0%,#3B2206 31%,#261604 47%);
+    /* Kéo dài dải mờ dần lên 420px + nhiều điểm dừng theo đường cong smoothstep (ease-in-out)
+       thay vì mask 2 điểm dừng tuyến tính — vừa hoà mượt hơn với dải multiply mới trong
+       .hero-bg-overlay, vừa tránh vệt "Mach band" ở chỗ độ dốc mask đổi đột ngột */
+    -webkit-mask-image:linear-gradient(180deg,
+      transparent 0,rgba(0,0,0,.06) 60px,rgba(0,0,0,.2) 120px,rgba(0,0,0,.39) 180px,
+      rgba(0,0,0,.61) 240px,rgba(0,0,0,.8) 300px,rgba(0,0,0,.95) 360px,#000 420px);
+    mask-image:linear-gradient(180deg,
+      transparent 0,rgba(0,0,0,.06) 60px,rgba(0,0,0,.2) 120px,rgba(0,0,0,.39) 180px,
+      rgba(0,0,0,.61) 240px,rgba(0,0,0,.8) 300px,rgba(0,0,0,.95) 360px,#000 420px);
   }
 
   /* ============ SCHEDULE ============ */
