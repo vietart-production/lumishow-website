@@ -22,6 +22,24 @@ const LOGO_IMG = `${ASSET_BASE}/logo-lumishow.png`;
 // một số client PC như Outlook desktop). Ảnh loại bỏ hẳn rủi ro font phía client.
 const TITLE_IMG = `${ASSET_BASE}/textSTTQMail.png`;
 
+// Font thật của web (Oswald/Montserrat) lấy trực tiếp từ Google Fonts (fonts.gstatic.com) —
+// khác với font FTV Raghlick tự host trên Firebase Hosting hồi trước, CDN này trả sẵn
+// Access-Control-Allow-Origin:* nên @font-face load cross-origin (mọi mail client, luôn
+// khác origin lumishow.vn) không bị chặn CORS. Mỗi family 2 khối theo unicode-range
+// (vietnamese/latin) — cả 2 khối cùng trỏ 1 file (Google trả font biến thể, 1 file chứa
+// nhiều độ đậm) nên không tốn thêm request nào, chỉ khai rõ từng độ đậm thực sự dùng
+// trong mail để trình duyệt khớp đúng mặt chữ, tránh phải tự "giả đậm" (synthetic bold) —
+// đây chính là nguyên nhân vỡ dấu tiếng Việt đã gặp với Georgia trước đó.
+function montserratFace(weight) {
+    return `
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:${weight};font-display:swap;src:url('https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WZhyzbi.woff2') format('woff2');unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:${weight};font-display:swap;src:url('https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}`;
+}
+const FONT_FACE_CSS = `
+${[400, 600, 700, 800].map(montserratFace).join("")}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:700;font-display:swap;src:url('https://fonts.gstatic.com/s/oswald/v57/TK3IWkUHHAIjg75cFRf3bXL8LICs1_Fv40pKlN4NNSeSASz7FmlZHYjedg.woff2') format('woff2');unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:700;font-display:swap;src:url('https://fonts.gstatic.com/s/oswald/v57/TK3IWkUHHAIjg75cFRf3bXL8LICs1_Fv40pKlN4NNSeSASz7FmlWHYg.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}`;
+
 function fmtVND(n) {
     return n.toLocaleString("vi-VN") + "đ";
 }
@@ -83,7 +101,8 @@ async function buildTicketEmailHtml(order, tickets) {
 
     return `
     <div style="background:#04060a;padding:0;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;background:#0d1117;">
+    <style>${FONT_FACE_CSS}</style>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Montserrat','Be Vietnam Pro',sans-serif;background:#0d1117;">
 
         <!-- HERO -->
         <tr>
@@ -105,7 +124,10 @@ async function buildTicketEmailHtml(order, tickets) {
         <!-- CONFIRM HEADING -->
         <tr>
             <td style="background:#0d1117;text-align:center;padding:0 24px 24px;">
-                <div style="color:#FFD15A;font-size:20px;font-weight:800;letter-spacing:.5px;">XÁC NHẬN ĐẶT VÉ THÀNH CÔNG</div>
+                <!-- Oswald tối đa chỉ có weight 700 (không có 800) — giữ đúng 700 để khớp
+                     @font-face khai báo, tránh trình duyệt phải tự giả đậm (synthetic bold)
+                     khi không tìm thấy đúng mặt chữ, nguyên nhân từng gây vỡ dấu tiếng Việt. -->
+                <div style="font-family:'Oswald','Arial Narrow',sans-serif;color:#FFD15A;font-size:21px;font-weight:700;letter-spacing:.5px;">XÁC NHẬN ĐẶT VÉ THÀNH CÔNG</div>
                 <div style="color:#98a29b;font-size:12.5px;margin-top:6px;">Sơn Thần Thủy Quái&nbsp; | &nbsp;Mã vé #${order.orderCode}</div>
             </td>
         </tr>
@@ -199,7 +221,7 @@ async function buildTicketEmailHtml(order, tickets) {
                             <p style="font-size:14px;color:#FFD15A;font-weight:800;margin:0 0 16px;">HOTLINE: ${SUPPORT_HOTLINE}</p>
                             <p style="font-size:13px;color:#c9d1cb;margin:0 0 18px;">Chúc bạn có một trải nghiệm đáng nhớ cùng Sơn Thần Thủy Quái.</p>
                             <p style="font-size:13px;color:#c9d1cb;margin:0;">Trân trọng,</p>
-                            <p style="font-family:Arial,Helvetica,sans-serif;font-style:italic;font-weight:700;color:#FFD15A;font-size:20px;margin:2px 0 0;">Lumishow</p>
+                            <p style="font-style:italic;font-weight:700;color:#FFD15A;font-size:20px;margin:2px 0 0;">Lumishow</p>
                         </td>
                     </tr>
                 </table>
