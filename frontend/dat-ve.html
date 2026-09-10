@@ -2142,6 +2142,7 @@ function endHold(release){
   holdSession = null;
   holdBar.classList.remove('show');
   cancelHoldBtn.style.display = 'none';
+  resetCouponState();
   selectedSeats.forEach(id => {
     if (seatStates[id] === ST.HELD_BY_ME) seatStates[id] = release ? ST.AVAILABLE : ST.SELECTED_BY_ME;
     paintSeat(id);
@@ -2186,6 +2187,18 @@ const coTitle     = document.getElementById('coTitle');
 let coStep = 1;
 let currentOrder = null;   // đơn hàng của phiên giữ ghế hiện tại
 let appliedCoupon = null;  // { code, percentOff } sau khi bấm "Áp dụng" thành công — chỉ để ước tính hiển thị, server luôn validate + tính lại
+
+// Coupon gắn với 1 phiên giữ ghế cụ thể — hold cũ kết thúc (hết giờ/huỷ/mất ghế)
+// mà không xoá appliedCoupon thì mã cũ vẫn âm thầm được tính vào phiên giữ ghế
+// MỚI sau đó dù khách chưa nhập gì lại, và ô nhập/thông báo trên UI cũng không
+// còn phản ánh đúng trạng thái. Gọi ở endHold() để không sót điểm gọi nào.
+function resetCouponState(){
+  appliedCoupon = null;
+  const input = document.getElementById('coCoupon');
+  const msg = document.getElementById('coCouponMsg');
+  if (input) input.value = '';
+  if (msg){ msg.textContent = ''; msg.className = 'co-coupon-msg'; }
+}
 
 const fmtDT = () => document.getElementById('showWhen').textContent;
 
@@ -2436,8 +2449,36 @@ function showErr(id, on){
   document.getElementById('err' + id).classList.toggle('show', on);
   document.getElementById('co' + id).classList.toggle('bad', on);
 }
+
+/* Nháp thông tin người đặt (họ tên/SĐT/email) lưu theo tab (sessionStorage) —
+   trước đây đóng panel rồi mở lại (hoặc lỡ tải lại trang giữa chừng) là mất
+   sạch, phải gõ lại từ đầu. Lưu mỗi lần gõ, khôi phục ngay khi trang tải xong,
+   không xoá khi hold kết thúc vì đây là thông tin cá nhân dùng lại được cho
+   lần đặt vé tiếp theo trong cùng tab — khác với coupon (gắn theo từng hold). */
+const CUSTOMER_DRAFT_KEY = 'lumishow-customer-info-draft';
+function saveCustomerDraft(){
+  try {
+    sessionStorage.setItem(CUSTOMER_DRAFT_KEY, JSON.stringify({
+      name: document.getElementById('coName').value,
+      phone: document.getElementById('coPhone').value,
+      email: document.getElementById('coEmail').value
+    }));
+  } catch (e) {}
+}
+function restoreCustomerDraft(){
+  try {
+    const raw = sessionStorage.getItem(CUSTOMER_DRAFT_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.name)  document.getElementById('coName').value  = d.name;
+    if (d.phone) document.getElementById('coPhone').value = d.phone;
+    if (d.email) document.getElementById('coEmail').value = d.email;
+  } catch (e) {}
+}
+restoreCustomerDraft();
+
 ['Name','Phone','Email'].forEach(k => {
-  document.getElementById('co' + k).addEventListener('input', () => showErr(k, false));
+  document.getElementById('co' + k).addEventListener('input', () => { showErr(k, false); saveCustomerDraft(); });
 });
 
 function validateCustomer(){
