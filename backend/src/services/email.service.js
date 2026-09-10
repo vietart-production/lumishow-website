@@ -16,6 +16,7 @@ const SUPPORT_HOTLINE = "0869 512 246 (Ms. Chi)";
 const ASSET_BASE = "https://lumishow.vn/image";
 const HERO_IMG = `${ASSET_BASE}/SonThanThuyQuai.jpg`;
 const LOGO_IMG = `${ASSET_BASE}/logo-lumishow.png`;
+const FONT_STTQ_URL = "https://lumishow.vn/font/1FTV-RAGHLICK.OTF";
 
 function fmtVND(n) {
     return n.toLocaleString("vi-VN") + "đ";
@@ -44,12 +45,25 @@ function infoRow(icon, label, value) {
     </tr>`;
 }
 
-function qrThumbHtml(ticket) {
+// Mỗi vé xếp riêng 1 hàng (dọc), không xếp chung hàng ngang — nhiều vé đặt sát
+// nhau trong cùng 1 hàng từng khiến máy quét check-in dễ bắt nhầm mã bên cạnh khi
+// đưa điện thoại lại gần. Có đường kẻ phân tách + khoảng cách rộng giữa các vé.
+function qrBlockHtml(ticket, index, total) {
+    const divider = index > 0
+        ? `<div style="height:1px;background:rgba(255,255,255,.1);margin:0 auto 26px;max-width:220px;"></div>`
+        : "";
+    const numberLabel = total > 1
+        ? `<div style="color:#98a29b;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Vé ${index + 1}/${total}</div>`
+        : "";
     return `
-    <td align="center" style="padding:0 10px 14px;">
-        <img src="${qrImgUrl(ticket.ticketCode)}" width="150" height="150" alt="QR vé ${ticket.ticketCode}" style="display:block;border-radius:10px;background:#fff;padding:10px;">
-        <div style="color:#E6F1EA;font-size:13px;font-weight:700;margin-top:8px;">${ticket.seatId}</div>
-    </td>`;
+    <tr>
+        <td align="center" style="padding:${index === 0 ? "6px" : "26px"} 20px 6px;">
+            ${divider}
+            ${numberLabel}
+            <img src="${qrImgUrl(ticket.ticketCode)}" width="160" height="160" alt="QR vé ${ticket.ticketCode}" style="display:block;margin:0 auto;border-radius:10px;background:#fff;padding:12px;">
+            <div style="color:#E6F1EA;font-size:14px;font-weight:700;margin-top:10px;">Ghế ${ticket.seatId}${ticket.tierName ? ` — ${ticket.tierName}` : ""}</div>
+        </td>
+    </tr>`;
 }
 
 async function buildTicketEmailHtml(order, tickets) {
@@ -60,11 +74,19 @@ async function buildTicketEmailHtml(order, tickets) {
     const seatSummary = tickets.map((t) => t.seatId).join(", ");
 
     const qrThumbs = tickets
-        .map((t) => qrThumbHtml(t))
+        .map((t, i) => qrBlockHtml(t, i, tickets.length))
         .join("");
 
     return `
     <div style="background:#04060a;padding:0;">
+    <!-- Font trang trí đúng như trên web (.text-sttq) cho riêng dòng tên show — chỉ 1 font
+         phụ thêm, còn lại toàn mail vẫn dùng Arial/Helvetica để đỡ rối mắt. Không dùng
+         gradient-text (background-clip:text) vì phần lớn mail client không hỗ trợ; nơi
+         nào không tải được @font-face (vd Outlook desktop) sẽ tự rơi về Georgia/serif,
+         chữ vẫn hiện đúng màu vàng gold bình thường, không vỡ giao diện. -->
+    <style>
+        @font-face{font-family:'FTV Raghlick';src:url('${FONT_STTQ_URL}') format('opentype');font-weight:700;font-style:normal;}
+    </style>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;background:#0d1117;">
 
         <!-- HERO -->
@@ -78,7 +100,10 @@ async function buildTicketEmailHtml(order, tickets) {
         <tr>
             <td style="background:#0d1117;text-align:center;padding:24px 24px 20px;">
                 <img src="${LOGO_IMG}" width="200" alt="LumiShow" style="display:block;width:200px;max-width:60%;height:auto;margin:0 auto 18px;">
-                <div style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:30px;line-height:1.2;letter-spacing:1px;text-transform:uppercase;color:#FFD15A;margin:0 auto 10px;">Sơn Thần Thủy Quái</div>
+                <!-- Không uppercase: font FTV Raghlick không có glyph hoa dựng sẵn cho ký tự có dấu
+                     (vd "Ầ"), CSS text-transform:uppercase ép dựng dấu tự động sẽ vỡ nét — trang web
+                     (.text-sttq) cũng để nguyên chữ hoa/thường gốc, không uppercase. -->
+                <div style="font-family:'FTV Raghlick',Georgia,'Times New Roman',serif;font-weight:700;font-size:34px;line-height:1.25;letter-spacing:.5px;color:#FFD15A;margin:0 auto 10px;">Sơn Thần Thủy Quái</div>
                 <div style="color:#98a29b;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Show xiếc kết hợp 3D Mapping Panorama 360°</div>
                 <div style="color:#7CFF5A;font-size:11.5px;font-weight:700;margin-top:8px;">◆ &nbsp;LumiShow kết hợp cùng Rạp Xiếc Trung Ương&nbsp; ◆</div>
             </td>
@@ -123,7 +148,7 @@ async function buildTicketEmailHtml(order, tickets) {
                     <tr>
                         <td align="center" style="padding:4px 20px 20px;border-top:1px solid rgba(255,255,255,.08);">
                             <div style="color:#98a29b;font-size:11px;margin:14px 0 12px;text-align:center;">📱&nbsp; Mã QR vé — quét để check-in tại rạp</div>
-                            <table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>${qrThumbs}</tr></table>
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${qrThumbs}</table>
                         </td>
                     </tr>
                 </table>

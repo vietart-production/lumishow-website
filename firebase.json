@@ -18,6 +18,12 @@
     ],
     "headers": [
       {
+        "source": "/font/**",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
         "source": "**/*.@(html|xml|txt)",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
