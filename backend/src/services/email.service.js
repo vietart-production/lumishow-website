@@ -1,6 +1,10 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM || "LumiShow <booking@lumishow.vn>";
-const CONTACT_TO_EMAIL = process.env.CONTACT_TO_EMAIL || "lumishow.vietnam@gmail.com";
+const CONTACT_TO_EMAIL = process.env.CONTACT_TO_EMAIL || "lumishow.va@gmail.com";
+// Mail nội bộ báo có khách đặt vé thành công — cùng hộp thư với mail liên hệ theo
+// yêu cầu, nhưng để riêng biến (thay vì dùng chung CONTACT_TO_EMAIL) để sau này có
+// thể trỏ 2 loại thông báo sang 2 nơi khác nhau qua .env mà không phải sửa code.
+const ORDER_NOTIFY_EMAIL = process.env.ORDER_NOTIFY_EMAIL || "lumishow.va@gmail.com";
 
 // Render tự inject biến này với URL public thật của service — dùng làm gốc
 // cho ảnh QR (xem ticket.routes.js). Fallback localhost để test ở máy local.
@@ -276,6 +280,72 @@ async function sendTicketEmail(order, tickets) {
     }
 }
 
+// Mail nội bộ báo có khách đặt vé thành công — riêng cho LumiShow theo dõi đơn,
+// khác hẳn mail vé gửi khách (không hero, không QR, không nội quy). Cố tình tối
+// giản: chỉ đúng những gì cần biết ngay (khách nào, ghế nào, suất nào, bao nhiêu
+// tiền) xếp thành 1 khối thông tin duy nhất, dễ liếc qua trên điện thoại.
+function buildOrderNotificationHtml(order, tickets) {
+
+    const { time, date } = splitShowtime(order.showtimeId);
+    const seatList = tickets.map((t) => t.seatId).join(", ");
+    const tierSummary = [...new Set(tickets.map((t) => t.tierName))].join(", ");
+
+    return `
+    <div style="background:#04060a;padding:24px;">
+    <style>${FONT_FACE_CSS}</style>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto;font-family:'Montserrat','Be Vietnam Pro',sans-serif;background:#0d1117;border-radius:14px;overflow:hidden;">
+        <tr>
+            <td style="padding:22px 24px;">
+                <div style="font-family:'Oswald','Arial Narrow',sans-serif;color:#FFD15A;font-size:17px;font-weight:700;letter-spacing:.5px;margin-bottom:2px;">🎟️&nbsp; ĐƠN VÉ MỚI</div>
+                <div style="color:#98a29b;font-size:12px;margin-bottom:16px;">Mã đơn #${order.orderCode} — Sơn Thần Thủy Quái</div>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#10151c;">
+                    <tr><td style="padding:16px 18px;">
+                        ${infoRow("👤", "Khách hàng", escapeHtml(order.customerName))}
+                        ${infoRow("📞", "SĐT", `<a href="tel:${escapeHtml(order.customerPhone)}" style="color:#E6F1EA;">${escapeHtml(order.customerPhone)}</a>`)}
+                        ${infoRow("✉️", "Email", `<a href="mailto:${escapeHtml(order.customerEmail)}" style="color:#E6F1EA;">${escapeHtml(order.customerEmail)}</a>`)}
+                        ${infoRow("🕐", "Suất diễn", `${time}, ${date}`)}
+                        ${infoRow("💺", "Ghế", `${seatList} <span style="color:#98a29b;font-weight:400;">(${tierSummary})</span>`)}
+                        ${infoRow("💰", "Tổng tiền", `<span style="color:#7CFF5A;">${fmtVND(order.amount)}</span>`)}
+                    </td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    </div>`;
+}
+
+// Không throw ra ngoài — cùng lý do với sendTicketEmail: lỗi gửi mail nội bộ
+// không được phép làm hỏng luồng xác nhận thanh toán của khách.
+async function sendOrderNotificationEmail(order, tickets) {
+
+    if (!RESEND_API_KEY) {
+        console.warn("[email] RESEND_API_KEY chưa cấu hình — bỏ qua gửi mail thông báo đơn.");
+        return;
+    }
+
+    const html = buildOrderNotificationHtml(order, tickets);
+
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            from: EMAIL_FROM,
+            to: ORDER_NOTIFY_EMAIL,
+            subject: `🎟️ Đơn vé mới #${order.orderCode} — ${order.customerName} (${tickets.length} ghế)`,
+            html
+        })
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Gửi mail thông báo đơn thất bại (${response.status}): ${errText}`);
+    }
+}
+
 function escapeHtml(s) {
     return String(s)
         .replace(/&/g, "&amp;")
@@ -347,5 +417,6 @@ async function sendContactEmail({ name, phone, email, company, message }) {
 
 module.exports = {
     sendTicketEmail,
+    sendOrderNotificationEmail,
     sendContactEmail
 };

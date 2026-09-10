@@ -11,7 +11,7 @@ const QRCode = require("qrcode");
 const { db } = require("../config/firebase");
 const { FieldValue } = require("firebase-admin/firestore");
 const { getHoldStatus } = require("./booking.service");
-const { sendTicketEmail } = require("./email.service");
+const { sendTicketEmail, sendOrderNotificationEmail } = require("./email.service");
 const { applyCouponToAmount } = require("./coupon.service");
 
 const payos = new PayOS({
@@ -366,6 +366,9 @@ async function finalizeOrderAsPaid(orderRef) {
     if (!alreadyPaid && emailPayload) {
         sendTicketEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
             console.error("GỬI MAIL VÉ THẤT BẠI:", error);
+        });
+        sendOrderNotificationEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
+            console.error("GỬI MAIL THÔNG BÁO ĐƠN THẤT BẠI:", error);
         });
     }
 
