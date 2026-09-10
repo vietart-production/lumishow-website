@@ -16,7 +16,11 @@ const SUPPORT_HOTLINE = "0869 512 246 (Ms. Chi)";
 const ASSET_BASE = "https://lumishow.vn/image";
 const HERO_IMG = `${ASSET_BASE}/SonThanThuyQuai.jpg`;
 const LOGO_IMG = `${ASSET_BASE}/logo-lumishow.png`;
-const FONT_STTQ_URL = "https://lumishow.vn/font/1FTV-RAGHLICK.OTF";
+// Ảnh chữ "Sơn Thần Thủy Quái" dựng sẵn (font + màu gradient như trên web) —
+// dùng ảnh thay vì text thật vì @font-face/gradient-text không tương thích
+// đều tay giữa các mail client (đã thử font thật, vẫn lỗi dấu tiếng Việt trên
+// một số client PC như Outlook desktop). Ảnh loại bỏ hẳn rủi ro font phía client.
+const TITLE_IMG = `${ASSET_BASE}/textSTTQMail.png`;
 
 function fmtVND(n) {
     return n.toLocaleString("vi-VN") + "đ";
@@ -79,14 +83,6 @@ async function buildTicketEmailHtml(order, tickets) {
 
     return `
     <div style="background:#04060a;padding:0;">
-    <!-- Font trang trí đúng như trên web (.text-sttq) cho riêng dòng tên show — chỉ 1 font
-         phụ thêm, còn lại toàn mail vẫn dùng Arial/Helvetica để đỡ rối mắt. Không dùng
-         gradient-text (background-clip:text) vì phần lớn mail client không hỗ trợ; nơi
-         nào không tải được @font-face (vd Outlook desktop) sẽ tự rơi về Georgia/serif,
-         chữ vẫn hiện đúng màu vàng gold bình thường, không vỡ giao diện. -->
-    <style>
-        @font-face{font-family:'FTV Raghlick';src:url('${FONT_STTQ_URL}') format('opentype');font-weight:700;font-style:normal;}
-    </style>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;background:#0d1117;">
 
         <!-- HERO -->
@@ -100,18 +96,7 @@ async function buildTicketEmailHtml(order, tickets) {
         <tr>
             <td style="background:#0d1117;text-align:center;padding:24px 24px 20px;">
                 <img src="${LOGO_IMG}" width="200" alt="LumiShow" style="display:block;width:200px;max-width:60%;height:auto;margin:0 auto 18px;">
-                <!-- Không uppercase: font FTV Raghlick không có glyph hoa dựng sẵn cho ký tự có dấu
-                     (vd "Ầ"), CSS text-transform:uppercase ép dựng dấu tự động sẽ vỡ nét — trang web
-                     (.text-sttq) cũng để nguyên chữ hoa/thường gốc, không uppercase.
-                     Fallback Arial (không phải Georgia): trên máy test, Georgia tự vỡ dấu combining
-                     accent của "ầ" bất kể weight — Outlook desktop (không hỗ trợ @font-face dù có
-                     CORS) sẽ luôn rơi vào nhánh fallback này nên phải chọn font an toàn thật sự,
-                     đồng thời cũng là font đã dùng xuyên suốt mail — không thêm font thứ 3.
-                     Màu #FBBB21 lấy đúng token --gold, trùng màu mở đầu gradient .text-sttq
-                     (--grad-text) bên trang Lịch diễn để đồng bộ; không dùng gradient-text thật
-                     (background-clip:text) vì color:transparent sẽ làm chữ vô hình hẳn ở client
-                     không hỗ trợ clip, rủi ro hơn nhiều so với lệch màu. -->
-                <div style="font-family:'FTV Raghlick',Arial,Helvetica,sans-serif;font-weight:700;font-size:34px;line-height:1.25;letter-spacing:.5px;color:#FBBB21;margin:0 auto 10px;">Sơn Thần Thủy Quái</div>
+                <img src="${TITLE_IMG}" width="320" alt="Sơn Thần Thủy Quái" style="display:block;width:100%;max-width:320px;height:auto;margin:0 auto 10px;">
                 <div style="color:#98a29b;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Show xiếc kết hợp 3D Mapping Panorama 360°</div>
                 <div style="color:#7CFF5A;font-size:11.5px;font-weight:700;margin-top:8px;">◆ &nbsp;LumiShow kết hợp cùng Rạp Xiếc Trung Ương&nbsp; ◆</div>
             </td>
