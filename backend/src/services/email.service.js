@@ -1,10 +1,13 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM || "LumiShow <booking@lumishow.vn>";
 const CONTACT_TO_EMAIL = process.env.CONTACT_TO_EMAIL || "lumishow.va@gmail.com";
-// Mail nội bộ báo có khách đặt vé thành công — cùng hộp thư với mail liên hệ theo
-// yêu cầu, nhưng để riêng biến (thay vì dùng chung CONTACT_TO_EMAIL) để sau này có
-// thể trỏ 2 loại thông báo sang 2 nơi khác nhau qua .env mà không phải sửa code.
-const ORDER_NOTIFY_EMAIL = process.env.ORDER_NOTIFY_EMAIL || "lumishow.va@gmail.com";
+// Mail nội bộ báo có khách đặt vé thành công — nhận riêng ở đây, KHÔNG nhận mail
+// liên hệ (khác CONTACT_TO_EMAIL ở trên). Cho phép nhiều người nhận (Resend nhận
+// mảng ở field "to"); .env override vẫn dùng 1 chuỗi, phân tách bằng dấu phẩy.
+const ORDER_NOTIFY_EMAILS = (process.env.ORDER_NOTIFY_EMAIL || "lumishow.va@gmail.com,haophamcircus@gmail.com")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
 
 // Render tự inject biến này với URL public thật của service — dùng làm gốc
 // cho ảnh QR (xem ticket.routes.js). Fallback localhost để test ở máy local.
@@ -334,7 +337,7 @@ async function sendOrderNotificationEmail(order, tickets) {
         },
         body: JSON.stringify({
             from: EMAIL_FROM,
-            to: ORDER_NOTIFY_EMAIL,
+            to: ORDER_NOTIFY_EMAILS,
             subject: `🎟️ Đơn vé mới #${order.orderCode} — ${order.customerName} (${tickets.length} ghế)`,
             html
         })
