@@ -9,10 +9,9 @@ const crypto = require("crypto");
 const QRCode = require("qrcode");
 
 const { db } = require("../config/firebase");
-const { FieldValue } = require("firebase-admin/firestore");
 const { getHoldStatus } = require("./booking.service");
 const { sendTicketEmail, sendOrderNotificationEmail, sendSeatConflictAlertEmail } = require("./email.service");
-const { applyCouponToAmount } = require("./coupon.service");
+const { reserveCouponToAmount, releaseCouponUse } = require("./coupon.service");
 
 const payos = new PayOS({
     clientId: process.env.PAYOS_CLIENT_ID,
@@ -83,7 +82,10 @@ async function createPaymentForHold({
     let coupon = null;
 
     if (couponCode) {
-        const applied = await applyCouponToAmount(couponCode, subtotal);
+        // GIỮ CHỖ lượt coupon ngay (atomic, đã tăng usedCount) thay vì chỉ đọc
+        // — chặn race nhiều người cùng dùng 1 mã giới hạn lượt / mã giảm 100%.
+        // Nếu các bước sau (tạo PayOS link) hỏng thì hoàn lại bằng releaseCouponUse.
+        const applied = await reserveCouponToAmount(couponCode, subtotal);
         amount = applied.amount;
         coupon = {
             code: applied.code,
@@ -92,7 +94,10 @@ async function createPaymentForHold({
         };
     }
 
-    const orderCode = Date.now();
+    // orderCode gửi cho PayOS phải DUY NHẤT. Date.now() thuần có thể trùng khi
+    // hai đơn tạo trong cùng mili-giây → PayOS từ chối đơn sau, webhook tra
+    // nhầm đơn. Thêm 3 chữ số ngẫu nhiên (vẫn < MAX_SAFE_INTEGER).
+    const orderCode = Date.now() * 1000 + Math.floor(Math.random() * 1000);
     const orderId = `order_${crypto.randomUUID()}`;
     const orderRef = db.collection("orders").doc(orderId);
 
@@ -166,6 +171,11 @@ async function createPaymentForHold({
             updatedAt: new Date()
         });
 
+        // Hoàn lại lượt coupon đã giữ chỗ ở trên — đơn này không thành.
+        if (coupon && coupon.code) {
+            await releaseCouponUse(coupon.code);
+        }
+
         throw error;
     }
 
@@ -205,11 +215,17 @@ async function createPaymentForHold({
 // trùng, không tạo vé đôi.
 // ==========================================
 
-async function finalizeOrderAsPaid(orderRef) {
+// paidAmount: số tiền THỰC NHẬN từ PayOS (webhook.amount hoặc
+// paymentLink.amountPaid). Truyền vào để đối chiếu với order.amount TRONG
+// transaction — chặn trường hợp khách trả thiếu tiền mà vẫn được cấp đủ vé.
+// Không truyền (undefined) = bỏ qua đối chiếu, dùng cho đơn miễn phí 100%
+// (không qua PayOS, không có giao dịch tiền).
+async function finalizeOrderAsPaid(orderRef, paidAmount) {
 
     let alreadyPaid = false;
     let emailPayload = null;
     let conflictPayload = null;
+    let underpaidPayload = null;
 
     await db.runTransaction(async (transaction) => {
 
@@ -222,6 +238,38 @@ async function finalizeOrderAsPaid(orderRef) {
 
         if (order.orderStatus === "PAID") {
             alreadyPaid = true;
+            return;
+        }
+
+        // Đơn đã bị huỷ (tạo payment link lỗi trước đó) — KHÔNG hồi sinh thành
+        // PAID nếu một webhook/poll trễ tới sau. Tránh gán vé cho đơn đã đóng.
+        if (order.orderStatus === "CANCELLED") {
+            return;
+        }
+
+        // Đối chiếu số tiền thực nhận: nếu trả thiếu, KHÔNG cấp vé — đánh dấu
+        // UNDERPAID để xử lý tay (hoàn/bù). Chỉ đánh dấu 1 lần (idempotent với
+        // webhook retry). paidAmount == null (đơn miễn phí) thì bỏ qua.
+        if (paidAmount != null && Number(paidAmount) < Number(order.amount)) {
+            if (order.paymentStatus !== "UNDERPAID") {
+                transaction.update(orderRef, {
+                    paymentStatus: "UNDERPAID",
+                    paidAmountActual: Number(paidAmount),
+                    updatedAt: new Date()
+                });
+                underpaidPayload = {
+                    order: {
+                        customerName: order.customerName,
+                        customerPhone: order.customerPhone,
+                        customerEmail: order.customerEmail,
+                        orderCode: order.orderCode,
+                        amount: order.amount,
+                        showId: order.showId,
+                        showtimeId: order.showtimeId
+                    },
+                    paidAmount: Number(paidAmount)
+                };
+            }
             return;
         }
 
@@ -244,19 +292,9 @@ async function finalizeOrderAsPaid(orderRef) {
             seatRefs.map((ref) => transaction.get(ref))
         );
 
-        // Coupon (nếu đơn có áp) — đọc trong transaction (bắt buộc đọc trước
-        // khi ghi) để tăng usedCount đúng lúc đơn PAID thật, không phải lúc
-        // tạo payment link. Nếu coupon doc đã bị xoá (hiếm, admin tự xoá)
-        // thì bỏ qua bước tăng, không chặn việc chốt đơn — tiền khách đã
-        // trả thật, không thể vì thiếu 1 con số thống kê mà huỷ đơn.
-        let couponRef = null;
-        let couponExists = false;
-
-        if (order.coupon && order.coupon.code) {
-            couponRef = db.collection("coupons").doc(order.coupon.code);
-            const couponSnap = await transaction.get(couponRef);
-            couponExists = couponSnap.exists;
-        }
+        // Coupon: usedCount đã được GIỮ CHỖ (tăng) atomic ngay lúc tạo payment
+        // link (xem reserveCouponToAmount trong coupon.service.js), KHÔNG tăng
+        // lại ở đây — tránh đếm 2 lần và tránh khe hở race đã có trước đây.
 
         const now = new Date();
 
@@ -280,7 +318,11 @@ async function finalizeOrderAsPaid(orderRef) {
 
             const seatDoc = seatDocs[i];
 
+            // Ghế không còn tồn tại (bị xoá/đổi mã giữa chừng) — trước đây bỏ
+            // qua âm thầm: khách trả đủ tiền nhưng nhận thiếu vé, không ai biết.
+            // Giờ đưa vào xung đột để có vé "cần xử lý" + mail cảnh báo.
             if (!seatDoc.exists) {
+                conflictSeats.push({ seatId, seatStatus: "MISSING", seatData: null });
                 return;
             }
 
@@ -387,7 +429,7 @@ async function finalizeOrderAsPaid(orderRef) {
                 customerPhone: order.customerPhone,
                 customerEmail: order.customerEmail,
 
-                price: seatData.price,
+                price: seatData ? seatData.price : null,
 
                 paymentStatus: "paid",
                 ticketStatus: "conflict_needs_review",
@@ -399,17 +441,6 @@ async function finalizeOrderAsPaid(orderRef) {
                 createdAt: now
             });
         });
-
-        // ==========================================
-        // 6. Coupon → tăng usedCount (chỉ khi đơn thật sự PAID)
-        // ==========================================
-
-        if (couponRef && couponExists) {
-            transaction.update(couponRef, {
-                usedCount: FieldValue.increment(1),
-                updatedAt: now
-            });
-        }
 
         emailPayload = {
             order: {
@@ -432,6 +463,16 @@ async function finalizeOrderAsPaid(orderRef) {
         }
     });
 
+    // Đơn trả thiếu tiền — gửi cảnh báo kỹ thuật để xử lý tay, không cấp vé.
+    if (underpaidPayload) {
+        sendSeatConflictAlertEmail(
+            underpaidPayload.order,
+            [{ seatId: `TRẢ THIẾU TIỀN: nhận ${underpaidPayload.paidAmount}đ / cần ${underpaidPayload.order.amount}đ`, seatStatus: "UNDERPAID" }]
+        ).catch((error) => {
+            console.error("GỬI MAIL CẢNH BÁO TRẢ THIẾU TIỀN THẤT BẠI:", error);
+        });
+    }
+
     // Gửi mail sau khi transaction đã chốt xong — không gửi trong lúc transaction
     // đang chạy vì Firestore có thể tự retry transaction nếu xung đột ghi.
     if (!alreadyPaid && emailPayload) {
@@ -440,9 +481,14 @@ async function finalizeOrderAsPaid(orderRef) {
         // vé "valid" nào để gửi — bỏ qua mail vé/thông báo đơn bình thường,
         // chỉ gửi cảnh báo xung đột bên dưới.
         if (emailPayload.tickets.length > 0) {
-            sendTicketEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
-                console.error("GỬI MAIL VÉ THẤT BẠI:", error);
-            });
+            // Đánh dấu emailSent để biết đơn nào đã gửi được mail vé (H6): nếu
+            // gửi lỗi, ghi emailError để sau này dò và gửi lại, không mất dấu.
+            sendTicketEmail(emailPayload.order, emailPayload.tickets)
+                .then(() => orderRef.update({ emailSent: true, emailSentAt: new Date() }))
+                .catch((error) => {
+                    console.error("GỬI MAIL VÉ THẤT BẠI:", error);
+                    orderRef.update({ emailSent: false, emailError: String(error && error.message || error) }).catch(() => {});
+                });
             sendOrderNotificationEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
                 console.error("GỬI MAIL THÔNG BÁO ĐƠN THẤT BẠI:", error);
             });
@@ -487,7 +533,9 @@ async function handlePaymentWebhook(webhookBody) {
         return { handled: false, reason: "payment_not_successful" };
     }
 
-    const alreadyPaid = await finalizeOrderAsPaid(orderRef);
+    // Truyền số tiền thực nhận (webhookData.amount) để đối chiếu với order.amount
+    // — chặn trả thiếu tiền mà vẫn được cấp vé.
+    const alreadyPaid = await finalizeOrderAsPaid(orderRef, webhookData.amount);
 
     return { handled: true, alreadyPaid };
 }
@@ -518,7 +566,8 @@ async function getPaymentStatus(orderId) {
     const paymentLink = await payos.paymentRequests.get(order.orderCode);
 
     if (paymentLink.status === "PAID") {
-        await finalizeOrderAsPaid(orderRef);
+        // amountPaid: số tiền PayOS xác nhận đã nhận — đối chiếu với order.amount.
+        await finalizeOrderAsPaid(orderRef, paymentLink.amountPaid);
         return { orderStatus: "PAID", paymentStatus: "PAID" };
     }
 
