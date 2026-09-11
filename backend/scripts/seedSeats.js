@@ -56,6 +56,13 @@ const TIERS = {
 
 const SEAT_CODE_RE = /^([A-Z]+)(\d+)$/;
 
+// G1-G58 (khối ghế "Sơn Thần" đầu hàng G) dành riêng cho staff/lãnh đạo,
+// không mở bán công khai — seed thẳng SOLD ngay từ đầu để mọi suất diễn
+// thêm sau này (mở rộng mùa diễn, chạy lại script) cũng tự chặn ghế đúng
+// như suất diễn hiện tại (đã chặn thủ công bằng blockStaffSeats.js).
+const STAFF_ROW = "G";
+const STAFF_SEAT_MAX = 58;
+
 function buildSeats() {
     const seats = [];
 
@@ -81,7 +88,7 @@ function buildSeats() {
 
             price,
 
-            status: "AVAILABLE",
+            status: (row === STAFF_ROW && number <= STAFF_SEAT_MAX) ? "SOLD" : "AVAILABLE",
 
             holdId: null,
             holdExpiresAt: null
