@@ -2141,12 +2141,33 @@ function tickHold(){
     document.getElementById('coHoldBar').classList.toggle('danger', left <= 60);
   }
   if (left === 0){
-    const expired = currentOrder;
-    endHold(true);
-    if (expired){ expired.status = 'EXPIRED'; sendBookingEmail('HOLD_EXPIRED', expired); }
-    closeCheckout();
-    toast(t('msg.holdExpired'), 'warn');
+    // Đồng hồ này chạy theo GIỜ MÁY KHÁCH (Date.now()) nên có thể về 0 sớm hơn
+    // server (máy lệch giờ / độ trễ). Nếu khách đang ở bước chờ thanh toán và
+    // vừa chuyển khoản đúng lúc này, tự đóng + dừng poll + nhả ghế sẽ làm MẤT
+    // đơn dù đã trả tiền. Vì vậy hỏi server LẦN CUỐI trước khi bỏ.
+    if (holdSession.expiring) return; // đang xử lý, tránh gọi lại mỗi giây
+    holdSession.expiring = true;
+    handleHoldExpiry();
   }
+}
+async function handleHoldExpiry(){
+  if (coStep === 2 && currentOrder && currentOrder.orderId){
+    try {
+      const r = await fetchPaymentStatus(currentOrder.orderId);
+      if (r.orderStatus === 'PAID'){
+        stopPaymentPolling();
+        finishPaidOrder();
+        return;
+      }
+    } catch (e) {
+      // Không hỏi được server — vẫn để hết hạn như bình thường bên dưới.
+    }
+  }
+  const expired = currentOrder;
+  endHold(true);
+  if (expired){ expired.status = 'EXPIRED'; sendBookingEmail('HOLD_EXPIRED', expired); }
+  closeCheckout();
+  toast(t('msg.holdExpired'), 'warn');
 }
 function endHold(release){
   if (!holdSession) return;
