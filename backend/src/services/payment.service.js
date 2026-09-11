@@ -261,13 +261,16 @@ async function finalizeOrderAsPaid(orderRef) {
         const now = new Date();
 
         // ==========================================
-        // 2. Phân loại từng ghế: còn đúng hold của đơn này (chốt SOLD bình
-        // thường) hay đã bị người khác giữ/mua mất giữa chừng (hold hết hạn
-        // trước khi thanh toán được xác nhận — khách chuyển khoản tay chậm,
-        // webhook/poll đến trễ...). holdId trên ghế là nguồn sự thật duy nhất:
-        // khớp holdId thì chắc chắn ghế vẫn "của" đơn này; không khớp thì ghế
-        // đang HELD bởi hold khác hoặc đã SOLD cho người khác — cả 2 trường
-        // hợp đều phải chặn như nhau, không được ép ghi đè.
+        // 2. Phân loại từng ghế. Xung đột THẬT chỉ khi ghế đang thuộc về
+        // người/đơn KHÁC: đã SOLD (khách khác đã có vé), hoặc đang HELD bởi
+        // 1 hold khác (người khác đang giữ để thanh toán). Nếu ghế đang
+        // AVAILABLE — kể cả khi hold của chính đơn này đã hết hạn và bị nhả
+        // về trống (hold hết hạn do lỗi poll/tab đóng, không phải do tranh
+        // ghế thật) — thì không ai khác đang giữ/mua nó cả, an toàn để nhận
+        // lại cho đơn này. Chỉ so khớp holdId là chưa đủ: sau khi hold hết
+        // hạn, seat.holdId luôn bị set về null dù chưa có ai lấy mất, so
+        // holdId thẳng sẽ báo xung đột giả (đã xảy ra thật, khách "AN" bị
+        // báo xung đột dù không hề có ai giữ/mua ghế đó ngoài họ).
         // ==========================================
 
         const validSeats = [];
@@ -283,10 +286,14 @@ async function finalizeOrderAsPaid(orderRef) {
 
             const seatData = seatDoc.data();
 
-            if (seatData.holdId === order.holdId) {
-                validSeats.push({ seatId, seatRef: seatRefs[i], seatData });
-            } else {
+            const isConflict =
+                seatData.status === "SOLD" ||
+                (seatData.status === "HELD" && seatData.holdId !== order.holdId);
+
+            if (isConflict) {
                 conflictSeats.push({ seatId, seatStatus: seatData.status, seatData });
+            } else {
+                validSeats.push({ seatId, seatRef: seatRefs[i], seatData });
             }
         });
 
