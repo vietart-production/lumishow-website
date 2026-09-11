@@ -112,6 +112,21 @@ async function getHoldStatus(holdId) {
     };
 }
 
+// showtimeId dạng "YYYY-MM-DD_HH:MM" (giờ Việt Nam, UTC+7). Trả về epoch ms
+// của thời điểm suất bắt đầu, hoặc null nếu format lạ (khi đó không chặn theo
+// thời gian, để các lớp khác xử lý). Server Render chạy UTC nên phải trừ 7h,
+// không dùng new Date(chuỗi) trực tiếp (sẽ hiểu nhầm là giờ UTC, lệch 7 tiếng).
+function parseShowtimeStartMs(showtimeId) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})_(\d{2}):(\d{2})$/.exec(showtimeId || "");
+    if (!m) return null;
+    const [, y, mo, d, hh, mm] = m.map(Number);
+    return Date.UTC(y, mo - 1, d, hh, mm) - 7 * 60 * 60 * 1000;
+}
+
+// Ngưng bán bao lâu TRƯỚC giờ diễn (ms). 0 = cho mua tới đúng giờ bắt đầu;
+// đổi thành ví dụ 30*60*1000 nếu muốn đóng bán 30 phút trước giờ diễn.
+const SALES_CUTOFF_BEFORE_START_MS = 0;
+
 // ==========================================
 // GIỮ GHẾ BẰNG FIRESTORE TRANSACTION
 // ==========================================
@@ -138,6 +153,15 @@ async function createHold({
     if (seatIds.length === 0) {
         throw new Error("Bạn chưa chọn ghế");
     }
+
+    // Không cho đặt vé suất đã bắt đầu / đã diễn xong. showtime chỉ có cờ
+    // status="OPEN" (không có luồng nào tự đóng theo thời gian), nên phải so
+    // trực tiếp với thời gian thực ở đây, nếu không khách mua nhầm vé suất đã qua.
+    const startMs = parseShowtimeStartMs(showtimeId);
+    if (startMs !== null && startMs - SALES_CUTOFF_BEFORE_START_MS <= Date.now()) {
+        throw new Error("Suất diễn này đã bắt đầu hoặc đã kết thúc, không thể đặt vé.");
+    }
+
     await cleanupExpiredHoldsThrottled();
 
     // Không cho vượt quá giới hạn
@@ -153,6 +177,45 @@ async function createHold({
 
     if (uniqueSeatIds.length !== seatIds.length) {
         throw new Error("Danh sách ghế có dữ liệu trùng lặp");
+    }
+
+    // Mỗi phiên (bookingSessionId) chỉ được giữ 1 hold đang hiệu lực cùng lúc
+    // (MAX_ACTIVE_HOLDS_PER_SESSION). Trước đây giới hạn này khai báo nhưng
+    // không nơi nào thực thi → 1 người đổi session/gọi nhiều lần có thể khoá
+    // sạch ghế cả rạp. Chạy SAU cleanup để không tính nhầm hold vừa hết hạn.
+    const activeHoldsSnap = await db.collection("holds")
+        .where("bookingSessionId", "==", bookingSessionId)
+        .where("status", "==", "ACTIVE")
+        .get();
+
+    const nowForLimit = new Date();
+    const liveHolds = activeHoldsSnap.docs.filter((doc) => {
+        const exp = doc.data().expiresAt?.toDate
+            ? doc.data().expiresAt.toDate()
+            : new Date(doc.data().expiresAt);
+        return exp && exp > nowForLimit;
+    });
+
+    if (liveHolds.length >= BOOKING_CONFIG.MAX_ACTIVE_HOLDS_PER_SESSION) {
+        // Nếu phiên này đang giữ ĐÚNG những ghế đang yêu cầu (khách mất holdId
+        // sau khi reload/rớt mạng rồi thử giữ lại chính ghế đó) → trả lại hold
+        // cũ thay vì báo lỗi, để khách không tự khoá ghế của chính mình.
+        const sameSeatsHold = liveHolds.find((doc) => {
+            const s = doc.data().seatIds || [];
+            return s.length === uniqueSeatIds.length
+                && s.every((x) => uniqueSeatIds.includes(x));
+        });
+
+        if (sameSeatsHold) {
+            const data = sameSeatsHold.data();
+            return {
+                holdId: sameSeatsHold.id,
+                expiresAt: data.expiresAt?.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt),
+                seatIds: data.seatIds
+            };
+        }
+
+        throw new Error("Bạn đang có một phiên giữ ghế khác chưa hoàn tất. Vui lòng hoàn tất thanh toán hoặc chờ hết hạn rồi thử lại.");
     }
 
 
@@ -424,7 +487,7 @@ async function cleanupExpiredHolds() {
         .collection("holds")
         .where("status", "==", "ACTIVE")
         .where("expiresAt", "<=", now)
-        .limit(50)
+        .limit(100)
         .get();
 
 
@@ -433,18 +496,15 @@ async function cleanupExpiredHolds() {
     }
 
 
-    let releasedCount = 0;
+    // Giải phóng song song thay vì tuần tự: trước đây 50 transaction chạy nối
+    // tiếp (mỗi cái ~100-200ms) khiến giờ cao điểm dọn chậm và giam ghế trống.
+    // Mỗi hold là transaction độc lập nên song song an toàn; allSettled để một
+    // release lỗi không làm hỏng các release còn lại.
+    const results = await Promise.allSettled(
+        expiredSnapshot.docs.map((holdDoc) => releaseExpiredHold(holdDoc.id))
+    );
 
-
-    for (const holdDoc of expiredSnapshot.docs) {
-
-        await releaseExpiredHold(holdDoc.id);
-
-        releasedCount++;
-    }
-
-
-    return releasedCount;
+    return results.filter((r) => r.status === "fulfilled").length;
 }
 
 // ==========================================
@@ -469,7 +529,15 @@ async function cleanupExpiredHoldsThrottled() {
 
     lastCleanupAt = now;
 
-    return cleanupExpiredHolds();
+    // Dọn hold hết hạn là việc NỀN — một transaction release lỗi (tranh ghế,
+    // deadline, Firestore hiccup) KHÔNG được phép làm hỏng request xem/giữ ghế
+    // hợp lệ của khách đang gọi. Nuốt lỗi ở đây, chỉ log.
+    try {
+        return await cleanupExpiredHolds();
+    } catch (error) {
+        console.error("[cleanup] Lỗi khi dọn hold hết hạn (bỏ qua, không chặn request):", error);
+        return 0;
+    }
 }
 
 module.exports = {
