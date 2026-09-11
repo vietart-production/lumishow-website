@@ -1,13 +1,35 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM || "LumiShow <booking@lumishow.vn>";
-const CONTACT_TO_EMAIL = process.env.CONTACT_TO_EMAIL || "lumishow.va@gmail.com";
-// Mail nội bộ báo có khách đặt vé thành công — nhận riêng ở đây, KHÔNG nhận mail
-// liên hệ (khác CONTACT_TO_EMAIL ở trên). Cho phép nhiều người nhận (Resend nhận
-// mảng ở field "to"); .env override vẫn dùng 1 chuỗi, phân tách bằng dấu phẩy.
-const ORDER_NOTIFY_EMAILS = (process.env.ORDER_NOTIFY_EMAIL || "lumishow.va@gmail.com,haophamcircus@gmail.com")
-    .split(",")
-    .map((e) => e.trim())
-    .filter(Boolean);
+
+// Cho phép nhiều người nhận (Resend nhận mảng ở field "to"); .env override vẫn
+// dùng 1 chuỗi, phân tách bằng dấu phẩy.
+function parseEmailList(envValue, fallback) {
+    return (envValue || fallback)
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean);
+}
+
+// Mail liên hệ (form trang Liên hệ)
+const CONTACT_TO_EMAILS = parseEmailList(
+    process.env.CONTACT_TO_EMAIL,
+    "lumishow.va@gmail.com,vietartclaude@gmail.com"
+);
+
+// Mail nội bộ báo có khách đặt vé thành công — nhận riêng ở đây, KHÔNG dùng
+// chung danh sách với mail liên hệ hay mail cảnh báo lỗi kỹ thuật bên dưới.
+const ORDER_NOTIFY_EMAILS = parseEmailList(
+    process.env.ORDER_NOTIFY_EMAIL,
+    "lumishow.va@gmail.com,haophamcircus@gmail.com,vietartclaude@gmail.com"
+);
+
+// Mail cảnh báo LỖI KỸ THUẬT (vd. xung đột ghế) — cố tình KHÔNG dùng chung
+// ORDER_NOTIFY_EMAILS: đây là cảnh báo cho người xử lý kỹ thuật/vận hành hệ
+// thống, không phải cho đội kinh doanh nhận thông báo đơn vé bình thường.
+const TECH_ALERT_EMAILS = parseEmailList(
+    process.env.TECH_ALERT_EMAIL,
+    "vietartclaude@gmail.com"
+);
 
 // Render tự inject biến này với URL public thật của service — dùng làm gốc
 // cho ảnh QR (xem ticket.routes.js). Fallback localhost để test ở máy local.
@@ -373,7 +395,7 @@ async function sendSeatConflictAlertEmail(order, conflictSeats) {
         },
         body: JSON.stringify({
             from: EMAIL_FROM,
-            to: ORDER_NOTIFY_EMAILS,
+            to: TECH_ALERT_EMAILS,
             subject: `⚠️ XUNG ĐỘT GHẾ — Đơn #${order.orderCode} đã thanh toán nhưng ghế bị trùng`,
             html
         })
@@ -472,7 +494,7 @@ async function sendContactEmail({ name, phone, email, company, message }) {
         },
         body: JSON.stringify({
             from: EMAIL_FROM,
-            to: CONTACT_TO_EMAIL,
+            to: CONTACT_TO_EMAILS,
             reply_to: email,
             subject: `[LumiShow] Liên hệ mới từ ${name}`,
             html
