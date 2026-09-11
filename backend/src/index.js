@@ -9,6 +9,7 @@ const ticketRoutes = require("./routes/ticket.routes");
 const contactRoutes = require("./routes/contact.routes");
 const adminRoutes = require("./routes/admin.routes");
 const couponRoutes = require("./routes/coupon.routes");
+const { reconcilePendingOrders } = require("./services/reconcile.service");
 
 const app = express();
 
@@ -118,3 +119,19 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`LumiShow API đang chạy tại port ${PORT}`);
 });
+
+// Lưới an toàn C6: đối soát đơn treo mỗi 10 phút — chốt vé cho khách đã trả
+// tiền nhưng đóng tab trước khi poll xác nhận (webhook chưa đăng ký). Chạy
+// khi instance còn thức; bọc để lỗi không làm sập tiến trình. Render free có
+// thể ngủ đông khi vắng traffic — khi đó đơn treo sẽ được đối soát ở lần
+// instance thức dậy tiếp theo (vẫn tốt hơn không bao giờ).
+const RECONCILE_INTERVAL_MS = 10 * 60 * 1000;
+setInterval(() => {
+    reconcilePendingOrders({ commit: true, log: (m) => console.log("[reconcile]", m) })
+        .then((r) => {
+            if (r.committed > 0) {
+                console.log(`[reconcile] Đã chốt ${r.committed} đơn treo đã thanh toán.`);
+            }
+        })
+        .catch((error) => console.error("[reconcile] Lỗi đối soát nền:", error));
+}, RECONCILE_INTERVAL_MS);
