@@ -85,9 +85,11 @@ router.post("/admin/tickets/cancel", requirePin, async (req, res) => {
 
     try {
 
-        const { showId, showtimeId, seatId } = req.body;
+        // showId luôn dùng hằng SHOW_ID của server, KHÔNG tin giá trị client
+        // gửi (tránh ghép chuỗi lạ vào đường dẫn Firestore).
+        const { showtimeId, seatId } = req.body;
 
-        const result = await cancelTicketBySeat({ showId, showtimeId, seatId });
+        const result = await cancelTicketBySeat({ showId: SHOW_ID, showtimeId, seatId });
 
         return res.status(200).json({
             success: true,
@@ -116,7 +118,6 @@ router.post("/admin/tickets/create", requirePin, async (req, res) => {
     try {
 
         const {
-            showId,
             showtimeId,
             seatId,
             customerName,
@@ -124,8 +125,9 @@ router.post("/admin/tickets/create", requirePin, async (req, res) => {
             customerEmail
         } = req.body;
 
+        // showId luôn dùng hằng SHOW_ID của server, không tin client gửi.
         const result = await createManualTicket({
-            showId,
+            showId: SHOW_ID,
             showtimeId,
             seatId,
             customerName,

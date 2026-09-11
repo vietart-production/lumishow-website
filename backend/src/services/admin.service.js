@@ -1,18 +1,32 @@
+const crypto = require("crypto");
 const { db } = require("../config/firebase");
 const { FieldPath } = require("firebase-admin/firestore");
 
 const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
 
+// Chỉ cho phép mã ghế dạng {hàng}{số}: 1-2 chữ cái hoa + 1-3 số (vd B12, AB9).
+// Chặn chuỗi độc hại (path injection kiểu "../..") lọt vào đường dẫn Firestore.
+const SEAT_ID_RE = /^[A-Z]{1,2}\d{1,3}$/;
+
 // ==========================================
 // PIN ADMIN — kiểm tra ở SERVER, không hardcode trong app Unity (APK có
 // thể decompile lấy ra chuỗi cứng). Đổi được qua .env mà không cần build
-// lại app. Không set biến này thì dùng mặc định "0410205".
+// lại app.
+// LƯU Ý VẬN HÀNH: nên đặt biến ADMIN_PIN trên Render bằng một chuỗi DÀI, ngẫu
+// nhiên (không phải ngày sinh) — giá trị mặc định dưới đây chỉ là để dev/không
+// crash khi thiếu env, KHÔNG an toàn nếu repo công khai.
 // ==========================================
 
 const ADMIN_PIN = process.env.ADMIN_PIN || "0410205";
 
+// So sánh hằng-thời-gian để không rò rỉ độ dài/nội dung PIN qua thời gian phản
+// hồi (timing attack). Khác độ dài cũng trả false mà không so từng ký tự.
 function checkPin(pin) {
-    return typeof pin === "string" && pin === ADMIN_PIN;
+    if (typeof pin !== "string") return false;
+    const a = Buffer.from(pin);
+    const b = Buffer.from(ADMIN_PIN);
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
 }
 
 // ==========================================
@@ -26,6 +40,10 @@ async function cancelTicketBySeat({ showId, showtimeId, seatId }) {
 
     if (!showId || !showtimeId || !seatId) {
         throw new Error("Thiếu showId/showtimeId/seatId");
+    }
+
+    if (!SEAT_ID_RE.test(seatId)) {
+        throw new Error("Mã ghế không hợp lệ");
     }
 
     const ticketsSnap = await db.collection("tickets")
@@ -56,6 +74,12 @@ async function cancelTicketBySeat({ showId, showtimeId, seatId }) {
 
         if (!ticketSnap.exists || ticketSnap.data().ticketStatus !== "valid") {
             throw new Error("Vé đã bị huỷ hoặc không còn hợp lệ");
+        }
+
+        // Không cho huỷ vé đã check-in (khách đã vào rạp) — tránh nhân viên huỷ
+        // vé đang dùng rồi bán lại ghế, và tránh sai lệch số liệu soát vé.
+        if (ticketSnap.data().checkedIn === true) {
+            throw new Error("Vé đã được check-in (khách đã vào rạp), không thể huỷ");
         }
 
         transaction.update(ticketRef, {
@@ -100,6 +124,10 @@ async function createManualTicket({
 
     if (!showId || !showtimeId || !seatId || !customerName) {
         throw new Error("Thiếu showId/showtimeId/seatId/customerName");
+    }
+
+    if (!SEAT_ID_RE.test(seatId)) {
+        throw new Error("Mã ghế không hợp lệ");
     }
 
     const seatRef = db
