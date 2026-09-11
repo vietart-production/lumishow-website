@@ -318,6 +318,73 @@ function buildOrderNotificationHtml(order, tickets) {
     </div>`;
 }
 
+// Mail cảnh báo NỘI BỘ khi đơn đã thanh toán thật (tiền đã về tài khoản) nhưng 1
+// hoặc nhiều ghế trong đơn đã bị người khác giữ/mua mất giữa chừng (hold hết hạn
+// trước khi hệ thống kịp xác nhận thanh toán — xem finalizeOrderAsPaid trong
+// payment.service.js). Hệ thống KHÔNG tự quyết định đổi ghế/hoàn tiền được nên
+// cần người xử lý tay ngay — mail cố tình nổi bật (viền đỏ, chủ đề có ⚠️) để
+// không bị lẫn với các mail "đơn vé mới" bình thường.
+function buildSeatConflictAlertHtml(order, conflictSeats) {
+
+    const { time, date } = splitShowtime(order.showtimeId);
+    const seatList = conflictSeats.map((s) => `${s.seatId} (đang ${s.seatStatus})`).join(", ");
+
+    return `
+    <div style="background:#04060a;padding:24px;">
+    <style>${FONT_FACE_CSS}</style>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto;font-family:'Montserrat','Be Vietnam Pro',sans-serif;background:#0d1117;border-radius:14px;overflow:hidden;border:2px solid #FF5A5A;">
+        <tr>
+            <td style="padding:22px 24px;">
+                <div style="font-family:'Oswald','Arial Narrow',sans-serif;color:#FF5A5A;font-size:16px;font-weight:700;letter-spacing:.5px;margin-bottom:2px;">⚠️&nbsp; XUNG ĐỘT GHẾ — CẦN XỬ LÝ TAY NGAY</div>
+                <div style="color:#98a29b;font-size:12px;margin-bottom:16px;">Mã đơn #${order.orderCode} — khách đã thanh toán thật, nhưng ghế bên dưới đã bị giữ/bán cho người khác trước khi hệ thống kịp xác nhận.</div>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,90,90,.4);border-radius:12px;background:#10151c;">
+                    <tr><td style="padding:16px 18px;">
+                        ${infoRow("👤", "Khách hàng", escapeHtml(order.customerName))}
+                        ${infoRow("📞", "SĐT", `<a href="tel:${escapeHtml(order.customerPhone)}" style="color:#E6F1EA;">${escapeHtml(order.customerPhone)}</a>`)}
+                        ${infoRow("✉️", "Email", `<a href="mailto:${escapeHtml(order.customerEmail)}" style="color:#E6F1EA;">${escapeHtml(order.customerEmail)}</a>`)}
+                        ${infoRow("🕐", "Suất diễn", `${time}, ${date}`)}
+                        ${infoRow("💺", "Ghế xung đột", escapeHtml(seatList))}
+                        ${infoRow("💰", "Số tiền đã nhận", `<span style="color:#7CFF5A;">${fmtVND(order.amount)}</span>`)}
+                    </td></tr>
+                </table>
+
+                <p style="color:#c9d1cb;font-size:12.5px;line-height:1.7;margin:16px 0 0;">Cần liên hệ khách để đổi sang ghế còn trống khác, hoặc hoàn tiền — hệ thống đã ghi nhận đơn PAID nhưng KHÔNG tự gán ghế để tránh tạo trùng vé với người đang giữ/đã mua ghế đó.</p>
+            </td>
+        </tr>
+    </table>
+    </div>`;
+}
+
+async function sendSeatConflictAlertEmail(order, conflictSeats) {
+
+    if (!RESEND_API_KEY) {
+        console.warn("[email] RESEND_API_KEY chưa cấu hình — bỏ qua gửi mail cảnh báo xung đột ghế.");
+        return;
+    }
+
+    const html = buildSeatConflictAlertHtml(order, conflictSeats);
+
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            from: EMAIL_FROM,
+            to: ORDER_NOTIFY_EMAILS,
+            subject: `⚠️ XUNG ĐỘT GHẾ — Đơn #${order.orderCode} đã thanh toán nhưng ghế bị trùng`,
+            html
+        })
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Gửi mail cảnh báo xung đột ghế thất bại (${response.status}): ${errText}`);
+    }
+}
+
 // Không throw ra ngoài — cùng lý do với sendTicketEmail: lỗi gửi mail nội bộ
 // không được phép làm hỏng luồng xác nhận thanh toán của khách.
 async function sendOrderNotificationEmail(order, tickets) {
@@ -421,5 +488,6 @@ async function sendContactEmail({ name, phone, email, company, message }) {
 module.exports = {
     sendTicketEmail,
     sendOrderNotificationEmail,
+    sendSeatConflictAlertEmail,
     sendContactEmail
 };

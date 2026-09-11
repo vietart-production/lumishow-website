@@ -11,7 +11,7 @@ const QRCode = require("qrcode");
 const { db } = require("../config/firebase");
 const { FieldValue } = require("firebase-admin/firestore");
 const { getHoldStatus } = require("./booking.service");
-const { sendTicketEmail, sendOrderNotificationEmail } = require("./email.service");
+const { sendTicketEmail, sendOrderNotificationEmail, sendSeatConflictAlertEmail } = require("./email.service");
 const { applyCouponToAmount } = require("./coupon.service");
 
 const payos = new PayOS({
@@ -209,6 +209,7 @@ async function finalizeOrderAsPaid(orderRef) {
 
     let alreadyPaid = false;
     let emailPayload = null;
+    let conflictPayload = null;
 
     await db.runTransaction(async (transaction) => {
 
@@ -260,18 +261,52 @@ async function finalizeOrderAsPaid(orderRef) {
         const now = new Date();
 
         // ==========================================
-        // 2. Order → PAID
+        // 2. Phân loại từng ghế: còn đúng hold của đơn này (chốt SOLD bình
+        // thường) hay đã bị người khác giữ/mua mất giữa chừng (hold hết hạn
+        // trước khi thanh toán được xác nhận — khách chuyển khoản tay chậm,
+        // webhook/poll đến trễ...). holdId trên ghế là nguồn sự thật duy nhất:
+        // khớp holdId thì chắc chắn ghế vẫn "của" đơn này; không khớp thì ghế
+        // đang HELD bởi hold khác hoặc đã SOLD cho người khác — cả 2 trường
+        // hợp đều phải chặn như nhau, không được ép ghi đè.
+        // ==========================================
+
+        const validSeats = [];
+        const conflictSeats = [];
+
+        order.seatIds.forEach((seatId, i) => {
+
+            const seatDoc = seatDocs[i];
+
+            if (!seatDoc.exists) {
+                return;
+            }
+
+            const seatData = seatDoc.data();
+
+            if (seatData.holdId === order.holdId) {
+                validSeats.push({ seatId, seatRef: seatRefs[i], seatData });
+            } else {
+                conflictSeats.push({ seatId, seatStatus: seatData.status, seatData });
+            }
+        });
+
+        // ==========================================
+        // 3. Order → PAID (tiền đã nhận thật nên luôn phải chốt PAID, kể cả
+        // khi có ghế xung đột — không thể coi như chưa nhận tiền được).
         // ==========================================
 
         transaction.update(orderRef, {
             orderStatus: "PAID",
             paymentStatus: "PAID",
             paidAt: now,
-            updatedAt: now
+            updatedAt: now,
+            ...(conflictSeats.length > 0
+                ? { seatConflicts: conflictSeats.map((c) => ({ seatId: c.seatId, seatStatus: c.seatStatus })) }
+                : {})
         });
 
         // ==========================================
-        // 3. Hold → COMPLETED
+        // 4. Hold → COMPLETED
         // ==========================================
 
         if (holdSnap.exists) {
@@ -282,35 +317,31 @@ async function finalizeOrderAsPaid(orderRef) {
         }
 
         // ==========================================
-        // 4. Ghế → SOLD, tạo vé cho từng ghế
+        // 5. Ghế hợp lệ → SOLD, tạo vé "valid". Ghế xung đột → KHÔNG đụng vào
+        // ghế (đang thuộc về người khác), chỉ tạo vé đánh dấu
+        // "conflict_needs_review" để có dấu vết đối soát/hoàn tiền tay — nhân
+        // viên xử lý qua sendSeatConflictAlertEmail bên dưới, không tự động.
         // ==========================================
 
         const ticketsForEmail = [];
 
-        seatDocs.forEach((seatDoc, i) => {
+        validSeats.forEach(({ seatId, seatRef, seatData }) => {
 
-            if (!seatDoc.exists) {
-                return;
-            }
+            const ticketCode = `LS-${order.orderCode}-${seatId}`;
 
-            const seatData = seatDoc.data();
-            const ticketCode = `LS-${order.orderCode}-${order.seatIds[i]}`;
-
-            transaction.update(seatRefs[i], {
+            transaction.update(seatRef, {
                 status: "SOLD",
                 holdId: null,
                 holdExpiresAt: null,
                 updatedAt: now
             });
 
-            const ticketRef = db.collection("tickets").doc();
-
-            transaction.set(ticketRef, {
+            transaction.set(db.collection("tickets").doc(), {
                 orderId: orderRef.id,
 
                 showId: order.showId,
                 showtimeId: order.showtimeId,
-                seatId: order.seatIds[i],
+                seatId,
 
                 customerName: order.customerName,
                 customerPhone: order.customerPhone,
@@ -329,15 +360,41 @@ async function finalizeOrderAsPaid(orderRef) {
             });
 
             ticketsForEmail.push({
-                seatId: order.seatIds[i],
+                seatId,
                 tierName: seatData.tierName,
                 price: seatData.price,
                 ticketCode
             });
         });
 
+        conflictSeats.forEach(({ seatId, seatData }) => {
+
+            transaction.set(db.collection("tickets").doc(), {
+                orderId: orderRef.id,
+
+                showId: order.showId,
+                showtimeId: order.showtimeId,
+                seatId,
+
+                customerName: order.customerName,
+                customerPhone: order.customerPhone,
+                customerEmail: order.customerEmail,
+
+                price: seatData.price,
+
+                paymentStatus: "paid",
+                ticketStatus: "conflict_needs_review",
+                ticketCode: `LS-${order.orderCode}-${seatId}`,
+
+                checkedIn: false,
+                checkedInAt: null,
+
+                createdAt: now
+            });
+        });
+
         // ==========================================
-        // 5. Coupon → tăng usedCount (chỉ khi đơn thật sự PAID)
+        // 6. Coupon → tăng usedCount (chỉ khi đơn thật sự PAID)
         // ==========================================
 
         if (couponRef && couponExists) {
@@ -359,17 +416,36 @@ async function finalizeOrderAsPaid(orderRef) {
             },
             tickets: ticketsForEmail
         };
+
+        if (conflictSeats.length > 0) {
+            conflictPayload = {
+                order: emailPayload.order,
+                conflictSeats: conflictSeats.map((c) => ({ seatId: c.seatId, seatStatus: c.seatStatus }))
+            };
+        }
     });
 
     // Gửi mail sau khi transaction đã chốt xong — không gửi trong lúc transaction
     // đang chạy vì Firestore có thể tự retry transaction nếu xung đột ghi.
     if (!alreadyPaid && emailPayload) {
-        sendTicketEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
-            console.error("GỬI MAIL VÉ THẤT BẠI:", error);
-        });
-        sendOrderNotificationEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
-            console.error("GỬI MAIL THÔNG BÁO ĐƠN THẤT BẠI:", error);
-        });
+
+        // Ghế xung đột hết 100% (hiếm, chỉ xảy ra khi đơn 1 ghế) thì không còn
+        // vé "valid" nào để gửi — bỏ qua mail vé/thông báo đơn bình thường,
+        // chỉ gửi cảnh báo xung đột bên dưới.
+        if (emailPayload.tickets.length > 0) {
+            sendTicketEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
+                console.error("GỬI MAIL VÉ THẤT BẠI:", error);
+            });
+            sendOrderNotificationEmail(emailPayload.order, emailPayload.tickets).catch((error) => {
+                console.error("GỬI MAIL THÔNG BÁO ĐƠN THẤT BẠI:", error);
+            });
+        }
+
+        if (conflictPayload) {
+            sendSeatConflictAlertEmail(conflictPayload.order, conflictPayload.conflictSeats).catch((error) => {
+                console.error("GỬI MAIL CẢNH BÁO XUNG ĐỘT GHẾ THẤT BẠI:", error);
+            });
+        }
     }
 
     return alreadyPaid;

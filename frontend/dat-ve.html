@@ -2451,6 +2451,12 @@ function openCheckout(step){
   coOverlay.classList.add('show');
   setStep(step || 1);
   if (step === 1 || !step) setTimeout(() => document.getElementById('coName').focus(), 120);
+  // Mở lại thẳng bước 2 (khôi phục sau reload, hoặc bấm lại nút đặt vé khi đã có
+  // đơn/hold sẵn) từng KHÔNG khởi động lại poll nền — khiến đơn treo PENDING_PAYMENT
+  // dù khách đã chuyển khoản xong, nếu tab bị đóng/tải lại đúng lúc đang chờ thanh
+  // toán. startPaymentPolling() tự gọi stopPaymentPolling() trước nên gọi lại vô hại
+  // kể cả khi đã có 1 vòng poll khác đang chạy.
+  if (step === 2) startPaymentPolling();
 }
 function closeCheckout(){ coOverlay.classList.remove('show'); stopPaymentPolling(); }
 
