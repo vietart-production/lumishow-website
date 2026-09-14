@@ -916,9 +916,9 @@
 
   // ============ LỊCH DIỄN — chọn chuỗi 3 ngày liên tục (Thứ 6 · Thứ 7 · Chủ nhật) ============
   const SEASON_START = new Date(2026, 8, 25); // Thứ 6 đầu tiên: 25.09.2026
-  // Tạm để lịch diễn hết tháng 10 — tháng 11 & 12 chưa chốt lịch diễn cụ thể,
-  // không đặt lịch xa vậy. Cập nhật lại khi có lịch tháng 11/12 chính thức.
-  const SEASON_END   = new Date(2026, 9, 25); // Chủ nhật cuối cùng: 25.10.2026
+  // Tạm khoá lịch diễn sau tháng 9 — khớp với status CLOSED bên Firestore và
+  // SEASON_END bên dat-ve.html, xem CLAUDE.md. Cập nhật lại khi mở bán lại.
+  const SEASON_END   = new Date(2026, 8, 30);
 
   function fmt(d){ return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0'); }
   function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
