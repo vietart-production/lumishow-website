@@ -936,7 +936,7 @@
   const today = new Date(); today.setHours(0,0,0,0);
   let runIndex = runs.findIndex(r => r[2] >= today);
   if (runIndex === -1) runIndex = 0;
-  let selectedDay = 0; // 0 = Thứ 6, 1 = Thứ 7, 2 = Chủ nhật
+  let selectedDay = 1; // 0 = Thứ 6, 1 = Thứ 7, 2 = Chủ nhật — mặc định chọn Thứ 7
 
   const weekendTrack = document.getElementById('weekendTrack');
   const weekPrevBtn = document.getElementById('weekPrev');
@@ -973,10 +973,10 @@
   }
 
   weekPrevBtn?.addEventListener('click', () => {
-    if (runIndex > 0) { runIndex--; selectedDay = 0; renderWeekend(); }
+    if (runIndex > 0) { runIndex--; selectedDay = 1; renderWeekend(); }
   });
   weekNextBtn?.addEventListener('click', () => {
-    if (runIndex < runs.length - 1) { runIndex++; selectedDay = 0; renderWeekend(); }
+    if (runIndex < runs.length - 1) { runIndex++; selectedDay = 1; renderWeekend(); }
   });
 
   renderWeekend();
