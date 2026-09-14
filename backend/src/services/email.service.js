@@ -73,11 +73,13 @@ function fmtVND(n) {
     return n.toLocaleString("vi-VN") + "đ";
 }
 
-// showtimeId dạng "2026-09-25_17:30" -> { time: "17:30", date: "25/09/2026" }
+// showtimeId dạng "2026-09-25_17:30" -> { time: "17H30", date: "25/09/2026" }
+// Hiển thị "H" thay vì ":" cho dễ đọc — chỉ đổi cách hiển thị, showtimeId gốc
+// (dùng để tra cứu/đối soát) không đổi.
 function splitShowtime(showtimeId) {
     const [datePart, timePart] = showtimeId.split("_");
     const [y, m, d] = datePart.split("-");
-    return { time: timePart, date: `${d}/${m}/${y}` };
+    return { time: timePart.replace(":", "H"), date: `${d}/${m}/${y}` };
 }
 
 // Ảnh QR thật (không phải base64 nhúng trong HTML) — nhiều mail client tự

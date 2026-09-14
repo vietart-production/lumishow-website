@@ -2659,6 +2659,10 @@ const SHOWTIMES_BY_DAY = [
   ['16:30','20:00'],
   ['10:00','16:30']
 ];
+// Hiển thị "H" thay vì ":" cho dễ đọc (20:00 -> 20H00) — chỉ đổi lúc hiển thị,
+// giá trị gốc trong SHOWTIMES_BY_DAY giữ nguyên vì được ghép thẳng vào
+// showtimeId gửi lên backend (phải khớp seatCode/document Firestore).
+const fmtShowTime = t => t.replace(':', 'H');
 // Tên tháng/thứ đổi theo ngôn ngữ hiện tại — đọc trực tiếp từ I18N (xem mục 14) thay vì
 // mảng cố định tiếng Việt, để renderSchedule() vẽ đúng ngôn ngữ khi gọi lại từ setLang().
 const MONTHS = new Proxy([], { get: (_, i) => I18N[currentLang].months[i] });
@@ -2742,7 +2746,7 @@ function renderSchedule(){
   SHOWTIMES_BY_DAY[dayIndex].forEach((t, i) => {
     const b = document.createElement('button');
     b.className = 'time-btn' + (i === timeIndex ? ' active' : '');
-    b.textContent = t;
+    b.textContent = fmtShowTime(t);
     b.addEventListener('click', () => switchShow(() => { timeIndex = i; }));
     timeRow.appendChild(b);
   });
@@ -2752,7 +2756,7 @@ function renderSchedule(){
 
   const d = run[dayIndex];
   document.getElementById('showWhen').textContent =
-    DOWS[dayIndex] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' · ' + SHOWTIMES_BY_DAY[dayIndex][timeIndex];
+    DOWS[dayIndex] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' · ' + fmtShowTime(SHOWTIMES_BY_DAY[dayIndex][timeIndex]);
 }
 
 /* Đổi suất: nếu đang có ghế chọn thì hỏi trước, tránh mất công chọn lại */
