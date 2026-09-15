@@ -237,11 +237,7 @@
   /* ============ CONTENT ATMOSPHERE (Schedule + News dùng chung 1 lớp background) ============ */
   .content-atmosphere{position:relative;}
   .content-atmosphere::before{
-    /* top từng là -420px (trồi ngược lên đè vào đáy ảnh hero, đúng chỗ chữ ngày/địa
-       chỉ của KV mới) — đổi về 0 để dải mờ dần này chỉ còn nằm trong content-atmosphere
-       (dưới divider), không còn chồng lên ảnh hero nữa. Divider (.hero-divider) là
-       phần tử khác, không đụng tới, vẫn đứng nguyên vị trí sát đáy ảnh. */
-    content:'';position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
+    content:'';position:absolute;top:-420px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
     background:
       linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 15%,rgba(0,0,0,.65) 85%,rgba(0,0,0,.92) 100%),
       /* Giữ nguyên tâm quầng sáng nâu (trước ở -65px khi top:-65px) dù kéo dài dải hoà trộn,
