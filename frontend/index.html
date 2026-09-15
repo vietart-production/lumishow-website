@@ -191,11 +191,6 @@
     display:flex;align-items:flex-end;
     overflow:hidden;
     padding:70px var(--gutter) 90px;
-    /* margin (không phải padding) vì .hero-bg phủ inset:0 lên nguyên khối .hero —
-       tăng padding sẽ làm khối cao hơn RỒI ảnh phải cover theo, gây crop 2 BÊN
-       (ăn vào voi/rồng ở mép ảnh). margin nằm ngoài khối nên đẩy phần dưới
-       (divider/Lịch diễn...) xuống thêm mà không đụng vào kích thước/crop ảnh. */
-    margin-bottom:100px;
     background:radial-gradient(ellipse 1100px 650px at 74% 34%,#12241f 0%,#07090a 62%);
   }
   .hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;}
