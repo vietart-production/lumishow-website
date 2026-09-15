@@ -3,7 +3,7 @@ const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
 
-const { checkPartnerKey, listOrdersForPartner } = require("../services/partner.service");
+const { checkPartnerKey, listOrdersForPartner, listShowtimesForPartner } = require("../services/partner.service");
 
 // Endpoint nhạy cảm (đọc PII khách: tên/SĐT/email) nhưng chỉ đọc, không
 // huỷ/tạo được gì — giới hạn nhẹ hơn adminLimiter (huỷ/tạo vé) một chút,
@@ -58,6 +58,34 @@ router.post("/partner/orders/list", requirePartnerKey, async (req, res) => {
         return res.status(400).json({
             success: false,
             message: error.message || "Không thể lấy danh sách đơn hàng"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/partner/showtimes/list
+// body: { apiKey }
+// Cho dropdown lọc trên trang đối tác — trả toàn bộ suất đã seed.
+// ==========================================
+
+router.post("/partner/showtimes/list", requirePartnerKey, async (req, res) => {
+
+    try {
+
+        const showtimes = await listShowtimesForPartner();
+
+        return res.status(200).json({
+            success: true,
+            showtimes
+        });
+
+    } catch (error) {
+
+        console.error("PARTNER LIST SHOWTIMES ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể lấy danh sách suất diễn"
         });
     }
 });

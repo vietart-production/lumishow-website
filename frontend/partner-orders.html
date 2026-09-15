@@ -69,7 +69,9 @@
   <p class="sub">Chỉ đọc — dữ liệu đơn/vé thật, cập nhật theo thời gian thực.</p>
 
   <div class="filters">
-    <input type="text" id="fShowtime" placeholder="Suất diễn (vd 2026-09-26_16:30)">
+    <select id="fShowtime">
+      <option value="">Mọi suất diễn</option>
+    </select>
     <select id="fStatus">
       <option value="">Mọi trạng thái</option>
       <option value="PAID">PAID</option>
@@ -129,6 +131,34 @@ function fmtDate(iso){
 }
 function escapeHtml(s){
   return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+const DOW_NAMES = ["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
+function fmtShowtimeLabel(showtimeId){
+  const [datePart, timePart] = showtimeId.split("_");
+  const [y, m, d] = datePart.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return `${DOW_NAMES[date.getDay()]}, ${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y} · ${timePart}`;
+}
+
+async function loadShowtimes(){
+  const select = document.getElementById("fShowtime");
+  try {
+    const res = await fetch(`${API_BASE_URL}/partner/showtimes/list`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) return; // giữ mỗi option "Mọi suất diễn" nếu lỗi, không chặn trang
+
+    data.showtimes.forEach(st => {
+      const opt = document.createElement("option");
+      opt.value = st.showtimeId;
+      opt.textContent = fmtShowtimeLabel(st.showtimeId) + (st.status !== "OPEN" ? ` (${st.status})` : "");
+      select.appendChild(opt);
+    });
+  } catch (e) { /* im lặng — dropdown vẫn dùng được với "Mọi suất diễn" */ }
 }
 
 async function fetchOrders({ reset }){
@@ -198,6 +228,7 @@ function tryEnter(){
   apiKey = val;
   gate.hidden = true;
   app.hidden = false;
+  loadShowtimes();
   fetchOrders({ reset: true }).then(() => {
     // Chỉ lưu lại key vào phiên trình duyệt SAU KHI xác nhận gọi API thành công
     // (tránh lưu key sai vào sessionStorage nếu người dùng gõ nhầm).

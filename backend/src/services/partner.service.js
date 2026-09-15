@@ -87,7 +87,26 @@ async function listOrdersForPartner({ showtimeId, status, limit, cursor, sortDir
     return { orders, nextCursor };
 }
 
+// ==========================================
+// LIỆT KÊ SUẤT DIỄN — cho dropdown lọc trên trang đối tác, thay vì để họ tự
+// gõ tay showtimeId (dễ gõ sai định dạng). Trả TẤT CẢ suất đã seed (kể cả
+// đã diễn/đã khoá) vì đối tác cần đối soát cả dữ liệu quá khứ, không chỉ
+// suất sắp tới như listUpcomingShowtimes() bên admin.service.js.
+// ==========================================
+
+async function listShowtimesForPartner() {
+
+    const snap = await db.collection("shows").doc(SHOW_ID)
+        .collection("showtimes")
+        .get();
+
+    return snap.docs
+        .map((doc) => ({ showtimeId: doc.id, status: doc.data().status }))
+        .sort((a, b) => a.showtimeId.localeCompare(b.showtimeId));
+}
+
 module.exports = {
     checkPartnerKey,
-    listOrdersForPartner
+    listOrdersForPartner,
+    listShowtimesForPartner
 };
