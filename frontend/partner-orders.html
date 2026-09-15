@@ -12,7 +12,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
-  .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 80px;}
+  .wrap{max-width:1600px;margin:0 auto;padding:32px 32px 80px;}
   h1{font-size:20px;font-weight:700;margin:0 0 4px;}
   .sub{color:var(--dim);font-size:13px;margin:0 0 28px;}
 
@@ -34,6 +34,11 @@
   table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap;}
   th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);}
   th{color:var(--dim);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0;background:var(--panel);}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{color:var(--text);}
+  th.sortable .arrow{display:inline-block;margin-left:4px;opacity:.4;transition:opacity .15s,transform .15s;}
+  th.sortable.active .arrow{opacity:1;}
+  th.sortable.active.asc .arrow{transform:rotate(180deg);}
   tr:last-child td{border-bottom:none;}
   tr:hover td{background:rgba(255,255,255,.03);}
   .status{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
@@ -79,8 +84,10 @@
     <table>
       <thead>
         <tr>
-          <th>Mã đơn</th><th>Suất diễn</th><th>Trạng thái</th><th>Khách</th>
-          <th>SĐT</th><th>Email</th><th>Ghế</th><th>Tiền</th><th>Tạo lúc</th>
+          <th>Mã đơn</th><th>Suất diễn</th>
+          <th class="sortable active desc" id="thCreatedAt">Tạo lúc <span class="arrow">▼</span></th>
+          <th>Trạng thái</th><th>Khách</th>
+          <th>SĐT</th><th>Email</th><th>Ghế</th><th>Tiền</th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
@@ -103,6 +110,7 @@ const KEY_STORAGE = "lumishow_partner_key";
 let apiKey = "";
 let cursor = null;
 let totalLoaded = 0;
+let sortDir = "desc";
 
 const gate = document.getElementById("gate");
 const app = document.getElementById("app");
@@ -135,7 +143,8 @@ async function fetchOrders({ reset }){
     showtimeId: document.getElementById("fShowtime").value.trim() || undefined,
     status: document.getElementById("fStatus").value || undefined,
     limit: 50,
-    cursor: cursor || undefined
+    cursor: cursor || undefined,
+    sortDir
   };
 
   try {
@@ -170,13 +179,13 @@ function renderRow(o){
   return `<tr>
     <td>${escapeHtml(o.orderCode)}</td>
     <td>${escapeHtml(o.showtimeId)}</td>
+    <td>${fmtDate(o.createdAt)}</td>
     <td><span class="status ${escapeHtml(o.orderStatus)}">${escapeHtml(o.orderStatus)}</span></td>
     <td>${escapeHtml(o.customerName)}</td>
     <td>${escapeHtml(o.customerPhone)}</td>
     <td>${escapeHtml(o.customerEmail)}</td>
     <td>${escapeHtml((o.seatIds || []).join(", "))}</td>
     <td class="amount">${fmtVND(o.amount)}</td>
-    <td>${fmtDate(o.createdAt)}</td>
   </tr>`;
 }
 
@@ -200,6 +209,15 @@ function tryEnter(){
 
 document.getElementById("fApply").addEventListener("click", () => fetchOrders({ reset: true }));
 loadMoreBtn.addEventListener("click", () => fetchOrders({ reset: false }));
+
+const thCreatedAt = document.getElementById("thCreatedAt");
+thCreatedAt.addEventListener("click", () => {
+  sortDir = sortDir === "desc" ? "asc" : "desc";
+  thCreatedAt.classList.toggle("asc", sortDir === "asc");
+  thCreatedAt.classList.toggle("desc", sortDir === "desc");
+  thCreatedAt.querySelector(".arrow").textContent = sortDir === "asc" ? "▲" : "▼";
+  fetchOrders({ reset: true });
+});
 
 // Tự điền lại key đã lưu trong phiên (sessionStorage — mất khi đóng tab,
 // không phải localStorage vĩnh viễn) để không phải gõ lại mỗi lần F5.

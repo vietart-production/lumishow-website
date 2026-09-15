@@ -31,7 +31,7 @@ const DEFAULT_LIMIT = 50;
 // của bản ghi cuối cùng ở trang trước, dạng ISO string).
 // ==========================================
 
-async function listOrdersForPartner({ showtimeId, status, limit, cursor } = {}) {
+async function listOrdersForPartner({ showtimeId, status, limit, cursor, sortDir } = {}) {
 
     let q = db.collection("orders").where("showId", "==", SHOW_ID);
 
@@ -47,8 +47,9 @@ async function listOrdersForPartner({ showtimeId, status, limit, cursor } = {}) 
     }
 
     const safeLimit = Math.min(Math.max(Number(limit) || DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const safeSortDir = sortDir === "asc" ? "asc" : "desc";
 
-    q = q.orderBy("createdAt", "desc").limit(safeLimit);
+    q = q.orderBy("createdAt", safeSortDir).limit(safeLimit);
 
     if (cursor) {
         const cursorDate = new Date(cursor);

@@ -33,7 +33,7 @@ function requirePartnerKey(req, res, next) {
 
 // ==========================================
 // POST /api/partner/orders/list
-// body: { apiKey, showtimeId?, status?, limit?, cursor? }
+// body: { apiKey, showtimeId?, status?, limit?, cursor?, sortDir? ("asc"|"desc", mặc định "desc") }
 // Chỉ đọc — dùng cho đối tác nghiệp vụ (kế toán/venue) đối soát đơn/vé
 // thật, tách hẳn khỏi ADMIN_PIN (huỷ/tạo vé tại cổng).
 // ==========================================
@@ -42,9 +42,9 @@ router.post("/partner/orders/list", requirePartnerKey, async (req, res) => {
 
     try {
 
-        const { showtimeId, status, limit, cursor } = req.body;
+        const { showtimeId, status, limit, cursor, sortDir } = req.body;
 
-        const result = await listOrdersForPartner({ showtimeId, status, limit, cursor });
+        const result = await listOrdersForPartner({ showtimeId, status, limit, cursor, sortDir });
 
         return res.status(200).json({
             success: true,
