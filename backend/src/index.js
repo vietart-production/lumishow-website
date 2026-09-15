@@ -9,6 +9,7 @@ const ticketRoutes = require("./routes/ticket.routes");
 const contactRoutes = require("./routes/contact.routes");
 const adminRoutes = require("./routes/admin.routes");
 const couponRoutes = require("./routes/coupon.routes");
+const partnerRoutes = require("./routes/partner.routes");
 const { reconcilePendingOrders } = require("./services/reconcile.service");
 
 const app = express();
@@ -87,6 +88,7 @@ app.use("/api", ticketRoutes);
 app.use("/api", contactRoutes);
 app.use("/api", adminRoutes);
 app.use("/api", couponRoutes);
+app.use("/api", partnerRoutes);
 
 
 // /health trả tĩnh, KHÔNG ping Firestore mỗi request — trước đây mỗi lần gọi
