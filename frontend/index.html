@@ -180,7 +180,14 @@
   /* ============ HERO ============ */
   .hero{
     position:relative;
-    min-height:clamp(560px,82vh,880px);
+    /* Trước dùng 82vh (chỉ phụ thuộc chiều cao viewport) — trên desktop khối hero
+       thường RỘNG hơn tỉ lệ 16:9 của ảnh KV nên object-fit:cover phải cắt bớt
+       chiều cao, và vì neo "center top" nên luôn cắt mất phần ĐÁY ảnh. Ảnh KV
+       hiện tại đặt tên vở + ngày công diễn + địa chỉ sát mép dưới nên bị cắt mất
+       hẳn. Đổi sang 56vw (đúng tỉ lệ cao/rộng 1440/2560 của ảnh) để chiều cao
+       hero bám sát tỉ lệ ảnh thật, gần như không còn cắt — đồng thời đẩy
+       divider/Lịch diễn/News... xuống thấp hơn tương ứng. */
+    min-height:clamp(560px,56vw,1200px);
     display:flex;align-items:flex-end;
     overflow:hidden;
     padding:70px var(--gutter) 90px;
