@@ -204,14 +204,16 @@
          KV hiện tại (2026-09-16, ảnh KV mới). Nhiều điểm dừng theo đường cong
          ease-out để tránh hiệu ứng "Mach band". */
       linear-gradient(0deg,
-        rgba(59,34,6,.01) 0%,rgba(59,34,6,.02) 2%,rgba(59,34,6,.05) 3.5%,
-        rgba(59,34,6,.08) 5%,rgba(59,34,6,.07) 7%,rgba(59,34,6,.04) 9%,
-        rgba(59,34,6,.02) 11%,rgba(59,34,6,.01) 13%,transparent 16%),
+        rgba(59,34,6,.008) 0%,rgba(59,34,6,.014) 2%,rgba(59,34,6,.03) 3.5%,
+        rgba(59,34,6,.05) 5%,rgba(59,34,6,.04) 7%,rgba(59,34,6,.025) 8%,
+        rgba(59,34,6,.012) 9%,transparent 10%),
       linear-gradient(90deg,rgba(3,8,14,.55) 0%,rgba(3,8,14,.26) 45%,rgba(3,8,14,.06) 100%);
     /* multiply thay vì đè màu phẳng lên ảnh — vùng tối "ăn" theo màu/chi tiết ảnh gốc
        bên dưới nên mềm và tự nhiên hơn, đỡ tạo cảm giác một lớp màu dán chồng lên */
     mix-blend-mode:multiply;
-    box-shadow:inset 0 0 100px 20px rgba(2,8,15,.4);
+    /* Giảm mạnh (100px/20px/.4 -> 55px/8px/.2) — vignette 4 cạnh trước đó cũng góp
+       phần làm tối "chân" ảnh KV, không chỉ riêng dải mây mờ ở trên (2026-09-16). */
+    box-shadow:inset 0 0 55px 8px rgba(2,8,15,.2);
     transition:opacity 1.4s ease,background .3s ease;
   }
   .hero-bg-overlay.dim{opacity:.5;}
@@ -237,21 +239,23 @@
   /* ============ CONTENT ATMOSPHERE (Schedule + News dùng chung 1 lớp background) ============ */
   .content-atmosphere{position:relative;}
   .content-atmosphere::before{
-    content:'';position:absolute;top:-420px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
+    content:'';position:absolute;top:-150px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
     background:
       linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 15%,rgba(0,0,0,.65) 85%,rgba(0,0,0,.92) 100%),
       /* Giữ nguyên tâm quầng sáng nâu (trước ở -65px khi top:-65px) dù kéo dài dải hoà trộn,
          để không đổi hướng "nở" của quầng sáng, chỉ đổi độ dài mờ dần */
       radial-gradient(circle at left 355px,#8F3800 0%,#3B2206 31%,#261604 47%);
-    /* Kéo dài dải mờ dần lên 420px + nhiều điểm dừng theo đường cong smoothstep (ease-in-out)
-       thay vì mask 2 điểm dừng tuyến tính — vừa hoà mượt hơn với dải multiply mới trong
-       .hero-bg-overlay, vừa tránh vệt "Mach band" ở chỗ độ dốc mask đổi đột ngột */
+    /* Rút ngắn dải mờ dần từ 420px xuống 150px (2026-09-16) — 420px kéo lớp gradient
+       đen này lấn sâu vào tận "chân" ảnh KV (mask gần full-đen ngay sát đáy hero),
+       cộng dồn với dải mây mờ + box-shadow ở .hero-bg-overlay làm chân ảnh bị ăn tối
+       quá nhiều. Vẫn giữ đường cong smoothstep (ease-in-out) nhiều điểm dừng để tránh
+       "Mach band", chỉ nén lại theo đúng tỉ lệ 150/420. */
     -webkit-mask-image:linear-gradient(180deg,
-      transparent 0,rgba(0,0,0,.06) 60px,rgba(0,0,0,.2) 120px,rgba(0,0,0,.39) 180px,
-      rgba(0,0,0,.61) 240px,rgba(0,0,0,.8) 300px,rgba(0,0,0,.95) 360px,#000 420px);
+      transparent 0,rgba(0,0,0,.06) 21px,rgba(0,0,0,.2) 43px,rgba(0,0,0,.39) 64px,
+      rgba(0,0,0,.61) 86px,rgba(0,0,0,.8) 107px,rgba(0,0,0,.95) 129px,#000 150px);
     mask-image:linear-gradient(180deg,
-      transparent 0,rgba(0,0,0,.06) 60px,rgba(0,0,0,.2) 120px,rgba(0,0,0,.39) 180px,
-      rgba(0,0,0,.61) 240px,rgba(0,0,0,.8) 300px,rgba(0,0,0,.95) 360px,#000 420px);
+      transparent 0,rgba(0,0,0,.06) 21px,rgba(0,0,0,.2) 43px,rgba(0,0,0,.39) 64px,
+      rgba(0,0,0,.61) 86px,rgba(0,0,0,.8) 107px,rgba(0,0,0,.95) 129px,#000 150px);
   }
 
   /* ============ SCHEDULE ============ */
