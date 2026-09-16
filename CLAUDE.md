@@ -155,6 +155,15 @@ Không có endpoint admin để khóa/mở ghế theo batch — làm bằng scri
 
 Muốn mở lại các ghế này: chạy script tương tự đổi `BLOCKED` → `AVAILABLE` cho đúng danh sách mã ghế đã khóa (không có cách tự động phân biệt "từng bị BLOCKED" sau khi đã đổi, nên giữ lại danh sách mã ghế nếu cần mở lại sau).
 
+## Gradient tối "chân" ảnh KV trang chủ — bản chốt (2026-09-16)
+
+Sau ảnh KV mới (chữ nghệ thuật/tên vở nằm ở khoảng 7-16% tính từ đáy ảnh) + nhiều vòng chỉnh qua lại (kể cả user tự sửa tay trực tiếp qua IDE), bản CHỐT hiện tại ở `frontend/index.html`:
+
+- `.hero-bg-overlay`: dải "mây mờ" nâu dọc đỉnh ~5% (từ đáy), tắt hẳn ở 16%. Dải ngang (90deg) đậm bên trái `.55`, giữa `.26`, phải `.06` — **CHÚ Ý: từng thử tăng đầu phải lên `.2` để đỡ "lộ chân KV" bên phải, nhưng user tự tay revert lại `.06`** — đừng tự ý tăng lại nếu không có yêu cầu mới. Box-shadow vignette 4 cạnh: `inset 0 0 55px 8px rgba(2,8,15,.2)` (giảm từ `100px 20px .4` gốc).
+- `.content-atmosphere::before` (gradient đen của section Lịch diễn lấn ngược lên hero): `top:-195px` (đã qua nhiều mức: 420px gốc → 150px → 195px (+30%) → user tự sửa tay lên 230px → **user tự tay revert lại 195px**, chốt ở đây). Mask `-webkit-mask-image`/`mask-image` luôn phải scale đúng tỉ lệ theo `top` mỗi lần đổi (điểm dừng hiện tại: 27/56/83/112/139/168px, `#000` ở 195px).
+
+Nếu cần chỉnh tiếp: đổi từng phần một, hỏi rõ đang nói phần nào ("mây mờ" dọc trong `.hero-bg-overlay` vs gradient ngang 90deg cùng chỗ vs gradient đen `.content-atmosphere::before` lấn từ dưới lên) — session này từng chỉnh nhầm giữa các phần vì tên gọi "gradient" mơ hồ, phải hỏi lại nhiều lần.
+
 ## Trang tra cứu đơn hàng cho đối tác (2026-09-15)
 
 Đối tác nghiệp vụ (kế toán/venue) cần xem đơn/vé thật để đối soát — thêm `frontend/partner-orders.html` (không gắn nav) gọi `POST /api/partner/orders/list` (`backend/src/routes/partner.routes.js` + `partner.service.js`), lọc theo `showtimeId`/`orderStatus`, phân trang cursor.
