@@ -25,9 +25,63 @@
   #gateError{color:var(--red);font-size:12.5px;min-height:16px;margin-top:4px;}
 
   /* ---- Bộ lọc ---- */
-  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
-  .filters input,.filters select{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13.5px;}
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;position:relative;z-index:5;}
+  .filters select{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13.5px;}
   .filters button{padding:9px 16px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:13.5px;cursor:pointer;}
+
+  /* ---- Bộ chọn suất diễn — 72 suất phẳng trong <select> gốc rất khó dò
+     (không nhóm, không tìm được). Thay bằng combobox: nút hiện lựa chọn
+     hiện tại, mở ra bảng nhóm theo THÁNG, mỗi ngày 1 hàng, mỗi suất giờ là
+     1 pill bấm được — suất đang mở bán nổi bật màu xanh, suất đã khoá lùi
+     về nền mờ (vẫn bấm được, phục vụ tra cứu quá khứ) nhưng không chiếm
+     sự chú ý. Có ô tìm nhanh theo ngày/giờ ở đầu bảng. ---- */
+  .st-picker{position:relative;min-width:240px;}
+  .st-btn{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);
+    color:var(--text);font-size:13.5px;cursor:pointer;text-align:left;
+  }
+  .st-btn:hover{border-color:rgba(255,255,255,.22);}
+  .st-btn .chev{width:14px;height:14px;flex-shrink:0;color:var(--dim);transition:transform .15s;}
+  .st-picker.open .st-btn .chev{transform:rotate(180deg);}
+  .st-btn .st-btn-label.placeholder{color:var(--dim);}
+
+  .st-panel{
+    position:absolute;top:calc(100% + 6px);left:0;width:min(420px,90vw);max-height:min(480px,70vh);
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 16px 40px rgba(0,0,0,.5);overflow:hidden;display:flex;flex-direction:column;
+  }
+  .st-search-row{padding:10px;border-bottom:1px solid var(--border);flex:0 0 auto;}
+  .st-search{
+    width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);
+    background:#0d1310;color:var(--text);font-size:13px;
+  }
+  .st-search:focus{outline:none;border-color:var(--green);}
+  .st-list{overflow-y:auto;padding:6px 0;}
+  .st-all-row{
+    display:block;width:100%;text-align:left;padding:9px 14px;border:none;background:none;
+    color:var(--text);font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .st-all-row:hover,.st-all-row.active{background:rgba(61,220,132,.1);color:var(--green);}
+  .st-month{
+    padding:12px 14px 6px;font-size:12px;font-weight:700;color:var(--dim);
+    border-top:1px solid var(--border);margin-top:4px;
+  }
+  .st-month:first-of-type{border-top:none;margin-top:0;}
+  .st-date-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 14px;}
+  .st-date-label{font-size:12.5px;color:var(--text);white-space:nowrap;}
+  .st-date-label .dow{color:var(--dim);margin-right:5px;}
+  .st-pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+  .st-pill{
+    padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
+    border:1px solid transparent;white-space:nowrap;
+  }
+  .st-pill.st-open{background:rgba(61,220,132,.14);color:var(--green);}
+  .st-pill.st-open:hover{background:rgba(61,220,132,.26);}
+  .st-pill.st-closed{background:transparent;color:var(--dim);border-color:var(--border);opacity:.6;}
+  .st-pill.st-closed:hover{opacity:1;}
+  .st-pill.active{border-color:currentColor;box-shadow:0 0 0 1px currentColor inset;}
+  .st-no-match{padding:24px 14px;text-align:center;color:var(--dim);font-size:13px;}
 
   /* ---- Bảng ---- */
   .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;}
@@ -76,9 +130,20 @@
   <p class="sub">Chỉ đọc — dữ liệu đơn/vé thật, cập nhật theo thời gian thực.</p>
 
   <div class="filters">
-    <select id="fShowtime">
-      <option value="">Mọi suất diễn</option>
-    </select>
+    <div class="st-picker" id="stPicker">
+      <button type="button" class="st-btn" id="stBtn">
+        <span class="st-btn-label placeholder" id="stBtnLabel">Mọi suất diễn</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="st-panel" id="stPanel" hidden>
+        <div class="st-search-row">
+          <input type="text" class="st-search" id="stSearch" placeholder="Tìm theo ngày, thứ hoặc giờ...">
+        </div>
+        <div class="st-list" id="stList">
+          <button type="button" class="st-all-row active" id="stAllRow">Mọi suất diễn</button>
+        </div>
+      </div>
+    </div>
     <select id="fStatus">
       <option value="">Mọi trạng thái</option>
       <option value="PAID">PAID</option>
@@ -144,6 +209,7 @@ function escapeHtml(s){
 }
 
 const DOW_NAMES = ["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
+const DOW_SHORT = ["CN","T2","T3","T4","T5","T6","T7"];
 function fmtShowtimeLabel(showtimeId){
   const [datePart, timePart] = showtimeId.split("_");
   const [y, m, d] = datePart.split("-").map(Number);
@@ -151,8 +217,20 @@ function fmtShowtimeLabel(showtimeId){
   return `${DOW_NAMES[date.getDay()]}, ${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y} · ${timePart}`;
 }
 
+// ---- Bộ chọn suất diễn (combobox nhóm theo tháng, thay cho <select> 72
+// dòng phẳng rất khó dò) ----
+let allShowtimes = [];
+let selectedShowtimeId = "";
+
+const stPicker = document.getElementById("stPicker");
+const stBtn = document.getElementById("stBtn");
+const stBtnLabel = document.getElementById("stBtnLabel");
+const stPanel = document.getElementById("stPanel");
+const stSearch = document.getElementById("stSearch");
+const stList = document.getElementById("stList");
+const stAllRow = document.getElementById("stAllRow");
+
 async function loadShowtimes(){
-  const select = document.getElementById("fShowtime");
   try {
     const res = await fetch(`${API_BASE_URL}/partner/showtimes/list`, {
       method: "POST",
@@ -160,22 +238,129 @@ async function loadShowtimes(){
       body: JSON.stringify({ apiKey })
     });
     const data = await res.json();
-    if (!res.ok || !data.success) return; // giữ mỗi option "Mọi suất diễn" nếu lỗi, không chặn trang
-
-    data.showtimes.forEach(st => {
-      const opt = document.createElement("option");
-      opt.value = st.showtimeId;
-      opt.textContent = fmtShowtimeLabel(st.showtimeId) + (st.status !== "OPEN" ? ` (${st.status})` : "");
-      select.appendChild(opt);
-    });
-  } catch (e) { /* im lặng — dropdown vẫn dùng được với "Mọi suất diễn" */ }
+    if (!res.ok || !data.success) return; // giữ picker rỗng (chỉ "Mọi suất diễn") nếu lỗi, không chặn trang
+    allShowtimes = data.showtimes;
+    renderShowtimePicker(allShowtimes);
+  } catch (e) { /* im lặng — picker vẫn dùng được với "Mọi suất diễn" */ }
 }
+
+function renderShowtimePicker(showtimes){
+  // Nhóm theo tháng rồi theo ngày — mỗi ngày 1 hàng, mỗi suất giờ trong
+  // ngày đó là 1 pill. Suất OPEN nổi bật, CLOSED lùi vào nền mờ nhưng vẫn
+  // bấm được (đối tác vẫn cần tra dữ liệu quá khứ).
+  const byMonth = new Map();
+  showtimes.forEach(st => {
+    const [datePart] = st.showtimeId.split("_");
+    const [y, m] = datePart.split("-").map(Number);
+    const monthKey = `${y}-${String(m).padStart(2,"0")}`;
+    if (!byMonth.has(monthKey)) byMonth.set(monthKey, new Map());
+    const byDate = byMonth.get(monthKey);
+    if (!byDate.has(datePart)) byDate.set(datePart, []);
+    byDate.get(datePart).push(st);
+  });
+
+  const monthKeys = [...byMonth.keys()].sort();
+  let html = "";
+
+  if (monthKeys.length === 0) {
+    html = `<div class="st-no-match">Không có suất diễn nào khớp tìm kiếm.</div>`;
+  }
+
+  monthKeys.forEach(monthKey => {
+    const [y, m] = monthKey.split("-").map(Number);
+    html += `<div class="st-month">Tháng ${m}, ${y}</div>`;
+
+    const byDate = byMonth.get(monthKey);
+    const dateKeys = [...byDate.keys()].sort();
+    dateKeys.forEach(datePart => {
+      const [dy, dm, dd] = datePart.split("-").map(Number);
+      const dow = DOW_SHORT[new Date(dy, dm - 1, dd).getDay()];
+      const pills = byDate.get(datePart)
+        .sort((a, b) => a.showtimeId.localeCompare(b.showtimeId))
+        .map(st => {
+          const time = st.showtimeId.split("_")[1];
+          const cls = st.status === "OPEN" ? "st-open" : "st-closed";
+          const active = st.showtimeId === selectedShowtimeId ? " active" : "";
+          return `<button type="button" class="st-pill ${cls}${active}" data-showtime="${st.showtimeId}">${time}</button>`;
+        }).join("");
+      html += `<div class="st-date-row">
+        <span class="st-date-label"><span class="dow">${dow}</span>${String(dd).padStart(2,"0")}/${String(dm).padStart(2,"0")}</span>
+        <span class="st-pills">${pills}</span>
+      </div>`;
+    });
+  });
+
+  stList.innerHTML = html;
+  // Hàng "Mọi suất diễn" nằm ngoài phần render động (không bị ghi đè) — chèn lại lên đầu.
+  stList.insertBefore(stAllRow, stList.firstChild);
+}
+
+function updateStBtnLabel(){
+  if (!selectedShowtimeId) {
+    stBtnLabel.textContent = "Mọi suất diễn";
+    stBtnLabel.classList.add("placeholder");
+    stAllRow.classList.add("active");
+  } else {
+    stBtnLabel.textContent = fmtShowtimeLabel(selectedShowtimeId);
+    stBtnLabel.classList.remove("placeholder");
+    stAllRow.classList.remove("active");
+  }
+}
+
+function openStPanel(){
+  stPanel.hidden = false;
+  stPicker.classList.add("open");
+  stSearch.value = "";
+  renderShowtimePicker(allShowtimes);
+  stSearch.focus();
+}
+function closeStPanel(){
+  stPanel.hidden = true;
+  stPicker.classList.remove("open");
+}
+
+stBtn.addEventListener("click", () => {
+  if (stPanel.hidden) openStPanel(); else closeStPanel();
+});
+document.addEventListener("click", (e) => {
+  if (!stPicker.contains(e.target)) closeStPanel();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeStPanel();
+});
+
+stSearch.addEventListener("input", () => {
+  const q = stSearch.value.trim().toLowerCase();
+  if (!q) { renderShowtimePicker(allShowtimes); return; }
+  const filtered = allShowtimes.filter(st => {
+    const label = fmtShowtimeLabel(st.showtimeId).toLowerCase();
+    return label.includes(q) || st.showtimeId.toLowerCase().includes(q);
+  });
+  renderShowtimePicker(filtered);
+});
+
+stList.addEventListener("click", (e) => {
+  const pill = e.target.closest(".st-pill");
+  if (pill) {
+    selectedShowtimeId = pill.dataset.showtime;
+    updateStBtnLabel();
+    closeStPanel();
+    fetchOrders({ reset: true });
+    return;
+  }
+  if (e.target.closest("#stAllRow")) {
+    selectedShowtimeId = "";
+    updateStBtnLabel();
+    closeStPanel();
+    fetchOrders({ reset: true });
+  }
+});
 
 const singleViewEl = document.getElementById("singleView");
 const groupedViewEl = document.getElementById("groupedView");
 
 function currentShowtimeFilter(){
-  return document.getElementById("fShowtime").value.trim();
+  return selectedShowtimeId;
 }
 
 // Chọn "Mọi suất diễn" là chế độ CÓ THỂ trộn nhiều ngày trong 1 đợt tải —
