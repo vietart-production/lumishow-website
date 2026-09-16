@@ -207,7 +207,7 @@
         rgba(59,34,6,.01) 0%,rgba(59,34,6,.02) 2%,rgba(59,34,6,.05) 3.5%,
         rgba(59,34,6,.08) 5%,rgba(59,34,6,.07) 7%,rgba(59,34,6,.04) 9%,
         rgba(59,34,6,.02) 11%,rgba(59,34,6,.01) 13%,transparent 16%),
-      linear-gradient(90deg,rgba(3,8,14,.55) 0%,rgba(3,8,14,.26) 45%,rgba(3,8,14,.2) 100%);
+      linear-gradient(90deg,rgba(3,8,14,.55) 0%,rgba(3,8,14,.26) 45%,rgba(3,8,14,.06) 100%);
     /* multiply thay vì đè màu phẳng lên ảnh — vùng tối "ăn" theo màu/chi tiết ảnh gốc
        bên dưới nên mềm và tự nhiên hơn, đỡ tạo cảm giác một lớp màu dán chồng lên */
     mix-blend-mode:multiply;
@@ -245,16 +245,15 @@
       /* Giữ nguyên tâm quầng sáng nâu (trước ở -65px khi top:-65px) dù kéo dài dải hoà trộn,
          để không đổi hướng "nở" của quầng sáng, chỉ đổi độ dài mờ dần */
       radial-gradient(circle at left 355px,#8F3800 0%,#3B2206 31%,#261604 47%);
-    /* Rút ngắn dải mờ dần từ 420px xuống 150px, rồi chỉnh dần lên 195px (+30%)
-       và 230px (2026-09-16, chỉnh tay trực tiếp qua IDE) — vẫn giữ đường cong
-       smoothstep (ease-in-out) nhiều điểm dừng để tránh "Mach band", chỉ
-       nén/giãn theo đúng tỉ lệ mỗi lần đổi `top`. */
+    /* Rút ngắn dải mờ dần từ 420px xuống 150px rồi tăng lại +30% lên 195px
+       (2026-09-16) — 150px hơi thiếu, vẫn giữ đường cong smoothstep (ease-in-out)
+       nhiều điểm dừng để tránh "Mach band", chỉ nén/giãn theo đúng tỉ lệ. */
     -webkit-mask-image:linear-gradient(180deg,
-      transparent 0,rgba(0,0,0,.06) 32px,rgba(0,0,0,.2) 66px,rgba(0,0,0,.39) 98px,
-      rgba(0,0,0,.61) 132px,rgba(0,0,0,.8) 164px,rgba(0,0,0,.95) 198px,#000 230px);
+      transparent 0,rgba(0,0,0,.06) 27px,rgba(0,0,0,.2) 56px,rgba(0,0,0,.39) 83px,
+      rgba(0,0,0,.61) 112px,rgba(0,0,0,.8) 139px,rgba(0,0,0,.95) 168px,#000 195px);
     mask-image:linear-gradient(180deg,
-      transparent 0,rgba(0,0,0,.06) 32px,rgba(0,0,0,.2) 66px,rgba(0,0,0,.39) 98px,
-      rgba(0,0,0,.61) 132px,rgba(0,0,0,.8) 164px,rgba(0,0,0,.95) 198px,#000 230px);
+      transparent 0,rgba(0,0,0,.06) 27px,rgba(0,0,0,.2) 56px,rgba(0,0,0,.39) 83px,
+      rgba(0,0,0,.61) 112px,rgba(0,0,0,.8) 139px,rgba(0,0,0,.95) 168px,#000 195px);
   }
 
   /* ============ SCHEDULE ============ */
