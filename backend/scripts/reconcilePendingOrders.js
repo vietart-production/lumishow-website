@@ -11,7 +11,8 @@ const { reconcilePendingOrders } = require("../src/services/reconcile.service");
 //
 // CHẠY:
 //   node scripts/reconcilePendingOrders.js            -> DRY-RUN (chỉ xem, KHÔNG chốt)
-//   node scripts/reconcilePendingOrders.js --commit   -> CHỐT THẬT (cấp vé + gửi mail)
+//   node scripts/reconcilePendingOrders.js --commit   -> CHỐT THẬT (cấp vé + gửi mail,
+//                                                         hoặc chuyển EXPIRED nếu quá hạn chưa trả)
 // ==========================================
 
 const COMMIT = process.argv.includes("--commit");
@@ -26,7 +27,8 @@ const COMMIT = process.argv.includes("--commit");
     console.log("=================================");
     console.log(`Tổng đơn PENDING: ${r.total}`);
     console.log(`Đã trả (PayOS PAID): ${r.paid}${COMMIT ? ` — đã chốt ${r.committed}` : " — chạy lại với --commit để chốt"}`);
-    console.log(`Chưa trả / trạng thái khác: ${r.other}`);
+    console.log(`Quá hạn, chưa trả: ${r.expired}${COMMIT ? " — đã chuyển EXPIRED" : " — chạy lại với --commit để chuyển EXPIRED"}`);
+    console.log(`Chưa trả nhưng còn trong hạn chờ: ${r.other}`);
     console.log(`Lỗi khi hỏi PayOS (thường là đơn test/mã không tồn tại): ${r.failed}`);
     console.log("=================================");
 
