@@ -27,8 +27,8 @@ const CY = 680;
 const INNER_ROWS = new Set(["B", "C", "D", "E", "G", "H", "I"]);
 const OUTER_ROWS = new Set(["K", "L", "M", "N"]);
 const EXIT_SIDE_UPGRADE = {
-    B: { odd: [35, 61], even: [36, 52] }, C: { odd: [41, 69], even: [42, 62] },
-    D: { odd: [61, 75], even: [48, 70] }, E: { odd: [59, 85], even: [42, 80] },
+    B: { odd: [35, 51], even: [36, 52] }, C: { odd: [41, 61], even: [42, 62] },
+    D: { odd: [47, 69], even: [48, 70] }, E: { odd: [51, 75], even: [42, 80] },
     G: { odd: [53, 87], even: [42, 88] }, H: { odd: [47, 93], even: [60, 94] },
     I: { odd: [41, 65], even: [50, 70] }, K: { odd: [51, 93], even: [74, 94] },
     L: { odd: [73, 101], even: [82, 104] }, M: { odd: [83, 103], even: [86, 106] }

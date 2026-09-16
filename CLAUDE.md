@@ -128,6 +128,21 @@ Kỹ thuật giống hệt 2 lần đổi hạng trước: thêm `EXIT_SIDE_UPGR
 
 `EXIT_SIDE_UPGRADE` đổi cấu trúc thành `{odd:[min,max], even:[min,max]}` mỗi hàng (parity-aware) thay vì 1 khoảng chung — cả `frontend/dat-ve.html` lẫn `backend/scripts/seatTiers.generate.js` (hàm `inExitRange()`). Sau khi lọc bỏ ghế không tồn tại (gap kiến trúc thật, VD K51-71 không tồn tại) và ghế rơi vào phía trước (VD G42-58, H47-62 — vẫn là Sơn Thần vì INNER_ROWS phía trước, KHÔNG đổi) còn **249 mã ghế thật/suất diễn**, migrate **16932 ghế** (249 × 68 suất) → thuy-quai/250000. Không ghế SOLD/HELD nào bị ảnh hưởng ở cả 2 vòng (revert + áp mới).
 
+**Quy trình review đã dùng — nên lặp lại cho các lần đổi hạng ghế lớn sau này:** trước khi go-live, bật tạm `TEST_MODE = true` ở `frontend/dat-ve.html` (chỉ sửa local, không commit/push/deploy) — mode này ép mọi ghế thành AVAILABLE ở client, không gọi Firestore thật, nên user xem được đúng màu/hạng ghế qua Live Server (port 5500) mà không cần mở khóa gì trên production. Sau khi user duyệt xong mới tắt lại `TEST_MODE = false` và deploy thật.
+
+**Đợt review 2026-09-16 phát hiện sai tiếp ở B,C,D,E (bên lẻ) — đã sửa:**
+
+| Hàng | Lẻ cũ (sai) | Lẻ mới (đúng) |
+|---|---|---|
+| B | 35-61 | **35-51** |
+| C | 41-69 | **41-61** |
+| D | 61-75 | **47-69** |
+| E | 59-85 | **51-75** |
+
+(Chẵn B,C,D,E và toàn bộ G,H,I,K,L,M giữ nguyên như bảng trên, không đổi.) Migrate Firestore: 17 mã/suất chuyển về mi-nuong (B53-61, C63-69, D71-75, E77-85), 11 mã/suất chuyển thành thuy-quai (D47-59, E51-57) — tổng 1156 + 748 ghế trên 68 suất diễn.
+
+Đồng thời khóa lại **K74-94 (bên chẵn)** — 33 ghế/3 suất tháng 9 — vốn đang AVAILABLE do lần "mở lại toàn bộ K74-K94" trước đó chỉ khóa lại phần lẻ (K73-93), còn phần chẵn vẫn mở; giờ khóa nốt để về đúng trạng thái "toàn bộ K74-116 đều BLOCKED cho 3 suất tháng 9" như thiết kế gốc.
+
 Danh sách range bên chẵn đã khóa (cộng thêm bên lẻ toàn bộ mọi hàng): K74-116, O72-92, N74-96, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64, **P74-96** (P bị sót ở đợt khóa đầu 2026-09-16, bổ sung cùng ngày sau khi user phát hiện).
 
 **Cập nhật 2026-09-16 (sau đó cùng ngày):** K74-94 mở lại toàn bộ rồi user chỉnh lại chính xác hơn: **chỉ bên chẵn K74-94 mới AVAILABLE, bên lẻ K73-93 khóa lại (BLOCKED)** — tức quay về đúng logic gốc "bên lẻ toàn bộ khóa". Trạng thái hiện tại của vùng K73-96: K73 (lẻ, luôn BLOCKED từ đầu), K75-93 lẻ (BLOCKED, khóa lại 2026-09-16), K74-94 chẵn (AVAILABLE), K95-96 (BLOCKED, chưa ai yêu cầu mở). Riêng K97-116 vẫn BLOCKED nguyên như đợt khóa gốc.
