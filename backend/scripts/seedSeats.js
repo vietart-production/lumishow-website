@@ -47,7 +47,8 @@ const TIERS = {
 // seatTiers.json là danh sách 1181 ghế thật + hạng của từng ghế, tự sinh
 // từ toạ độ thật trong frontend/BookingTicket.html (SEAT_XY), theo quy tắc:
 //   - Phía trước (đối diện sân khấu, y > CY): hàng B,C,D,E,G,H,I = "son-than"
-//     (300k), hàng K,L,M,N,O,P = "thuy-quai" (250k).
+//     (300k), hàng K,L,M,N = "thuy-quai" (250k). Hàng O,P phía trước cũng là
+//     "mi-nuong" (đổi theo yêu cầu venue 2026-09-16, trước đó tính như K,L,M,N).
 //   - Phía sau (mọi hàng) = "mi-nuong" (200k).
 // Dùng đúng 1181 ghế thật này thay vì tính theo tổng số ghế/hàng, để tránh
 // lệch với sơ đồ ghế thật bên frontend (trước đây sinh dư 105 ghế ảo).

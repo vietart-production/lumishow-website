@@ -1068,9 +1068,10 @@ const ROWS = [
 /* Hạng ghế theo VỊ TRÍ THẬT (trước/sau sân khấu), không chỉ theo tên hàng —
    khớp đúng logic đã seed ở backend/scripts/seatTiers.generate.js:
    phía trước (y > CY, đối diện sân khấu) hàng B,C,D,E,G,H,I = Sơn Thần,
-   phía trước hàng K,L,M,N,O,P = Thủy Quái; còn lại (toàn bộ phía sau) = Mị Nương. */
+   phía trước hàng K,L,M,N = Thủy Quái; còn lại (toàn bộ phía sau, kể cả
+   phía trước hàng O,P — đổi theo yêu cầu venue 2026-09-16) = Mị Nương. */
 const INNER_ROWS = new Set(['B','C','D','E','G','H','I']);
-const OUTER_ROWS = new Set(['K','L','M','N','O','P']);
+const OUTER_ROWS = new Set(['K','L','M','N']);
 
 function tierOf(rowCode, y){
   const front = y > CY;

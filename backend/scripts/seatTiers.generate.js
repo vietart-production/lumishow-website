@@ -1,25 +1,27 @@
 // Sinh lại backend/scripts/seatTiers.json từ toạ độ ghế thật trong
-// frontend/BookingTicket.html (SEAT_XY). Chạy: node scripts/seatTiers.generate.js
+// frontend/dat-ve.html (SEAT_XY). Chạy: node scripts/seatTiers.generate.js
 //
 // Quy tắc hạng ghế (theo yêu cầu thực tế của venue):
 //   - Ghế "phía trước" (đối diện sân khấu — y > CY trong hệ toạ độ SVG):
 //       hàng B,C,D,E,G,H,I → "son-than" (Sơn Thần, giá cao nhất)
-//       hàng K,L,M,N,O,P   → "thuy-quai" (Thủy Quái, giá giữa)
-//   - Ghế "phía sau" (mọi hàng) → "mi-nuong" (Mị Nương, giá thấp nhất)
+//       hàng K,L,M,N       → "thuy-quai" (Thủy Quái, giá giữa)
+//       hàng O,P           → "mi-nuong" (đổi theo yêu cầu venue 2026-09-16,
+//                             trước đó là "thuy-quai" như K,L,M,N)
+//   - Ghế "phía sau" (mọi hàng, gồm cả O,P) → "mi-nuong" (Mị Nương, giá thấp nhất)
 // "Phía trước/phía sau" xác định bằng dấu của (y - CY): polar(r,deg) dùng
 // deg=180 là hướng xuống dưới (phía trước, gần lối vào khán giả), deg=0 là
 // hướng lên trên (phía sau, gần sân khấu/hậu trường) — xem hàm polar() và
-// entryStart/hauTruongEnd trong BookingTicket.html.
+// entryStart/hauTruongEnd trong frontend/dat-ve.html.
 
 const fs = require("fs");
 const path = require("path");
 
-const FRONTEND_HTML = path.resolve(__dirname, "../../frontend/BookingTicket.html");
+const FRONTEND_HTML = path.resolve(__dirname, "../../frontend/dat-ve.html");
 const OUTPUT_JSON = path.resolve(__dirname, "seatTiers.json");
 
 const CY = 680;
 const INNER_ROWS = new Set(["B", "C", "D", "E", "G", "H", "I"]);
-const OUTER_ROWS = new Set(["K", "L", "M", "N", "O", "P"]);
+const OUTER_ROWS = new Set(["K", "L", "M", "N"]);
 
 function extractSeatXY(html) {
 
