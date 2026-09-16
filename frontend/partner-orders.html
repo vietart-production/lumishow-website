@@ -114,6 +114,47 @@
   .group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
   .group-head h2{font-size:15px;font-weight:700;margin:0;}
   .group-head .count{color:var(--dim);font-size:12px;}
+
+  /* ---- Khối Admin (sửa/xoá thẳng vào database) — khoá riêng bằng
+     ADMIN_PIN, tách hẳn khỏi mật khẩu đối tác chỉ-đọc ở trên. Ẩn theo mặc
+     định, chỉ ai biết PIN mới mở khoá được, và mọi request vẫn được server
+     xác thực lại (khoá ở giao diện chỉ để đỡ phải gõ PIN mỗi lần thao tác,
+     không phải lớp bảo mật thật). ---- */
+  .head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:28px;}
+  .admin-toggle{
+    display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:20px;
+    border:1px solid var(--border);background:none;color:var(--dim);font-size:12.5px;cursor:pointer;
+    flex-shrink:0;
+  }
+  .admin-toggle:hover{color:var(--text);border-color:rgba(255,255,255,.22);}
+  .admin-toggle.unlocked{color:var(--gold);border-color:rgba(251,187,33,.4);background:rgba(251,187,33,.08);}
+  .admin-gate-row{display:flex;gap:8px;align-items:center;}
+  .admin-gate-row input{padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:13px;width:150px;}
+  .admin-gate-row button{padding:7px 12px;border-radius:7px;border:none;background:var(--gold);color:#241a02;font-weight:700;font-size:12.5px;cursor:pointer;}
+  .admin-gate-err{color:var(--red);font-size:12px;}
+
+  .row-actions{display:flex;gap:6px;}
+  .row-actions button{
+    padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:none;
+    color:var(--dim);font-size:11.5px;cursor:pointer;white-space:nowrap;
+  }
+  .row-actions .edit-btn:hover{color:var(--text);border-color:rgba(255,255,255,.25);}
+  .row-actions .delete-btn:hover{color:var(--red);border-color:rgba(255,107,107,.4);}
+
+  /* ---- Modal sửa đơn ---- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal{width:min(420px,100%);background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;}
+  .modal h3{margin:0 0 16px;font-size:16px;}
+  .modal label{display:block;font-size:12px;color:var(--dim);margin:12px 0 5px;}
+  .modal input{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:14px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .modal-actions button{padding:9px 16px;border-radius:8px;border:none;font-weight:700;font-size:13px;cursor:pointer;}
+  .modal-cancel{background:none;border:1px solid var(--border) !important;color:var(--text);}
+  .modal-save{background:var(--green);color:#04140b;}
+  .modal-err{color:var(--red);font-size:12.5px;min-height:16px;margin-top:10px;}
+
+  #downloadBtn{padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px;}
+  #downloadBtn:hover{border-color:rgba(255,255,255,.25);}
 </style>
 </head>
 <body>
@@ -126,8 +167,20 @@
 </div>
 
 <div class="wrap" id="app" hidden>
-  <h1>Tra cứu đơn hàng — Sơn Thần Thủy Quái</h1>
-  <p class="sub">Chỉ đọc — dữ liệu đơn/vé thật, cập nhật theo thời gian thực.</p>
+  <div class="head-row">
+    <div>
+      <h1>Tra cứu đơn hàng — Sơn Thần Thủy Quái</h1>
+      <p class="sub">Chỉ đọc — dữ liệu đơn/vé thật, cập nhật theo thời gian thực.</p>
+    </div>
+    <div>
+      <button type="button" class="admin-toggle" id="adminToggle">🔒 Công cụ Admin</button>
+      <div class="admin-gate-row" id="adminGateRow" hidden>
+        <input type="password" id="adminPinInput" placeholder="PIN admin" autocomplete="off">
+        <button type="button" id="adminGateBtn">Mở khoá</button>
+      </div>
+      <div class="admin-gate-err" id="adminGateErr"></div>
+    </div>
+  </div>
 
   <div class="filters">
     <div class="st-picker" id="stPicker">
@@ -162,6 +215,7 @@
           <th class="sortable active desc" id="thCreatedAt">Tạo lúc <span class="arrow">▼</span></th>
           <th>Trạng thái</th><th>Khách</th>
           <th>SĐT</th><th>Email</th><th>Ghế</th><th>Tiền</th>
+          <th id="thActions" hidden>Thao tác</th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
@@ -176,7 +230,27 @@
 
   <div class="footer-row">
     <span id="summary"></span>
-    <button id="loadMore" hidden>Tải thêm</button>
+    <div style="display:flex;gap:10px;">
+      <button id="downloadBtn">⬇ Tải Excel</button>
+      <button id="loadMore" hidden>Tải thêm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal" hidden>
+  <div class="modal">
+    <h3>Sửa thông tin khách</h3>
+    <label for="editName">Tên khách</label>
+    <input type="text" id="editName">
+    <label for="editPhone">Số điện thoại</label>
+    <input type="text" id="editPhone">
+    <label for="editEmail">Email</label>
+    <input type="text" id="editEmail">
+    <div class="modal-err" id="editErr"></div>
+    <div class="modal-actions">
+      <button type="button" class="modal-cancel" id="editCancel">Huỷ</button>
+      <button type="button" class="modal-save" id="editSave">Lưu</button>
+    </div>
   </div>
 </div>
 
@@ -188,6 +262,9 @@ let apiKey = "";
 let cursor = null;
 let totalLoaded = 0;
 let sortDir = "desc";
+let adminUnlocked = false;
+let adminPin = "";
+let lastLoadedOrders = []; // đơn đang hiển thị (sau lọc) — nguồn cho nút Tải Excel
 
 const gate = document.getElementById("gate");
 const app = document.getElementById("app");
@@ -386,8 +463,9 @@ async function fetchSingleShowtime({ reset }){
   groupedViewEl.hidden = true;
   singleViewEl.hidden = false;
 
-  if (reset) { cursor = null; rowsEl.innerHTML = ""; totalLoaded = 0; }
+  if (reset) { cursor = null; rowsEl.innerHTML = ""; totalLoaded = 0; lastLoadedOrders = []; }
 
+  document.getElementById("thActions").hidden = !adminUnlocked;
   loadingEl.hidden = false;
   errEl.hidden = true;
   loadMoreBtn.hidden = true;
@@ -405,6 +483,7 @@ async function fetchSingleShowtime({ reset }){
     const data = await callOrdersApi(body);
 
     data.orders.forEach(o => rowsEl.insertAdjacentHTML("beforeend", renderRow(o)));
+    lastLoadedOrders.push(...data.orders);
     totalLoaded += data.orders.length;
     cursor = data.nextCursor;
 
@@ -447,6 +526,8 @@ async function fetchAllGrouped(){
 
     emptyEl.hidden = true; // empty message chỉ dùng cho bảng đơn — chế độ nhóm tự báo rỗng riêng
 
+    lastLoadedOrders = all;
+
     if (all.length === 0) {
       groupedViewEl.innerHTML = `<div class="empty">Không có đơn nào khớp bộ lọc.</div>`;
       summaryEl.textContent = "Đã tải 0 đơn";
@@ -477,6 +558,7 @@ async function fetchAllGrouped(){
             <thead><tr>
               <th>Mã đơn</th><th>Tạo lúc</th><th>Trạng thái</th><th>Khách</th>
               <th>SĐT</th><th>Email</th><th>Ghế</th><th>Tiền</th>
+              ${adminUnlocked ? "<th>Thao tác</th>" : ""}
             </tr></thead>
             <tbody>${orders.map(renderRow).join("")}</tbody>
           </table>
@@ -517,6 +599,10 @@ function renderRow(o){
     <td>${escapeHtml(o.customerEmail)}</td>
     <td>${escapeHtml((o.seatIds || []).join(", "))}</td>
     <td class="amount">${fmtVND(o.amount)}</td>
+    ${adminUnlocked ? `<td><div class="row-actions">
+      <button type="button" class="edit-btn" data-order-id="${escapeHtml(o.orderId)}">Sửa</button>
+      <button type="button" class="delete-btn" data-order-id="${escapeHtml(o.orderId)}">Xoá</button>
+    </div></td>` : ""}
   </tr>`;
 }
 
@@ -559,6 +645,158 @@ thCreatedAt.addEventListener("click", () => {
     if (saved) document.getElementById("apiKeyInput").value = saved;
   } catch (e) {}
 })();
+
+// ==========================================
+// KHỐI ADMIN — mở khoá bằng ADMIN_PIN (khác PARTNER_API_KEY ở trên), cho
+// phép Sửa/Xoá thẳng đơn hàng. Mở khoá xong tải lại danh sách hiện tại để
+// vẽ thêm cột "Thao tác" cho đồng nhất (đơn giản hơn vá cột vào bảng đang
+// có), sau đó Sửa/Xoá chỉ cần render lại đúng phần đã đổi.
+// ==========================================
+
+const adminToggle = document.getElementById("adminToggle");
+const adminGateRow = document.getElementById("adminGateRow");
+const adminPinInput = document.getElementById("adminPinInput");
+const adminGateErr = document.getElementById("adminGateErr");
+
+adminToggle.addEventListener("click", () => {
+  if (adminUnlocked) return; // đã mở khoá — nút chỉ còn vai trò hiển thị trạng thái
+  adminGateRow.hidden = !adminGateRow.hidden;
+  if (!adminGateRow.hidden) adminPinInput.focus();
+});
+
+async function tryUnlockAdmin(){
+  const pin = adminPinInput.value.trim();
+  if (!pin) return;
+  adminGateErr.textContent = "";
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/verify-pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pin })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      adminGateErr.textContent = "Sai PIN admin";
+      return;
+    }
+    adminPin = pin;
+    adminUnlocked = true;
+    adminGateRow.hidden = true;
+    adminToggle.textContent = "🔓 Admin (đã mở khoá)";
+    adminToggle.classList.add("unlocked");
+    fetchOrders({ reset: true }); // vẽ lại để thêm cột Thao tác
+  } catch (e) {
+    adminGateErr.textContent = "Không kết nối được máy chủ";
+  }
+}
+document.getElementById("adminGateBtn").addEventListener("click", tryUnlockAdmin);
+adminPinInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlockAdmin(); });
+
+// ---- Sửa / Xoá đơn — event delegation trên toàn #app vì nút nằm trong cả
+// bảng đơn lẻ (#singleView) lẫn nhiều bảng con trong #groupedView ----
+document.getElementById("app").addEventListener("click", (e) => {
+  const editBtn = e.target.closest(".edit-btn");
+  if (editBtn) return openEditModal(editBtn.dataset.orderId);
+
+  const delBtn = e.target.closest(".delete-btn");
+  if (delBtn) return handleDeleteOrder(delBtn.dataset.orderId);
+});
+
+const editModal = document.getElementById("editModal");
+const editErr = document.getElementById("editErr");
+let editingOrderId = null;
+
+function openEditModal(orderId){
+  const order = lastLoadedOrders.find(o => o.orderId === orderId);
+  if (!order) return;
+  editingOrderId = orderId;
+  document.getElementById("editName").value = order.customerName || "";
+  document.getElementById("editPhone").value = order.customerPhone || "";
+  document.getElementById("editEmail").value = order.customerEmail || "";
+  editErr.textContent = "";
+  editModal.hidden = false;
+}
+function closeEditModal(){ editModal.hidden = true; editingOrderId = null; }
+
+document.getElementById("editCancel").addEventListener("click", closeEditModal);
+editModal.addEventListener("click", (e) => { if (e.target === editModal) closeEditModal(); });
+
+document.getElementById("editSave").addEventListener("click", async () => {
+  editErr.textContent = "";
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/orders/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        password: adminPin,
+        orderId: editingOrderId,
+        customerName: document.getElementById("editName").value,
+        customerPhone: document.getElementById("editPhone").value,
+        customerEmail: document.getElementById("editEmail").value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Không thể lưu");
+    closeEditModal();
+    fetchOrders({ reset: true });
+  } catch (e) {
+    editErr.textContent = e.message;
+  }
+});
+
+async function handleDeleteOrder(orderId){
+  const order = lastLoadedOrders.find(o => o.orderId === orderId);
+  const label = order ? `${order.customerName || "?"} — ${(order.seatIds||[]).join(",")}` : orderId;
+  if (!confirm(`Xoá hẳn đơn "${label}"? Không hoàn tác được.`)) return;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/orders/delete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: adminPin, orderId })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Không thể xoá");
+    fetchOrders({ reset: true });
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// ==========================================
+// TẢI EXCEL — xuất đúng danh sách đang hiển thị (đã áp bộ lọc) ra CSV có
+// BOM UTF-8 (Excel cần BOM để hiện đúng tiếng Việt, không bị vỡ dấu) —
+// Excel mở CSV trực tiếp như file bảng tính bình thường, không cần thư
+// viện ngoài chỉ để xuất 1 bảng phẳng.
+// ==========================================
+
+function csvCell(v){
+  const s = String(v ?? "");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+}
+
+document.getElementById("downloadBtn").addEventListener("click", () => {
+  if (lastLoadedOrders.length === 0) { alert("Chưa có dữ liệu để tải."); return; }
+
+  const headers = ["Mã đơn","Suất diễn","Tạo lúc","Trạng thái","Khách hàng","SĐT","Email","Ghế","Tiền"];
+  const rows = lastLoadedOrders.map(o => [
+    o.orderCode, o.showtimeId, fmtDate(o.createdAt), fmtStatus(o.orderStatus),
+    o.customerName, o.customerPhone, o.customerEmail, (o.seatIds||[]).join(", "), o.amount
+  ]);
+
+  const csv = [headers, ...rows].map(r => r.map(csvCell).join(",")).join("\r\n");
+  const bom = String.fromCharCode(0xFEFF);
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `don-hang-lumishow-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
 </script>
 
 </body>

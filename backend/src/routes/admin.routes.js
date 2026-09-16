@@ -7,7 +7,9 @@ const {
     checkPin,
     cancelTicketBySeat,
     createManualTicket,
-    listUpcomingShowtimes
+    listUpcomingShowtimes,
+    deleteOrder,
+    updateOrderCustomerInfo
 } = require("../services/admin.service");
 
 const SHOW_ID = "son-than-thuy-quai";
@@ -148,6 +150,75 @@ router.post("/admin/tickets/create", requirePin, async (req, res) => {
         return res.status(400).json({
             success: false,
             message: error.message || "Không thể tạo vé"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/admin/orders/delete
+// body: { password, orderId }
+// Xoá hẳn đơn (đơn rác/test) + ticket liên quan, trả ghế về AVAILABLE.
+// Dùng cho trang partner-orders.html (công cụ Admin, khoá riêng PIN này,
+// tách khỏi PARTNER_API_KEY chỉ-đọc).
+// ==========================================
+
+router.post("/admin/orders/delete", requirePin, async (req, res) => {
+
+    try {
+
+        const { orderId } = req.body;
+
+        const result = await deleteOrder({ showId: SHOW_ID, orderId });
+
+        return res.status(200).json({
+            success: true,
+            message: "Đã xoá đơn hàng",
+            result
+        });
+
+    } catch (error) {
+
+        console.error("ADMIN DELETE ORDER ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể xoá đơn hàng"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/admin/orders/update
+// body: { password, orderId, customerName?, customerPhone?, customerEmail? }
+// ==========================================
+
+router.post("/admin/orders/update", requirePin, async (req, res) => {
+
+    try {
+
+        const { orderId, customerName, customerPhone, customerEmail } = req.body;
+
+        const result = await updateOrderCustomerInfo({
+            showId: SHOW_ID,
+            orderId,
+            customerName,
+            customerPhone,
+            customerEmail
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Đã cập nhật đơn hàng",
+            result
+        });
+
+    } catch (error) {
+
+        console.error("ADMIN UPDATE ORDER ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể cập nhật đơn hàng"
         });
     }
 });

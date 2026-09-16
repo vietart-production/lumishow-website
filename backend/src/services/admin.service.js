@@ -272,9 +272,114 @@ async function listUpcomingShowtimes({ showId, limit = 10 }) {
     }));
 }
 
+// ==========================================
+// XOÁ ĐƠN HÀNG — dùng khi phát hiện đơn rác/test (không phải khách thật).
+// Xoá hẳn document order + mọi ticket liên quan, trả ghế về AVAILABLE.
+// KHÔNG dùng cho đơn khách thật muốn huỷ — trường hợp đó dùng
+// cancelTicketBySeat() (giữ dấu vết ticketStatus="cancelled" để đối soát),
+// hàm này xoá vĩnh viễn, không hoàn tác được.
+// ==========================================
+
+async function deleteOrder({ showId, orderId }) {
+
+    if (!orderId) {
+        throw new Error("Thiếu orderId");
+    }
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderSnap = await orderRef.get();
+
+    if (!orderSnap.exists) {
+        throw new Error("Không tìm thấy đơn hàng");
+    }
+
+    const order = orderSnap.data();
+
+    if (order.showId && order.showId !== showId) {
+        throw new Error("Đơn hàng không thuộc show này");
+    }
+
+    const batch = db.batch();
+    batch.delete(orderRef);
+
+    if (order.showtimeId && Array.isArray(order.seatIds)) {
+        const seatsRef = db.collection("shows").doc(showId)
+            .collection("showtimes").doc(order.showtimeId)
+            .collection("seats");
+        order.seatIds.forEach((seatId) => {
+            batch.update(seatsRef.doc(seatId), {
+                status: "AVAILABLE",
+                holdId: null,
+                holdExpiresAt: null,
+                updatedAt: new Date()
+            });
+        });
+    }
+
+    const ticketsSnap = await db.collection("tickets").where("orderId", "==", orderId).get();
+    ticketsSnap.docs.forEach((t) => batch.delete(t.ref));
+
+    await batch.commit();
+
+    return {
+        orderId,
+        deletedTickets: ticketsSnap.size,
+        releasedSeats: (order.seatIds || []).length
+    };
+}
+
+// ==========================================
+// SỬA THÔNG TIN KHÁCH TRÊN ĐƠN HÀNG — sửa nhầm tên/SĐT/email lúc đặt tay,
+// hoặc khách báo sai thông tin cần đính chính. Cập nhật cả order lẫn mọi
+// ticket liên quan (denormalized customerName/Phone/Email trên ticket để
+// khỏi phải join sang order lúc soát vé) để không bị lệch dữ liệu.
+// ==========================================
+
+async function updateOrderCustomerInfo({ showId, orderId, customerName, customerPhone, customerEmail }) {
+
+    if (!orderId) {
+        throw new Error("Thiếu orderId");
+    }
+
+    const fields = {};
+    if (customerName !== undefined) fields.customerName = String(customerName).trim();
+    if (customerPhone !== undefined) fields.customerPhone = String(customerPhone).trim();
+    if (customerEmail !== undefined) fields.customerEmail = String(customerEmail).trim();
+
+    if (Object.keys(fields).length === 0) {
+        throw new Error("Không có gì để cập nhật");
+    }
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderSnap = await orderRef.get();
+
+    if (!orderSnap.exists) {
+        throw new Error("Không tìm thấy đơn hàng");
+    }
+
+    const order = orderSnap.data();
+
+    if (order.showId && order.showId !== showId) {
+        throw new Error("Đơn hàng không thuộc show này");
+    }
+
+    const now = new Date();
+    const batch = db.batch();
+    batch.update(orderRef, { ...fields, updatedAt: now });
+
+    const ticketsSnap = await db.collection("tickets").where("orderId", "==", orderId).get();
+    ticketsSnap.docs.forEach((t) => batch.update(t.ref, { ...fields, updatedAt: now }));
+
+    await batch.commit();
+
+    return { orderId, updatedFields: Object.keys(fields), updatedTickets: ticketsSnap.size };
+}
+
 module.exports = {
     checkPin,
     cancelTicketBySeat,
     createManualTicket,
-    listUpcomingShowtimes
+    listUpcomingShowtimes,
+    deleteOrder,
+    updateOrderCustomerInfo
 };
