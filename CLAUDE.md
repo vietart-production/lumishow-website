@@ -103,6 +103,14 @@ Sửa đồng bộ ở 3 nơi (thiếu 1 trong 3 sẽ lệch giá client/server)
 
 **Lưu ý nếu làm lại sau này:** user có nhắc tới "K73-" (câu bị cắt ngang, chưa rõ ý đầy đủ) — có thể liên quan tới việc range nên bắt đầu từ K73 thay vì K74, hoặc ý khác chưa nói hết. Nên hỏi lại rõ trước khi động vào vùng này lần nữa, và ưu tiên xin ảnh chụp khoanh vùng trực tiếp trên sơ đồ thật (cách đã hiệu quả ở các lần trước) thay vì suy đoán hướng trong/ngoài.
 
+## Nâng hạng Thủy Quái cho dải ghế phía sau theo sơ đồ venue gửi trực tiếp — THÀNH CÔNG (2026-09-16, sau lần revert ở trên)
+
+User gửi 2 ảnh chụp trực tiếp sơ đồ ghế thật venue (10 hàng B,C,D,E,G,H,I,K,L,M, 1 ảnh số chẵn + 1 ảnh số lẻ = 1 dải liên tục mỗi hàng) thay vì mô tả bằng lời — đây mới là "range đúng" (khác hẳn range đã revert ở trên). Đọc ảnh, tự động lọc bỏ (1) mã ghế không tồn tại thật và (2) ghế lỡ rơi vào phía trước (không thuộc "khu vực phía sau") trước khi ghi, để tránh đọc sai vài số biên trên ảnh chữ nhỏ/chéo làm hỏng dữ liệu giá:
+
+`B35-52, C39-62, D43-70, E47-80, G51-88, H55-94, I59-70, K73-94, L79-104, M83-106` — sau khi lọc còn **237 mã ghế thật/suất diễn** (đã loại vài chục mã rơi vào phía trước ở đầu dải C,D,E,G,H, và vài mã không tồn tại ở K/L/M do khoảng trống kiến trúc thật).
+
+Kỹ thuật giống hệt 2 lần đổi hạng trước: thêm `EXIT_SIDE_UPGRADE` (map hàng→[min,max]) vào `tierOf()` ở `frontend/dat-ve.html` (truyền thêm `num`) và `backend/scripts/seatTiers.generate.js`, generate lại `seatTiers.json`, migrate Firestore **16116 ghế** (237 mã × 68 suất diễn) → `tier:"thuy-quai", price:250000`, bỏ qua SOLD/HELD (không có ghế nào trong vùng này đã bán/đang giữ). Vì hàm `tierOf()` check `front` TRƯỚC khi check `EXIT_SIDE_UPGRADE`, ghế nào trong range số nhưng thực ra ở phía trước vẫn tự động được tính đúng theo luật phía trước (son-than/thuy-quai theo hàng), không bị dải này ghi đè sai — nên không cần cắt gọt range cho khớp tuyệt đối biên trước/sau, code tự an toàn.
+
 Danh sách range bên chẵn đã khóa (cộng thêm bên lẻ toàn bộ mọi hàng): K74-116, O72-92, N74-96, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64, **P74-96** (P bị sót ở đợt khóa đầu 2026-09-16, bổ sung cùng ngày sau khi user phát hiện).
 
 **Cập nhật 2026-09-16 (sau đó cùng ngày):** K74-94 mở lại toàn bộ rồi user chỉnh lại chính xác hơn: **chỉ bên chẵn K74-94 mới AVAILABLE, bên lẻ K73-93 khóa lại (BLOCKED)** — tức quay về đúng logic gốc "bên lẻ toàn bộ khóa". Trạng thái hiện tại của vùng K73-96: K73 (lẻ, luôn BLOCKED từ đầu), K75-93 lẻ (BLOCKED, khóa lại 2026-09-16), K74-94 chẵn (AVAILABLE), K95-96 (BLOCKED, chưa ai yêu cầu mở). Riêng K97-116 vẫn BLOCKED nguyên như đợt khóa gốc.
