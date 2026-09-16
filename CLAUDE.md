@@ -95,6 +95,12 @@ Sửa đồng bộ ở 3 nơi (thiếu 1 trong 3 sẽ lệch giá client/server)
 - `backend/scripts/seatTiers.generate.js`: sửa luôn path cũ trỏ `BookingTicket.html` (file không còn tồn tại, đã đổi tên thành `dat-ve.html` từ trước) + bỏ O,P khỏi `OUTER_ROWS`, chạy `node scripts/seatTiers.generate.js` để sinh lại `seatTiers.json` (nguồn seed cho suất diễn mới).
 - Firestore: đã chạy migration 1 lần cho **6052 ghế** (89 mã × 68 suất diễn hiện có, kể cả suất tháng 10-12 đang `CLOSED`) — set `tier:"mi-nuong", tierName:"Mị Nương", price:200000`, bỏ qua ghế `SOLD`/`HELD` (không có ghế nào trong vùng O/P-front đã bán hoặc đang giữ tại thời điểm đổi, nên không có ngoại lệ nào bị bỏ qua thật). Suất diễn tạo mới sau này tự động seed đúng nhờ `seatTiers.json` đã sửa.
 
+## Nâng hạng "nửa khu ghế phía sau đổ về phía thoát hiểm" lên Thủy Quái (2026-09-16)
+
+Theo yêu cầu venue: ở khu vực PHÍA SAU (y < CY, khác với mục đổi O,P ở trên là phía trước), nửa khu ghế của 10 hàng B,C,D,E,G,H,I,K,L,M đổ về phía cửa thoát hiểm (tính từ hàng chữ cái đổ xuống) được nâng từ Mị Nương (200k) lên **Thủy Quái (250k)**. Range đo theo SỐ GHẾ THẬT (không suy từ toạ độ vì khe thoát hiểm mỗi hàng lệch góc khác nhau) — trùng khớp với các range đã dùng để khóa tạm hồi đầu ngày 2026-09-16: `K74-116, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64` — tổng 188 mã ghế/suất diễn.
+
+Sửa đồng bộ y hệt cách làm ở mục đổi hạng O,P (xem trên): thêm `EXIT_SIDE_UPGRADE` (map hàng → [min,max]) vào `tierOf()` ở `frontend/dat-ve.html` (nơi quyết định giá thật khi khách đặt vé) và vào `backend/scripts/seatTiers.generate.js`, chạy lại `node scripts/seatTiers.generate.js`, rồi migrate Firestore — **12784 ghế** (188 mã × 68 suất diễn) đổi `tier:"thuy-quai", tierName:"Thủy Quái", price:250000`, bỏ qua ghế `SOLD`/`HELD` (không có ghế nào trong vùng này đã bán/đang giữ tại thời điểm đổi).
+
 Danh sách range bên chẵn đã khóa (cộng thêm bên lẻ toàn bộ mọi hàng): K74-116, O72-92, N74-96, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64, **P74-96** (P bị sót ở đợt khóa đầu 2026-09-16, bổ sung cùng ngày sau khi user phát hiện).
 
 **Cập nhật 2026-09-16 (sau đó cùng ngày):** K74-94 (21 ghế, thuộc khu phía sau — không liên quan gì đến đổi hạng O/P ở trên) đã **mở lại** (BLOCKED → AVAILABLE) theo yêu cầu user, nên hiện KHÔNG còn nằm trong vùng khóa nữa. Riêng K95, K96 (nằm ngoài 74-94 nhưng trong K74-116 gốc) — cần soát lại nếu có yêu cầu mở thêm.

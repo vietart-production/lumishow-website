@@ -1069,14 +1069,24 @@ const ROWS = [
    khớp đúng logic đã seed ở backend/scripts/seatTiers.generate.js:
    phía trước (y > CY, đối diện sân khấu) hàng B,C,D,E,G,H,I = Sơn Thần,
    phía trước hàng K,L,M,N = Thủy Quái; còn lại (toàn bộ phía sau, kể cả
-   phía trước hàng O,P — đổi theo yêu cầu venue 2026-09-16) = Mị Nương. */
+   phía trước hàng O,P — đổi theo yêu cầu venue 2026-09-16) = Mị Nương.
+   Ngoại lệ: ở PHÍA SAU, nửa khu ghế đổ về phía cửa thoát hiểm (từ hàng chữ
+   cái đổ xuống) của 10 hàng dưới đây cũng là Thủy Quái thay vì Mị Nương
+   (yêu cầu venue 2026-09-16) — range đo theo số ghế thật, không suy từ toạ độ
+   vì khe thoát hiểm mỗi hàng lệch góc khác nhau. */
 const INNER_ROWS = new Set(['B','C','D','E','G','H','I']);
 const OUTER_ROWS = new Set(['K','L','M','N']);
+const EXIT_SIDE_UPGRADE = {
+  K:[74,116], M:[108,130], L:[106,128], I:[72,86], H:[96,108],
+  G:[90,106], E:[82,98], D:[72,88], C:[64,78], B:[54,64]
+};
 
-function tierOf(rowCode, y){
+function tierOf(rowCode, y, num){
   const front = y > CY;
   if (front && INNER_ROWS.has(rowCode)) return 'son-than';
   if (front && OUTER_ROWS.has(rowCode)) return 'thuy-quai';
+  const exitRange = EXIT_SIDE_UPGRADE[rowCode];
+  if (!front && exitRange && num >= exitRange[0] && num <= exitRange[1]) return 'thuy-quai';
   return 'mi-nuong';
 }
 
@@ -1112,7 +1122,7 @@ function buildSeats(){
     const m = id.match(/^([A-Z]+)(\d+)$/);
     const rowCode = m[1], num = parseInt(m[2], 10);
     const [x, y] = SEAT_XY[id];
-    const tier = tierOf(rowCode, y);
+    const tier = tierOf(rowCode, y, num);
     return {
       id, row: rowCode, num, side: num % 2 === 1 ? 'odd' : 'even',
       tier, price: TIERS[tier].price, x, y
