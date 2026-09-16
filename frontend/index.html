@@ -1019,6 +1019,11 @@
     },
     {
       img: 'image/News/news1.jpg',
+      // Ảnh vuông 1440x1440 nhét vào khung 16:9 (object-fit:cover) crop theo
+      // chiều dọc, mặc định center cắt trúng giữa dòng chữ tiêu đề trong ảnh
+      // ("Sơn Thần - Thuỷ Quái" chỉ còn nửa dưới) — dịch điểm neo xuống dưới
+      // dòng chữ để chữ mất hẳn (sạch) thay vì bị cắt dở dang.
+      imgPosition: 'center 67%',
       href: 'https://www.facebook.com/share/p/1FbaoHQk5g/',
       date: '15.09', cat: { vi: 'Lumishow', en: 'Lumishow' },
       title: {
@@ -1077,7 +1082,7 @@
       <a class="news-slide" data-news-idx="${idx}" href="${n.href}" target="_blank" rel="noopener">
         ${n.youtubeId
           ? `<iframe src="https://www.youtube-nocookie.com/embed/${n.youtubeId}?controls=0&modestbranding=1&rel=0" title="${escapeHtml(n.title.vi)}" loading="lazy" allow="encrypted-media; picture-in-picture"></iframe>`
-          : `<img src="${n.img}" alt="${escapeHtml(n.title.vi)}" loading="lazy">`}
+          : `<img src="${n.img}" alt="${escapeHtml(n.title.vi)}" loading="lazy"${n.imgPosition ? ` style="object-position:${n.imgPosition}"` : ''}>`}
         <div class="news-slide-scrim"></div>
         <div class="news-slide-badge">${n.date} · <span class="nb-cat">${escapeHtml(n.cat.vi)}</span></div>
         <div class="news-slide-content">
