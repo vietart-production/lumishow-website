@@ -95,11 +95,13 @@ Sửa đồng bộ ở 3 nơi (thiếu 1 trong 3 sẽ lệch giá client/server)
 - `backend/scripts/seatTiers.generate.js`: sửa luôn path cũ trỏ `BookingTicket.html` (file không còn tồn tại, đã đổi tên thành `dat-ve.html` từ trước) + bỏ O,P khỏi `OUTER_ROWS`, chạy `node scripts/seatTiers.generate.js` để sinh lại `seatTiers.json` (nguồn seed cho suất diễn mới).
 - Firestore: đã chạy migration 1 lần cho **6052 ghế** (89 mã × 68 suất diễn hiện có, kể cả suất tháng 10-12 đang `CLOSED`) — set `tier:"mi-nuong", tierName:"Mị Nương", price:200000`, bỏ qua ghế `SOLD`/`HELD` (không có ghế nào trong vùng O/P-front đã bán hoặc đang giữ tại thời điểm đổi, nên không có ngoại lệ nào bị bỏ qua thật). Suất diễn tạo mới sau này tự động seed đúng nhờ `seatTiers.json` đã sửa.
 
-## Nâng hạng "nửa khu ghế phía sau đổ về phía thoát hiểm" lên Thủy Quái (2026-09-16)
+## Thử nâng hạng "nửa khu ghế phía sau đổ về phía thoát hiểm" lên Thủy Quái — ĐÃ REVERT (2026-09-16)
 
-Theo yêu cầu venue: ở khu vực PHÍA SAU (y < CY, khác với mục đổi O,P ở trên là phía trước), nửa khu ghế của 10 hàng B,C,D,E,G,H,I,K,L,M đổ về phía cửa thoát hiểm (tính từ hàng chữ cái đổ xuống) được nâng từ Mị Nương (200k) lên **Thủy Quái (250k)**. Range đo theo SỐ GHẾ THẬT (không suy từ toạ độ vì khe thoát hiểm mỗi hàng lệch góc khác nhau) — trùng khớp với các range đã dùng để khóa tạm hồi đầu ngày 2026-09-16: `K74-116, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64` — tổng 188 mã ghế/suất diễn.
+Đã thử áp dụng: 10 hàng B,C,D,E,G,H,I,K,L,M, range `K74-116, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64` (188 mã/suất) nâng từ Mị Nương lên Thủy Quái. User phản hồi **"ngược side rồi"** — sau 2 vòng hỏi lại vẫn chưa xác định được chính xác ý user muốn range/hướng nào, nên user chốt: **bỏ hẳn, revert toàn bộ khu vực phía sau về lại Mị Nương như cũ**.
 
-Sửa đồng bộ y hệt cách làm ở mục đổi hạng O,P (xem trên): thêm `EXIT_SIDE_UPGRADE` (map hàng → [min,max]) vào `tierOf()` ở `frontend/dat-ve.html` (nơi quyết định giá thật khi khách đặt vé) và vào `backend/scripts/seatTiers.generate.js`, chạy lại `node scripts/seatTiers.generate.js`, rồi migrate Firestore — **12784 ghế** (188 mã × 68 suất diễn) đổi `tier:"thuy-quai", tierName:"Thủy Quái", price:250000`, bỏ qua ghế `SOLD`/`HELD` (không có ghế nào trong vùng này đã bán/đang giữ tại thời điểm đổi).
+Đã revert đầy đủ: bỏ `EXIT_SIDE_UPGRADE` khỏi `tierOf()` ở `frontend/dat-ve.html` và khỏi `backend/scripts/seatTiers.generate.js`, chạy lại generate (seatTiers.json về đúng phân bố như sau khi đổi O,P: son-than 335 / thuy-quai 187 / mi-nuong 653), và migrate Firestore trả 12784 ghế (188 mã × 68 suất) về `tier:"mi-nuong", price:200000`.
+
+**Lưu ý nếu làm lại sau này:** user có nhắc tới "K73-" (câu bị cắt ngang, chưa rõ ý đầy đủ) — có thể liên quan tới việc range nên bắt đầu từ K73 thay vì K74, hoặc ý khác chưa nói hết. Nên hỏi lại rõ trước khi động vào vùng này lần nữa, và ưu tiên xin ảnh chụp khoanh vùng trực tiếp trên sơ đồ thật (cách đã hiệu quả ở các lần trước) thay vì suy đoán hướng trong/ngoài.
 
 Danh sách range bên chẵn đã khóa (cộng thêm bên lẻ toàn bộ mọi hàng): K74-116, O72-92, N74-96, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64, **P74-96** (P bị sót ở đợt khóa đầu 2026-09-16, bổ sung cùng ngày sau khi user phát hiện).
 

@@ -8,11 +8,6 @@
 //       hàng O,P           → "mi-nuong" (đổi theo yêu cầu venue 2026-09-16,
 //                             trước đó là "thuy-quai" như K,L,M,N)
 //   - Ghế "phía sau" (mọi hàng, gồm cả O,P) → "mi-nuong" (Mị Nương, giá thấp nhất)
-//   - Ngoại lệ: ở PHÍA SAU, nửa khu ghế đổ về phía cửa thoát hiểm (từ hàng chữ
-//     cái đổ xuống) của 10 hàng B,C,D,E,G,H,I,K,L,M cũng là "thuy-quai" thay vì
-//     "mi-nuong" (yêu cầu venue 2026-09-16) — range đo theo SỐ GHẾ THẬT (xem
-//     EXIT_SIDE_UPGRADE), không suy từ toạ độ vì khe thoát hiểm mỗi hàng lệch
-//     góc khác nhau.
 // "Phía trước/phía sau" xác định bằng dấu của (y - CY): polar(r,deg) dùng
 // deg=180 là hướng xuống dưới (phía trước, gần lối vào khán giả), deg=0 là
 // hướng lên trên (phía sau, gần sân khấu/hậu trường) — xem hàm polar() và
@@ -27,10 +22,6 @@ const OUTPUT_JSON = path.resolve(__dirname, "seatTiers.json");
 const CY = 680;
 const INNER_ROWS = new Set(["B", "C", "D", "E", "G", "H", "I"]);
 const OUTER_ROWS = new Set(["K", "L", "M", "N"]);
-const EXIT_SIDE_UPGRADE = {
-    K: [74, 116], M: [108, 130], L: [106, 128], I: [72, 86], H: [96, 108],
-    G: [90, 106], E: [82, 98], D: [72, 88], C: [64, 78], B: [54, 64]
-};
 
 function extractSeatXY(html) {
 
@@ -66,16 +57,12 @@ function main() {
 
     for (const [seatCode, [, y]] of Object.entries(seatXY)) {
 
-        const match = seatCode.match(/^([A-Z]+)(\d+)$/);
-        const row = match[1];
-        const num = parseInt(match[2], 10);
+        const row = seatCode.match(/^([A-Z]+)/)[1];
         const front = y > CY;
-        const exitRange = EXIT_SIDE_UPGRADE[row];
 
         let tier;
         if (front && INNER_ROWS.has(row)) tier = "son-than";
         else if (front && OUTER_ROWS.has(row)) tier = "thuy-quai";
-        else if (!front && exitRange && num >= exitRange[0] && num <= exitRange[1]) tier = "thuy-quai";
         else tier = "mi-nuong";
 
         tiers[seatCode] = tier;
