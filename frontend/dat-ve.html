@@ -1006,7 +1006,8 @@ const ST = {
   SELECTED_BY_ME:'SELECTED_BY_ME',
   HELD_BY_ME:'HELD_BY_ME',
   HELD_BY_OTHER:'HELD_BY_OTHER',
-  SOLD:'SOLD'
+  SOLD:'SOLD',
+  BLOCKED:'BLOCKED'
 };
 
 // Hạng vé: tên (song ngữ) + màu để làm chú thích. Giá gắn theo từng ghế, không hiện ở block Hạng vé.
@@ -1363,6 +1364,8 @@ async function fetchSeatStates(showtimeId) {
       states[seat.id] = ST.SOLD;
     } else if (serverSeat.status === "HELD") {
       states[seat.id] = ST.HELD_BY_OTHER;
+    } else if (serverSeat.status === "BLOCKED") {
+      states[seat.id] = ST.BLOCKED;
     } else {
       console.warn(
         `Ghế ${seat.id} có status không hợp lệ:`,
@@ -1654,6 +1657,7 @@ drawSeats();
    ========================================================= */
 const STATE_CLASS = {
   [ST.SOLD]:'st-sold',
+  [ST.BLOCKED]:'st-sold',
   [ST.HELD_BY_OTHER]:'st-held-other',
   [ST.SELECTED_BY_ME]:'st-selected',
   [ST.HELD_BY_ME]:'st-held-me'
@@ -1691,6 +1695,7 @@ function addSeat(id){
   if (holdSession){ toast(t('msg.holdActive'), 'warn'); return; }
   const st = seatStates[id];
   if (st === ST.SOLD){ toast(t('msg.seatSold'), 'warn'); return; }
+  if (st === ST.BLOCKED){ toast(t('msg.seatBlocked'), 'warn'); return; }
   if (st === ST.HELD_BY_OTHER){ toast(t('msg.seatHeldOther'), 'warn'); return; }
   if (st !== ST.AVAILABLE) return;
   if (selectedSeats.length >= MAX_SEATS){ toast(t('msg.maxSeats', { n: MAX_SEATS }), 'warn'); return; }
@@ -1851,6 +1856,9 @@ function updateSeatCard(id){
     btn.textContent = t('sc.cannotSelect'); btn.disabled = true;
   } else if (st === ST.SOLD){
     stateEl.textContent = t('seat.sold'); stateEl.classList.add('warn');
+    btn.textContent = t('sc.cannotSelect'); btn.disabled = true;
+  } else if (st === ST.BLOCKED){
+    stateEl.textContent = t('seat.blocked'); stateEl.classList.add('warn');
     btn.textContent = t('sc.cannotSelect'); btn.disabled = true;
   } else {
     stateEl.textContent = t('seat.available');
@@ -2078,6 +2086,7 @@ function handleSeatTap(node){
   const id = node.dataset.id;
   const st = seatStates[id];
   if (st === ST.SOLD){ toast(t('msg.seatSold'), 'warn'); closeSeatCard(); return; }
+  if (st === ST.BLOCKED){ toast(t('msg.seatBlocked'), 'warn'); closeSeatCard(); return; }
   if (st === ST.HELD_BY_OTHER){ toast(t('msg.seatHeldOther'), 'warn'); closeSeatCard(); return; }
   if (st === ST.SELECTED_BY_ME){ removeSeat(id); closeSeatCard(); toast(t('msg.seatRemoved', { id })); return; }
   focusSeat(id, 2.4);
@@ -3020,6 +3029,7 @@ const I18N = {
 
     'msg.holdActive':'Đang trong phiên giữ ghế. Hãy hủy giữ ghế nếu muốn đổi.',
     'msg.seatSold':'Ghế này đã được bán rồi!',
+    'msg.seatBlocked':'Ghế này tạm khóa, chưa mở bán cho suất diễn này.',
     'msg.seatHeldOther':'Ghế này đang được người khác thanh toán.',
     'msg.maxSeats':'Mỗi lần đặt tối đa {n} ghế.',
     'msg.seatSoldChooseAnother':'Ghế này đã được bán rồi! Vui lòng chọn ghế khác.',
@@ -3028,7 +3038,7 @@ const I18N = {
     'confirm.removeSeatTitle':'Xác nhận bỏ Ghế {id} (hạng {tier} · {price})?',
     'confirm.removeSeatBody':'Ghế sẽ được trả lại cho người khác đặt.',
     'seat.selected':'Đã chọn', 'seat.heldMe':'Đang giữ cho bạn', 'seat.heldOther':'Người khác đang thanh toán',
-    'seat.sold':'Đã bán', 'seat.available':'Còn trống',
+    'seat.sold':'Đã bán', 'seat.available':'Còn trống', 'seat.blocked':'Tạm khóa',
     'sc.removeThis':'Bỏ ghế này', 'sc.holding':'Đang giữ ghế', 'sc.cannotSelect':'Không thể chọn',
     'sc.holdingOther':'Đang giữ ghế khác', 'sc.where':'Hàng {row} · Ghế số {num}', 'sc.perTicket':'/ vé',
     'msg.holdCreated':'Đã giữ {n} ghế trong {min} phút.',
@@ -3138,6 +3148,7 @@ const I18N = {
 
     'msg.holdActive':'You already have a hold session. Cancel it first if you want to change seats.',
     'msg.seatSold':'This seat has already been sold!',
+    'msg.seatBlocked':'This seat is temporarily closed for this showtime.',
     'msg.seatHeldOther':'This seat is currently being paid for by someone else.',
     'msg.maxSeats':'Maximum {n} seats per booking.',
     'msg.seatSoldChooseAnother':'This seat has already been sold! Please choose another seat.',
@@ -3146,7 +3157,7 @@ const I18N = {
     'confirm.removeSeatTitle':'Remove Seat {id} (tier {tier} · {price})?',
     'confirm.removeSeatBody':'The seat will be released for others to book.',
     'seat.selected':'Selected', 'seat.heldMe':'Held for you', 'seat.heldOther':'Someone else is paying',
-    'seat.sold':'Sold', 'seat.available':'Available',
+    'seat.sold':'Sold', 'seat.available':'Available', 'seat.blocked':'Closed',
     'sc.removeThis':'Remove this seat', 'sc.holding':'Holding seat', 'sc.cannotSelect':'Cannot select',
     'sc.holdingOther':'Holding another seat', 'sc.where':'Row {row} · Seat {num}', 'sc.perTicket':'/ ticket',
     'msg.holdCreated':'Held {n} seat(s) for {min} minutes.',
