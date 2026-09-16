@@ -122,6 +122,7 @@
      xác thực lại (khoá ở giao diện chỉ để đỡ phải gõ PIN mỗi lần thao tác,
      không phải lớp bảo mật thật). ---- */
   .head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:28px;}
+  .head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .admin-toggle{
     display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:20px;
     border:1px solid var(--border);background:none;color:var(--dim);font-size:12.5px;cursor:pointer;
@@ -154,8 +155,8 @@
   .modal-save{background:var(--green);color:#04140b;}
   .modal-err{color:var(--red);font-size:12.5px;min-height:16px;margin-top:10px;}
 
-  #downloadBtn{padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px;}
-  #downloadBtn:hover{border-color:rgba(255,255,255,.25);}
+  #downloadBtn{padding:8px 16px;border-radius:20px;border:none;background:var(--green);color:#04140b;font-weight:700;cursor:pointer;font-size:12.5px;flex-shrink:0;}
+  #downloadBtn:hover{opacity:.9;}
 </style>
 </head>
 <body>
@@ -173,7 +174,8 @@
       <h1>Tra cứu đơn hàng — Sơn Thần Thủy Quái</h1>
       <p class="sub">Chỉ đọc — dữ liệu đơn/vé thật, cập nhật theo thời gian thực.</p>
     </div>
-    <div>
+    <div class="head-actions">
+      <button id="downloadBtn">⬇ Tải Excel (.xlsx)</button>
       <button type="button" class="admin-toggle" id="adminToggle">🔒 Công cụ Admin</button>
       <div class="admin-gate-row" id="adminGateRow" hidden>
         <input type="password" id="adminPinInput" placeholder="PIN admin" autocomplete="off">
@@ -231,10 +233,7 @@
 
   <div class="footer-row">
     <span id="summary"></span>
-    <div style="display:flex;gap:10px;">
-      <button id="downloadBtn">⬇ Tải Excel (.xlsx)</button>
-      <button id="loadMore" hidden>Tải thêm</button>
-    </div>
+    <button id="loadMore" hidden>Tải thêm</button>
   </div>
 </div>
 
