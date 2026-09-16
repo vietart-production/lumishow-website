@@ -86,6 +86,8 @@ Khi có lịch tháng 10-12 chính thức: đổi `status` các showtime muốn 
 - Tái dùng CSS `st-sold` (nhìn giống ghế đã bán — khách không cần biết lý do, chỉ cần biết không chọn được), nhưng thông báo riêng `msg.seatBlocked`/`seat.blocked` ("tạm khóa", không nói "đã bán") ở toast, seat-card, và guard trong `addSeat()`/`handleSeatTap()` — để không nói sai sự thật với khách.
 - Backend `booking.service.js` không cần sửa: `createHold()` vốn đã allow-list `status !== "AVAILABLE"` nên `BLOCKED` tự động bị chặn giữ ghế, thông báo lỗi sẵn có ("không còn trống") vẫn đúng.
 
+Danh sách range bên chẵn đã khóa (cộng thêm bên lẻ toàn bộ mọi hàng): K74-116, O72-92, N74-96, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64, **P74-96** (P bị sót ở đợt khóa đầu 2026-09-16, bổ sung cùng ngày sau khi user phát hiện).
+
 Không có endpoint admin để khóa/mở ghế theo batch — làm bằng script Node tạm thời (`backend/scripts/tmp_*.js`, xoá ngay sau khi chạy, theo đúng quy ước) đọc `backend/scripts/seatTiers.json` làm nguồn sự thật cho mã ghế thật của từng hàng (min/max KHÔNG đủ, có nhiều lỗ hổng số ghế do kiến trúc lối thoát hiểm/WC — ví dụ hàng K thiếu 45,47,49-72; phải kiểm tra tồn tại từng mã, không suy ra từ khoảng số). Script bỏ qua (không đụng) ghế đã `SOLD` thật; ghế đang `HELD` thì cũng bỏ qua + cảnh báo để xử lý tay, không ép chuyển như cách `blockStaffSeats.js` làm với ghế staff (khối lượng đợt này lớn hơn nhiều, suất đang mở bán thật, không nên tự ý cướp hold của khách đang thanh toán dở).
 
 Muốn mở lại các ghế này: chạy script tương tự đổi `BLOCKED` → `AVAILABLE` cho đúng danh sách mã ghế đã khóa (không có cách tự động phân biệt "từng bị BLOCKED" sau khi đã đổi, nên giữ lại danh sách mã ghế nếu cần mở lại sau).
