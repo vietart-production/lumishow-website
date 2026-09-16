@@ -789,6 +789,17 @@ document.getElementById("downloadBtn").addEventListener("click", () => {
     if (ws[cellRef]) ws[cellRef].z = "#,##0";
   });
 
+  // Mã đơn / SĐT trông giống số nhưng phải giữ nguyên dạng text (không cho
+  // Excel tự suy ra kiểu số rồi hiển thị ký hiệu khoa học 1.789E+15, và SĐT
+  // có số 0 đứng đầu sẽ mất nếu bị coi là số).
+  ["Mã đơn", "SĐT"].forEach(colName => {
+    const col = headers.indexOf(colName);
+    rows.forEach((r, i) => {
+      const cellRef = XLSX.utils.encode_cell({ r: i + 1, c: col });
+      if (ws[cellRef]) { ws[cellRef].t = "s"; ws[cellRef].v = String(r[col] ?? ""); ws[cellRef].z = "@"; }
+    });
+  });
+
   // Độ rộng cột theo nội dung dài nhất (ký tự), có min/max hợp lý.
   ws["!cols"] = headers.map((h, c) => {
     let max = h.length;
