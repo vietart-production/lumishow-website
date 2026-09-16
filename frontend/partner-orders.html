@@ -490,7 +490,10 @@ async function fetchSingleShowtime({ reset }){
 
     emptyEl.hidden = totalLoaded > 0;
     loadMoreBtn.hidden = !cursor;
-    summaryEl.textContent = `Đã tải ${totalLoaded} đơn`;
+    const s = summarizeOrders(lastLoadedOrders);
+    summaryEl.textContent = totalLoaded > 0
+      ? `Đã tải ${totalLoaded} đơn, ${s.customers} khách, ${s.seats} vé, tổng ${fmtVND(s.amount)}`
+      : "Đã tải 0 đơn";
 
   } catch (e) {
     errEl.textContent = e.message;
@@ -567,7 +570,8 @@ async function fetchAllGrouped(){
       groupedViewEl.appendChild(section);
     });
 
-    summaryEl.textContent = `Đã tải ${all.length} đơn, ${keys.length} suất diễn`;
+    const s = summarizeOrders(all);
+    summaryEl.textContent = `Đã tải ${all.length} đơn, ${keys.length} suất diễn, ${s.customers} khách, ${s.seats} vé, tổng ${fmtVND(s.amount)}`;
 
   } catch (e) {
     errEl.textContent = e.message;
@@ -588,6 +592,24 @@ async function callOrdersApi(body){
     throw new Error(data.message || "Không tải được dữ liệu");
   }
   return data;
+}
+
+// Gộp số liệu tổng hợp cho dòng "Đã tải..." — khách tính theo SĐT (fallback
+// tên/email nếu thiếu SĐT) để không đếm trùng khách có nhiều đơn (VD 1 khách
+// đặt >6 ghế bị tách nhiều đơn do MAX_SEATS_PER_ORDER).
+function summarizeOrders(orders){
+  const customers = new Set();
+  const showtimes = new Set();
+  let seats = 0, amount = 0;
+
+  orders.forEach(o => {
+    customers.add((o.customerPhone || o.customerName || o.customerEmail || "").trim().toLowerCase());
+    if (o.showtimeId) showtimes.add(o.showtimeId);
+    seats += (o.seatIds || []).length;
+    amount += o.amount || 0;
+  });
+
+  return { customers: customers.size, showtimes: showtimes.size, seats, amount };
 }
 
 function renderRow(o){
