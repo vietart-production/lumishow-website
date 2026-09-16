@@ -53,6 +53,13 @@
   #loadMore:disabled{opacity:.4;cursor:default;}
   #summary{color:var(--dim);font-size:12.5px;}
   [hidden]{display:none!important;}
+
+  /* ---- Chế độ nhóm theo suất diễn ("Mọi suất diễn") — mỗi ngày 1 bảng
+     riêng, tránh trộn lẫn nhiều ngày trong 1 bảng dài gây đọc nhầm ---- */
+  .group{margin-bottom:28px;}
+  .group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
+  .group-head h2{font-size:15px;font-weight:700;margin:0;}
+  .group-head .count{color:var(--dim);font-size:12px;}
 </style>
 </head>
 <body>
@@ -82,11 +89,11 @@
     <button id="fApply">Lọc</button>
   </div>
 
-  <div class="table-wrap">
+  <div class="table-wrap" id="singleView">
     <table>
       <thead>
         <tr>
-          <th>Mã đơn</th><th>Suất diễn</th>
+          <th>Mã đơn</th>
           <th class="sortable active desc" id="thCreatedAt">Tạo lúc <span class="arrow">▼</span></th>
           <th>Trạng thái</th><th>Khách</th>
           <th>SĐT</th><th>Email</th><th>Ghế</th><th>Tiền</th>
@@ -95,9 +102,12 @@
       <tbody id="rows"></tbody>
     </table>
     <div id="empty" class="empty" hidden>Không có đơn nào khớp bộ lọc.</div>
-    <div id="loading" class="loading">Đang tải...</div>
     <div id="err" class="err" hidden></div>
   </div>
+
+  <div id="groupedView" hidden></div>
+
+  <div id="loading" class="loading">Đang tải...</div>
 
   <div class="footer-row">
     <span id="summary"></span>
@@ -161,7 +171,28 @@ async function loadShowtimes(){
   } catch (e) { /* im lặng — dropdown vẫn dùng được với "Mọi suất diễn" */ }
 }
 
+const singleViewEl = document.getElementById("singleView");
+const groupedViewEl = document.getElementById("groupedView");
+
+function currentShowtimeFilter(){
+  return document.getElementById("fShowtime").value.trim();
+}
+
+// Chọn "Mọi suất diễn" là chế độ CÓ THỂ trộn nhiều ngày trong 1 đợt tải —
+// tải hết rồi tách bảng theo từng suất, tránh nhìn nhầm ngày (feedback thật:
+// 1 bảng dài lẫn nhiều ngày dễ đọc sai). Chọn đúng 1 suất thì như cũ, 1 bảng
+// phẳng + "Tải thêm" vì mọi dòng vốn đã cùng 1 ngày, không cần tách.
 async function fetchOrders({ reset }){
+  if (currentShowtimeFilter()) {
+    return fetchSingleShowtime({ reset });
+  }
+  return fetchAllGrouped();
+}
+
+async function fetchSingleShowtime({ reset }){
+  groupedViewEl.hidden = true;
+  singleViewEl.hidden = false;
+
   if (reset) { cursor = null; rowsEl.innerHTML = ""; totalLoaded = 0; }
 
   loadingEl.hidden = false;
@@ -170,7 +201,7 @@ async function fetchOrders({ reset }){
 
   const body = {
     apiKey,
-    showtimeId: document.getElementById("fShowtime").value.trim() || undefined,
+    showtimeId: currentShowtimeFilter(),
     status: document.getElementById("fStatus").value || undefined,
     limit: 50,
     cursor: cursor || undefined,
@@ -178,16 +209,7 @@ async function fetchOrders({ reset }){
   };
 
   try {
-    const res = await fetch(`${API_BASE_URL}/partner/orders/list`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.message || "Không tải được dữ liệu");
-    }
+    const data = await callOrdersApi(body);
 
     data.orders.forEach(o => rowsEl.insertAdjacentHTML("beforeend", renderRow(o)));
     totalLoaded += data.orders.length;
@@ -205,10 +227,96 @@ async function fetchOrders({ reset }){
   }
 }
 
+// Số trang tối đa khi tự động tải hết (an toàn, tránh vòng lặp chạy mãi nếu
+// API trả cursor bất thường) — 40 trang x 50 = 2000 đơn, dư sức cho 1 mùa diễn.
+const MAX_AUTO_PAGES = 40;
+
+async function fetchAllGrouped(){
+  singleViewEl.hidden = true;
+  groupedViewEl.hidden = false;
+  loadMoreBtn.hidden = true;
+
+  loadingEl.hidden = false;
+  errEl.hidden = true;
+  groupedViewEl.innerHTML = "";
+
+  const status = document.getElementById("fStatus").value || undefined;
+  const all = [];
+
+  try {
+    let pageCursor = undefined;
+    for (let page = 0; page < MAX_AUTO_PAGES; page++) {
+      const data = await callOrdersApi({ apiKey, status, limit: 50, cursor: pageCursor, sortDir });
+      all.push(...data.orders);
+      if (!data.nextCursor) break;
+      pageCursor = data.nextCursor;
+    }
+
+    emptyEl.hidden = true; // empty message chỉ dùng cho bảng đơn — chế độ nhóm tự báo rỗng riêng
+
+    if (all.length === 0) {
+      groupedViewEl.innerHTML = `<div class="empty">Không có đơn nào khớp bộ lọc.</div>`;
+      summaryEl.textContent = "Đã tải 0 đơn";
+      return;
+    }
+
+    const byShowtime = new Map();
+    all.forEach(o => {
+      const key = o.showtimeId || "(không rõ suất diễn)";
+      if (!byShowtime.has(key)) byShowtime.set(key, []);
+      byShowtime.get(key).push(o);
+    });
+
+    // Sắp theo showtimeId tăng dần (định dạng YYYY-MM-DD_HH:MM nên so chuỗi
+    // = so thời gian thật) — luôn 25/9 rồi 26/9 rồi 27/9..., không phụ thuộc
+    // sortDir (sortDir chỉ áp trong nội bộ mỗi nhóm).
+    const keys = [...byShowtime.keys()].sort((a, b) => a.localeCompare(b));
+
+    keys.forEach(key => {
+      const orders = byShowtime.get(key);
+      const label = key === "(không rõ suất diễn)" ? key : fmtShowtimeLabel(key);
+      const section = document.createElement("div");
+      section.className = "group";
+      section.innerHTML = `
+        <div class="group-head"><h2>${escapeHtml(label)}</h2><span class="count">${orders.length} đơn</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Mã đơn</th><th>Tạo lúc</th><th>Trạng thái</th><th>Khách</th>
+              <th>SĐT</th><th>Email</th><th>Ghế</th><th>Tiền</th>
+            </tr></thead>
+            <tbody>${orders.map(renderRow).join("")}</tbody>
+          </table>
+        </div>`;
+      groupedViewEl.appendChild(section);
+    });
+
+    summaryEl.textContent = `Đã tải ${all.length} đơn, ${keys.length} suất diễn`;
+
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.hidden = false;
+  } finally {
+    loadingEl.hidden = true;
+  }
+}
+
+async function callOrdersApi(body){
+  const res = await fetch(`${API_BASE_URL}/partner/orders/list`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không tải được dữ liệu");
+  }
+  return data;
+}
+
 function renderRow(o){
   return `<tr>
     <td>${escapeHtml(o.orderCode)}</td>
-    <td>${escapeHtml(o.showtimeId)}</td>
     <td>${fmtDate(o.createdAt)}</td>
     <td><span class="status ${escapeHtml(o.orderStatus)}">${escapeHtml(o.orderStatus)}</span></td>
     <td>${escapeHtml(o.customerName)}</td>
