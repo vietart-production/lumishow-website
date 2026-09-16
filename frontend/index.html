@@ -239,23 +239,21 @@
   /* ============ CONTENT ATMOSPHERE (Schedule + News dùng chung 1 lớp background) ============ */
   .content-atmosphere{position:relative;}
   .content-atmosphere::before{
-    content:'';position:absolute;top:-150px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
+    content:'';position:absolute;top:-195px;left:0;right:0;bottom:0;z-index:0;pointer-events:none;
     background:
       linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 15%,rgba(0,0,0,.65) 85%,rgba(0,0,0,.92) 100%),
       /* Giữ nguyên tâm quầng sáng nâu (trước ở -65px khi top:-65px) dù kéo dài dải hoà trộn,
          để không đổi hướng "nở" của quầng sáng, chỉ đổi độ dài mờ dần */
       radial-gradient(circle at left 355px,#8F3800 0%,#3B2206 31%,#261604 47%);
-    /* Rút ngắn dải mờ dần từ 420px xuống 150px (2026-09-16) — 420px kéo lớp gradient
-       đen này lấn sâu vào tận "chân" ảnh KV (mask gần full-đen ngay sát đáy hero),
-       cộng dồn với dải mây mờ + box-shadow ở .hero-bg-overlay làm chân ảnh bị ăn tối
-       quá nhiều. Vẫn giữ đường cong smoothstep (ease-in-out) nhiều điểm dừng để tránh
-       "Mach band", chỉ nén lại theo đúng tỉ lệ 150/420. */
+    /* Rút ngắn dải mờ dần từ 420px xuống 150px rồi tăng lại +30% lên 195px
+       (2026-09-16) — 150px hơi thiếu, vẫn giữ đường cong smoothstep (ease-in-out)
+       nhiều điểm dừng để tránh "Mach band", chỉ nén/giãn theo đúng tỉ lệ. */
     -webkit-mask-image:linear-gradient(180deg,
-      transparent 0,rgba(0,0,0,.06) 21px,rgba(0,0,0,.2) 43px,rgba(0,0,0,.39) 64px,
-      rgba(0,0,0,.61) 86px,rgba(0,0,0,.8) 107px,rgba(0,0,0,.95) 129px,#000 150px);
+      transparent 0,rgba(0,0,0,.06) 27px,rgba(0,0,0,.2) 56px,rgba(0,0,0,.39) 83px,
+      rgba(0,0,0,.61) 112px,rgba(0,0,0,.8) 139px,rgba(0,0,0,.95) 168px,#000 195px);
     mask-image:linear-gradient(180deg,
-      transparent 0,rgba(0,0,0,.06) 21px,rgba(0,0,0,.2) 43px,rgba(0,0,0,.39) 64px,
-      rgba(0,0,0,.61) 86px,rgba(0,0,0,.8) 107px,rgba(0,0,0,.95) 129px,#000 150px);
+      transparent 0,rgba(0,0,0,.06) 27px,rgba(0,0,0,.2) 56px,rgba(0,0,0,.39) 83px,
+      rgba(0,0,0,.61) 112px,rgba(0,0,0,.8) 139px,rgba(0,0,0,.95) 168px,#000 195px);
   }
 
   /* ============ SCHEDULE ============ */
