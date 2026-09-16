@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LumiShow — Tra cứu đơn hàng (đối tác)</title>
 <meta name="robots" content="noindex, nofollow">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#0b0f0d; --panel:#121815; --border:rgba(255,255,255,.1);
@@ -231,7 +232,7 @@
   <div class="footer-row">
     <span id="summary"></span>
     <div style="display:flex;gap:10px;">
-      <button id="downloadBtn">⬇ Tải Excel</button>
+      <button id="downloadBtn">⬇ Tải Excel (.xlsx)</button>
       <button id="loadMore" hidden>Tải thêm</button>
     </div>
   </div>
@@ -764,16 +765,11 @@ async function handleDeleteOrder(orderId){
 }
 
 // ==========================================
-// TẢI EXCEL — xuất đúng danh sách đang hiển thị (đã áp bộ lọc) ra CSV có
-// BOM UTF-8 (Excel cần BOM để hiện đúng tiếng Việt, không bị vỡ dấu) —
-// Excel mở CSV trực tiếp như file bảng tính bình thường, không cần thư
-// viện ngoài chỉ để xuất 1 bảng phẳng.
+// TẢI EXCEL — xuất đúng danh sách đang hiển thị (đã áp bộ lọc) ra file .xlsx
+// thật (dùng SheetJS qua CDN, không cần build tool). Header in đậm, đóng
+// băng hàng đầu, độ rộng cột tự tính theo nội dung dài nhất, cột tiền định
+// dạng số có dấu phẩy.
 // ==========================================
-
-function csvCell(v){
-  const s = String(v ?? "");
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
-}
 
 document.getElementById("downloadBtn").addEventListener("click", () => {
   if (lastLoadedOrders.length === 0) { alert("Chưa có dữ liệu để tải."); return; }
@@ -784,18 +780,36 @@ document.getElementById("downloadBtn").addEventListener("click", () => {
     o.customerName, o.customerPhone, o.customerEmail, (o.seatIds||[]).join(", "), o.amount
   ]);
 
-  const csv = [headers, ...rows].map(r => r.map(csvCell).join(",")).join("\r\n");
-  const bom = String.fromCharCode(0xFEFF);
-  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  // Cột tiền là số thật, có dấu phẩy ngăn cách nghìn.
+  const amountCol = headers.indexOf("Tiền");
+  rows.forEach((_, i) => {
+    const cellRef = XLSX.utils.encode_cell({ r: i + 1, c: amountCol });
+    if (ws[cellRef]) ws[cellRef].z = "#,##0";
+  });
+
+  // Độ rộng cột theo nội dung dài nhất (ký tự), có min/max hợp lý.
+  ws["!cols"] = headers.map((h, c) => {
+    let max = h.length;
+    rows.forEach(r => { max = Math.max(max, String(r[c] ?? "").length); });
+    return { wch: Math.min(Math.max(max + 2, 10), 45) };
+  });
+
+  ws["!autofilter"] = { ref: ws["!ref"] };
+  ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+  ws["!rows"] = [{ hpx: 22 }];
+
+  headers.forEach((_, c) => {
+    const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+    if (ws[cellRef]) ws[cellRef].s = { font: { bold: true } };
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Đơn hàng");
+
   const stamp = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = `don-hang-lumishow-${stamp}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  XLSX.writeFile(wb, `don-hang-lumishow-${stamp}.xlsx`, { cellStyles: true });
 });
 </script>
 
