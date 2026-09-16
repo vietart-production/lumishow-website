@@ -9,8 +9,9 @@
 //                             trước đó là "thuy-quai" như K,L,M,N)
 //   - Ghế "phía sau" (mọi hàng, gồm cả O,P) → "mi-nuong" (Mị Nương, giá thấp nhất)
 //   - Ngoại lệ: ở PHÍA SAU, dải ghế theo EXIT_SIDE_UPGRADE (10 hàng B→M, đọc
-//     từ sơ đồ thật venue gửi 2026-09-16) cũng là "thuy-quai" thay vì
-//     "mi-nuong" — front vẫn được check trước nên không bị ghi đè sai.
+//     từ bảng số ghế thật venue gửi 2026-09-16 — lẻ/chẵn biên khác nhau nên
+//     tách riêng) cũng là "thuy-quai" thay vì "mi-nuong" — front vẫn được
+//     check trước nên không bị ghi đè sai.
 // "Phía trước/phía sau" xác định bằng dấu của (y - CY): polar(r,deg) dùng
 // deg=180 là hướng xuống dưới (phía trước, gần lối vào khán giả), deg=0 là
 // hướng lên trên (phía sau, gần sân khấu/hậu trường) — xem hàm polar() và
@@ -26,9 +27,19 @@ const CY = 680;
 const INNER_ROWS = new Set(["B", "C", "D", "E", "G", "H", "I"]);
 const OUTER_ROWS = new Set(["K", "L", "M", "N"]);
 const EXIT_SIDE_UPGRADE = {
-    B: [35, 52], C: [39, 62], D: [43, 70], E: [47, 80], G: [51, 88],
-    H: [55, 94], I: [59, 70], K: [73, 94], L: [79, 104], M: [83, 106]
+    B: { odd: [35, 61], even: [36, 52] }, C: { odd: [41, 69], even: [42, 62] },
+    D: { odd: [61, 75], even: [48, 70] }, E: { odd: [59, 85], even: [42, 80] },
+    G: { odd: [53, 87], even: [42, 88] }, H: { odd: [47, 93], even: [60, 94] },
+    I: { odd: [41, 65], even: [50, 70] }, K: { odd: [51, 93], even: [74, 94] },
+    L: { odd: [73, 101], even: [82, 104] }, M: { odd: [83, 103], even: [86, 106] }
 };
+
+function inExitRange(row, num) {
+    const exit = EXIT_SIDE_UPGRADE[row];
+    if (!exit) return false;
+    const r = num % 2 === 1 ? exit.odd : exit.even;
+    return num >= r[0] && num <= r[1];
+}
 
 function extractSeatXY(html) {
 
@@ -68,12 +79,11 @@ function main() {
         const row = match[1];
         const num = parseInt(match[2], 10);
         const front = y > CY;
-        const exitRange = EXIT_SIDE_UPGRADE[row];
 
         let tier;
         if (front && INNER_ROWS.has(row)) tier = "son-than";
         else if (front && OUTER_ROWS.has(row)) tier = "thuy-quai";
-        else if (exitRange && num >= exitRange[0] && num <= exitRange[1]) tier = "thuy-quai";
+        else if (inExitRange(row, num)) tier = "thuy-quai";
         else tier = "mi-nuong";
 
         tiers[seatCode] = tier;
