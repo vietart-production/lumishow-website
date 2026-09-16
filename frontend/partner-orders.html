@@ -146,10 +146,10 @@
     </div>
     <select id="fStatus">
       <option value="">Mọi trạng thái</option>
-      <option value="PAID">PAID</option>
-      <option value="PENDING_PAYMENT">PENDING_PAYMENT</option>
-      <option value="CANCELLED">CANCELLED</option>
-      <option value="EXPIRED">EXPIRED</option>
+      <option value="PAID">Đã thanh toán</option>
+      <option value="PENDING_PAYMENT">Chờ thanh toán</option>
+      <option value="CANCELLED">Đã hủy</option>
+      <option value="EXPIRED">Hết hạn</option>
     </select>
     <button id="fApply">Lọc</button>
   </div>
@@ -207,6 +207,14 @@ function fmtDate(iso){
 function escapeHtml(s){
   return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
+
+const STATUS_LABELS = {
+  PAID: "Đã thanh toán",
+  PENDING_PAYMENT: "Chờ thanh toán",
+  CANCELLED: "Đã hủy",
+  EXPIRED: "Hết hạn"
+};
+function fmtStatus(s){ return STATUS_LABELS[s] || s; }
 
 const DOW_NAMES = ["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
 const DOW_SHORT = ["CN","T2","T3","T4","T5","T6","T7"];
@@ -503,7 +511,7 @@ function renderRow(o){
   return `<tr>
     <td>${escapeHtml(o.orderCode)}</td>
     <td>${fmtDate(o.createdAt)}</td>
-    <td><span class="status ${escapeHtml(o.orderStatus)}">${escapeHtml(o.orderStatus)}</span></td>
+    <td><span class="status ${escapeHtml(o.orderStatus)}">${escapeHtml(fmtStatus(o.orderStatus))}</span></td>
     <td>${escapeHtml(o.customerName)}</td>
     <td>${escapeHtml(o.customerPhone)}</td>
     <td>${escapeHtml(o.customerEmail)}</td>
