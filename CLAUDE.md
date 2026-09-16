@@ -143,6 +143,8 @@ Kỹ thuật giống hệt 2 lần đổi hạng trước: thêm `EXIT_SIDE_UPGR
 
 Đồng thời khóa lại **K74-94 (bên chẵn)** — 33 ghế/3 suất tháng 9 — vốn đang AVAILABLE do lần "mở lại toàn bộ K74-K94" trước đó chỉ khóa lại phần lẻ (K73-93), còn phần chẵn vẫn mở; giờ khóa nốt để về đúng trạng thái "toàn bộ K74-116 đều BLOCKED cho 3 suất tháng 9" như thiết kế gốc.
 
+**Đảo lại ngay sau đó cùng ngày:** user xác nhận việc khóa K74-94 chẵn ở trên là NHẦM — đã **mở lại AVAILABLE** (33 ghế/3 suất tháng 9). Trạng thái đúng hiện tại: K74-94 chẵn = AVAILABLE, K73-93 lẻ = BLOCKED (không đổi). Đây là trạng thái CHỐT — không tự ý khóa lại K74-94 chẵn nữa nếu không có yêu cầu mới rõ ràng.
+
 Danh sách range bên chẵn đã khóa (cộng thêm bên lẻ toàn bộ mọi hàng): K74-116, O72-92, N74-96, M108-130, L106-128, I72-86, H96-108, G90-106, E82-98, D72-88, C64-78, B54-64, **P74-96** (P bị sót ở đợt khóa đầu 2026-09-16, bổ sung cùng ngày sau khi user phát hiện).
 
 **Cập nhật 2026-09-16 (sau đó cùng ngày):** K74-94 mở lại toàn bộ rồi user chỉnh lại chính xác hơn: **chỉ bên chẵn K74-94 mới AVAILABLE, bên lẻ K73-93 khóa lại (BLOCKED)** — tức quay về đúng logic gốc "bên lẻ toàn bộ khóa". Trạng thái hiện tại của vùng K73-96: K73 (lẻ, luôn BLOCKED từ đầu), K75-93 lẻ (BLOCKED, khóa lại 2026-09-16), K74-94 chẵn (AVAILABLE), K95-96 (BLOCKED, chưa ai yêu cầu mở). Riêng K97-116 vẫn BLOCKED nguyên như đợt khóa gốc.
