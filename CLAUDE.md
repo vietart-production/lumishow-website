@@ -164,6 +164,12 @@ Sau ảnh KV mới (chữ nghệ thuật/tên vở nằm ở khoảng 7-16% tín
 
 Nếu cần chỉnh tiếp: đổi từng phần một, hỏi rõ đang nói phần nào ("mây mờ" dọc trong `.hero-bg-overlay` vs gradient ngang 90deg cùng chỗ vs gradient đen `.content-atmosphere::before` lấn từ dưới lên) — session này từng chỉnh nhầm giữa các phần vì tên gọi "gradient" mơ hồ, phải hỏi lại nhiều lần.
 
+## Bán buôn toàn bộ ghế Thủy Quái còn trống suất 26/9 16:30 (2026-09-17)
+
+Theo yêu cầu: toàn bộ ghế hạng Thủy Quái của suất `2026-09-26_16:30` đang `AVAILABLE` (chưa bán, không `BLOCKED`) đã chuyển `SOLD`, tên khách hàng chung **"Rạp Xiếc Customer"** — **218 ghế**, mỗi ghế 1 đơn + 1 vé riêng (tổng 218 đơn/218 vé, 54.500.000đ), tạo bằng đúng hàm `createManualTicket()` có sẵn trong `admin.service.js` (giống cách tạo vé tay/tiền mặt khác — `orderStatus/paymentStatus:"PAID"`, `paymentMethod:"cash"`, `source:"manual"`, không gửi mail vì không có email khách). 209 ghế `BLOCKED` và 3 ghế đã `SOLD` từ trước giữ nguyên, không đụng.
+
+Muốn tra lại nhanh: `orders`/`tickets` where `showtimeId=="2026-09-26_16:30" && customerName=="Rạp Xiếc Customer"`.
+
 ## Trang tra cứu đơn hàng cho đối tác (2026-09-15)
 
 Đối tác nghiệp vụ (kế toán/venue) cần xem đơn/vé thật để đối soát — thêm `frontend/partner-orders.html` (không gắn nav) gọi `POST /api/partner/orders/list` (`backend/src/routes/partner.routes.js` + `partner.service.js`), lọc theo `showtimeId`/`orderStatus`, phân trang cursor.
