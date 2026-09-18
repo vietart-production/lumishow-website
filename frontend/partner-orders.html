@@ -100,6 +100,7 @@
   .status.PAID{background:rgba(61,220,132,.15);color:var(--green);}
   .status.PENDING_PAYMENT{background:rgba(251,187,33,.15);color:var(--gold);}
   .status.CANCELLED,.status.EXPIRED{background:rgba(255,107,107,.15);color:var(--red);}
+  .status.PARTNER_SALE{background:rgba(167,139,250,.16);color:#a78bfa;}
   .amount{font-variant-numeric:tabular-nums;}
   .empty,.loading,.err{padding:40px;text-align:center;color:var(--dim);}
   .err{color:var(--red);}
@@ -292,6 +293,14 @@ const STATUS_LABELS = {
   EXPIRED: "Hết hạn"
 };
 function fmtStatus(s){ return STATUS_LABELS[s] || s; }
+
+// Đơn bán buôn cho đối tác (VD lô 218 vé Thủy Quái suất 26/9 16:30, xem
+// CLAUDE.md) — vẫn orderStatus:"PAID" thật (không đổi dữ liệu gốc), chỉ hiện
+// nhãn riêng "Bán bởi đối tác" thay vì "Đã thanh toán" (bảng lẫn Excel) để
+// dễ phân biệt với khách tự đặt vé thật khi đối soát.
+const PARTNER_SALE_CUSTOMER_NAME = "Rạp Xiếc Customer";
+function isPartnerSale(o){ return o.customerName === PARTNER_SALE_CUSTOMER_NAME; }
+function fmtStatusDisplay(o){ return isPartnerSale(o) ? "Bán bởi đối tác" : fmtStatus(o.orderStatus); }
 
 const DOW_NAMES = ["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
 const DOW_SHORT = ["CN","T2","T3","T4","T5","T6","T7"];
@@ -612,10 +621,11 @@ function summarizeOrders(orders){
 }
 
 function renderRow(o){
+  const statusClass = isPartnerSale(o) ? "PARTNER_SALE" : escapeHtml(o.orderStatus);
   return `<tr>
     <td>${escapeHtml(o.orderCode)}</td>
     <td>${fmtDate(o.createdAt)}</td>
-    <td><span class="status ${escapeHtml(o.orderStatus)}">${escapeHtml(fmtStatus(o.orderStatus))}</span></td>
+    <td><span class="status ${statusClass}">${escapeHtml(fmtStatusDisplay(o))}</span></td>
     <td>${escapeHtml(o.customerName)}</td>
     <td>${escapeHtml(o.customerPhone)}</td>
     <td>${escapeHtml(o.customerEmail)}</td>
@@ -797,7 +807,7 @@ document.getElementById("downloadBtn").addEventListener("click", () => {
 
   const headers = ["Mã đơn","Suất diễn","Tạo lúc","Trạng thái","Khách hàng","SĐT","Email","Ghế","Tiền"];
   const rows = lastLoadedOrders.map(o => [
-    o.orderCode, o.showtimeId, fmtDate(o.createdAt), fmtStatus(o.orderStatus),
+    o.orderCode, o.showtimeId, fmtDate(o.createdAt), fmtStatusDisplay(o),
     o.customerName, o.customerPhone, o.customerEmail, (o.seatIds||[]).join(", "), o.amount
   ]);
 
