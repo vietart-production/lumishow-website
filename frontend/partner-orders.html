@@ -208,6 +208,11 @@
       <option value="CANCELLED">Đã hủy</option>
       <option value="EXPIRED">Hết hạn</option>
     </select>
+    <select id="fSource">
+      <option value="">Mọi nguồn</option>
+      <option value="direct">Khách đặt trực tiếp</option>
+      <option value="partner">Bán bởi đối tác</option>
+    </select>
     <button id="fApply">Lọc</button>
   </div>
 
@@ -300,6 +305,16 @@ function fmtStatus(s){ return STATUS_LABELS[s] || s; }
 // dễ phân biệt với khách tự đặt vé thật khi đối soát.
 const PARTNER_SALE_CUSTOMER_NAME = "Rạp Xiếc Customer";
 function isPartnerSale(o){ return o.customerName === PARTNER_SALE_CUSTOMER_NAME; }
+
+// Lọc "Nguồn bán" — tách hẳn khỏi #fStatus (không phải orderStatus thật trên
+// Firestore/API, chỉ suy ra từ customerName) nên lọc ở client sau khi API trả
+// về, không gửi lên backend.
+function currentSourceFilter(){ return document.getElementById("fSource").value; }
+function applySourceFilter(orders){
+  const f = currentSourceFilter();
+  if (!f) return orders;
+  return orders.filter(o => f === "partner" ? isPartnerSale(o) : !isPartnerSale(o));
+}
 function fmtStatusDisplay(o){ return isPartnerSale(o) ? "Bán bởi đối tác" : fmtStatus(o.orderStatus); }
 
 const DOW_NAMES = ["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
@@ -490,10 +505,11 @@ async function fetchSingleShowtime({ reset }){
 
   try {
     const data = await callOrdersApi(body);
+    const orders = applySourceFilter(data.orders);
 
-    data.orders.forEach(o => rowsEl.insertAdjacentHTML("beforeend", renderRow(o)));
-    lastLoadedOrders.push(...data.orders);
-    totalLoaded += data.orders.length;
+    orders.forEach(o => rowsEl.insertAdjacentHTML("beforeend", renderRow(o)));
+    lastLoadedOrders.push(...orders);
+    totalLoaded += orders.length;
     cursor = data.nextCursor;
 
     emptyEl.hidden = totalLoaded > 0;
@@ -538,16 +554,17 @@ async function fetchAllGrouped(){
 
     emptyEl.hidden = true; // empty message chỉ dùng cho bảng đơn — chế độ nhóm tự báo rỗng riêng
 
-    lastLoadedOrders = all;
+    const filtered = applySourceFilter(all);
+    lastLoadedOrders = filtered;
 
-    if (all.length === 0) {
+    if (filtered.length === 0) {
       groupedViewEl.innerHTML = `<div class="empty">Không có đơn nào khớp bộ lọc.</div>`;
       summaryEl.textContent = "Đã tải 0 đơn";
       return;
     }
 
     const byShowtime = new Map();
-    all.forEach(o => {
+    filtered.forEach(o => {
       const key = o.showtimeId || "(không rõ suất diễn)";
       if (!byShowtime.has(key)) byShowtime.set(key, []);
       byShowtime.get(key).push(o);
@@ -578,8 +595,8 @@ async function fetchAllGrouped(){
       groupedViewEl.appendChild(section);
     });
 
-    const s = summarizeOrders(all);
-    summaryEl.textContent = `Đã tải ${all.length} đơn, ${keys.length} suất diễn, ${s.customers} khách, ${s.seats} vé, tổng ${fmtVND(s.amount)}`;
+    const s = summarizeOrders(filtered);
+    summaryEl.textContent = `Đã tải ${filtered.length} đơn, ${keys.length} suất diễn, ${s.customers} khách, ${s.seats} vé, tổng ${fmtVND(s.amount)}`;
 
   } catch (e) {
     errEl.textContent = e.message;
