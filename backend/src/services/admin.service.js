@@ -302,11 +302,43 @@ async function deleteOrder({ showId, orderId }) {
     const batch = db.batch();
     batch.delete(orderRef);
 
-    if (order.showtimeId && Array.isArray(order.seatIds)) {
+    let releasedSeats = 0;
+    const skippedSeats = [];
+
+    if (order.showtimeId && Array.isArray(order.seatIds) && order.seatIds.length > 0) {
+
         const seatsRef = db.collection("shows").doc(showId)
             .collection("showtimes").doc(order.showtimeId)
             .collection("seats");
-        order.seatIds.forEach((seatId) => {
+
+        // Trước khi trả ghế về AVAILABLE, kiểm tra ghế đó có đang được giữ bởi 1 vé
+        // "valid" CỦA ĐƠN KHÁC hay không (VD: xoá 1 đơn rác/test mà tình cờ trùng
+        // seatId với 1 đơn thật đã bán ghế đó sau này) — nếu có thì bỏ qua ghế đó,
+        // không ghi đè mất trạng thái SOLD hợp lệ của đơn khác. Đã xảy ra thật
+        // (ghế B8, suất 2026-09-26_16:30, bị reset AVAILABLE dù đã bán cho khách
+        // khác — phát hiện và vá 2026-09-18). Dùng đúng composite index sẵn có
+        // (showId, showtimeId, seatId, ticketStatus) trong firestore.indexes.json.
+        const ownershipChecks = await Promise.all(
+            order.seatIds.map((seatId) =>
+                db.collection("tickets")
+                    .where("showId", "==", showId)
+                    .where("showtimeId", "==", order.showtimeId)
+                    .where("seatId", "==", seatId)
+                    .where("ticketStatus", "==", "valid")
+                    .get()
+            )
+        );
+
+        order.seatIds.forEach((seatId, i) => {
+
+            const ownedByOther = ownershipChecks[i].docs.some((t) => t.data().orderId !== orderId);
+
+            if (ownedByOther) {
+                skippedSeats.push(seatId);
+                return;
+            }
+
+            releasedSeats++;
             batch.update(seatsRef.doc(seatId), {
                 status: "AVAILABLE",
                 holdId: null,
@@ -324,7 +356,8 @@ async function deleteOrder({ showId, orderId }) {
     return {
         orderId,
         deletedTickets: ticketsSnap.size,
-        releasedSeats: (order.seatIds || []).length
+        releasedSeats,
+        skippedSeats
     };
 }
 
