@@ -183,7 +183,10 @@
 
   .lh-info{
     flex:1 1 360px;min-width:300px;
-    padding:44px 40px;
+    /* padding-top giảm tạm (44px -> 26px) vì logo .lh-logo đang ẩn tạm bên dưới —
+       đẩy phần mô tả/danh sách liên hệ lên cho cân bằng với cột form bên cạnh.
+       Khi hiện lại logo thì đổi padding-top về lại 44px. */
+    padding:26px 40px 44px;
     border-right:1px solid rgba(255,255,255,.08);
     background:rgba(255,255,255,.015);
   }
@@ -429,7 +432,9 @@
   <div class="lh-wrap">
     <div class="lh-card">
       <div class="lh-info">
-        <img class="lh-logo" src="image/logo-lumishow.png" alt="LumiShow">
+        <!-- Tạm ẩn logo chính (2026-09-20) — muốn hiện lại thì bỏ comment dòng dưới
+             và đổi padding-top của .lh-info về 44px. -->
+        <!-- <img class="lh-logo" src="image/logo-lumishow.png" alt="LumiShow"> -->
         <p class="lh-desc" data-i18n="lh.desc">LumiShow là đơn vị sản xuất show diễn với 3D Mapping, đồ họa sân khấu và công nghệ trình chiếu hiện đại.</p>
 
         <div class="lh-contact-list">
