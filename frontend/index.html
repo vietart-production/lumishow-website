@@ -510,6 +510,12 @@
     .hero-bg-overlay{background:linear-gradient(180deg,transparent 78%,#07090a 100%);box-shadow:none;}
     .section-title{font-size:24px;}
     .news-grid{grid-template-columns:1fr;}
+    /* Card 16:9 quá thấp khi width co theo 60vw trên màn hẹp — tiêu đề (2 dòng)
+       + hàng nút/thể loại/mô tả cộng dồn cao hơn cả khung ảnh, tràn lên che gần
+       hết ảnh. Cho card cao hơn (4:3) và ẩn phần mô tả (.nsg-desc, dài ngắn tuỳ
+       bài nên khó lường trước) để nội dung gọn lại, không còn đẩy lên chiếm hết. */
+    .news-slide{aspect-ratio:4/3;}
+    .nsg-desc{display:none;}
     /* margin-left/top cố định của hero-eyebrow được canh mắt cho màn desktop —
        trên điện thoại tạo cảm giác chữ bị lệch/trôi khỏi lề, cỡ chữ cũng quá to
        so với bề rộng màn hình. Bỏ offset, giảm cỡ chữ theo vw. Canh giữa .hero-copy
@@ -548,6 +554,11 @@
     /* Padding của weekend-track là giá trị cố định nên trên màn hẹp cộng dồn
        làm tràn ngang, cuộn mất hẳn nút "next" ra khỏi khung nhìn — giảm lại cho vừa */
     .weekend-track{padding:10px;}
+    /* Màn quá hẹp: card News càng thấp, hàng nút "Xem ngay" + thể loại vẫn còn
+       chiếm chỗ đáng kể — bỏ hẳn, chỉ giữ tiêu đề cho gọn đẹp, bấm cả ảnh vẫn
+       mở được tin (link bọc toàn bộ .news-slide). */
+    .news-slide-actions{display:none;}
+    .news-slide-title{margin-bottom:0;}
   }
   @media (max-width:400px){
     .lang-select{padding:5px 6px;font-size:11.5px;}
