@@ -929,10 +929,17 @@
   // SEASON_END bên dat-ve.html, xem CLAUDE.md. Cập nhật lại khi mở bán lại.
   const SEASON_END   = new Date(2026, 8, 30);
 
-  // Giờ chiếu theo thứ trong tuần — khớp SHOWTIMES_BY_DAY bên backend/scripts/seedSeats.js
-  // (0=CN, 5=T6, 6=T7). Chỉ để HIỂN THỊ trên lịch trang chủ, không quyết định suất nào
-  // thật sự mở bán — việc đó do Firestore status="OPEN"/"CLOSED" quyết định.
-  const SHOWTIMES_BY_DOW = { 0:['10:00','16:30'], 5:['20:00'], 6:['16:30','20:00'] };
+  // Giờ chiếu THỰC SỰ đang mở bán, theo TỪNG NGÀY cụ thể (isoDate -> mảng giờ) —
+  // KHÔNG dùng quy luật chung theo thứ (SHOWTIMES_BY_DAY bên seedSeats.js liệt kê
+  // giờ chiếu MẶC ĐỊNH của mỗi thứ, nhưng không phải suất nào cũng đang mở — VD
+  // suất 26.09 20:00 (Thứ 7) đang khoá, chỉ 16:30 mở). Đồng bộ với "3 suất cuối
+  // tuần 25-27.09" đang mở trong Firestore, xem CLAUDE.md — cập nhật tay ở đây khi
+  // mở thêm suất tháng 10-12 sau này, cùng lúc với SEASON_END.
+  const OPEN_TIMES_BY_DATE = {
+    '2026-09-25': ['20:00'],
+    '2026-09-26': ['16:30'],
+    '2026-09-27': ['10:00']
+  };
 
   function fmt(d){ return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0'); }
   function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
@@ -967,7 +974,7 @@
         <span class="wd-dow">${dict.dows[i]}</span>
         <span class="wd-dom">${String(date.getDate()).padStart(2,'0')}</span>
         <span class="wd-moy">${dict.months[date.getMonth()]}</span>
-        <span class="wd-time">${(SHOWTIMES_BY_DOW[date.getDay()] || []).join(' · ')}</span>
+        <span class="wd-time">${(OPEN_TIMES_BY_DATE[isoDate(date)] || []).join(' · ')}</span>
       </div>
     `).join('<div class="weekend-connector"></div>');
 
