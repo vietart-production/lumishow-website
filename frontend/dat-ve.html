@@ -259,6 +259,7 @@
 
   /* ============ MODAL & TOAST ============ */
   .overlay{position:fixed;inset:0;z-index:200;background:rgba(3,6,9,.72);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .2s;}
+  #overlay{z-index:400;}
   .overlay.show{opacity:1;pointer-events:auto;}
   .modal{width:min(400px,100%);background:var(--bg-soft);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:26px 26px 22px;transform:translateY(10px) scale(.97);transition:transform .22s cubic-bezier(.2,.8,.3,1);}
   .overlay.show .modal{transform:none;}
