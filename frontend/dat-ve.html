@@ -2601,6 +2601,7 @@ function suggestEmailDomain(email){
 
 const emailInput = document.getElementById('coEmail');
 const emailSuggestBtn = document.getElementById('emailSuggest');
+let emailSuggestionConfirmed = false;
 emailInput.addEventListener('blur', () => {
   const suggestion = suggestEmailDomain(emailInput.value.trim());
   if (suggestion){
@@ -2611,7 +2612,10 @@ emailInput.addEventListener('blur', () => {
     emailSuggestBtn.hidden = true;
   }
 });
-emailInput.addEventListener('input', () => { emailSuggestBtn.hidden = true; });
+emailInput.addEventListener('input', () => {
+  emailSuggestBtn.hidden = true;
+  emailSuggestionConfirmed = false;
+});
 emailSuggestBtn.addEventListener('click', () => {
   emailInput.value = emailSuggestBtn.dataset.value;
   emailSuggestBtn.hidden = true;
@@ -2654,6 +2658,21 @@ coNextBtn.addEventListener('click', async () => {
 
     const customer = validateCustomer();
     if (!customer){ toast(t('msg.checkInfo'), 'warn'); return; }
+
+    const emailSuggestion = suggestEmailDomain(customer.email);
+    if (emailSuggestion && !emailSuggestionConfirmed){
+      confirmDialog({
+        title: t('confirm.emailTitle'),
+        body: t('confirm.emailBody', { email: emailSuggestion }),
+        okText: t('confirm.emailOk'),
+        onOk: () => {
+          emailSuggestionConfirmed = true;
+          coNextBtn.click();
+        }
+      });
+      return;
+    }
+    emailSuggestionConfirmed = false;
 
     const prevHoldId = currentOrder ? currentOrder.holdId : null;
 
@@ -3167,6 +3186,9 @@ const I18N = {
     'confirm.changeShowTitle':'Đổi suất diễn?',
     'confirm.changeShowBodyHold':'Phiên giữ ghế hiện tại sẽ bị hủy và ghế được trả lại.',
     'confirm.changeShowBodySeats':'Bạn đang chọn {n} ghế. Đổi suất sẽ xóa các ghế này.',
+    'confirm.emailTitle':'Xác nhận email?',
+    'confirm.emailBody':'Email bạn nhập là {email}. Có thể bạn đã gõ nhầm tên miền. Vẫn dùng email này để tiếp tục?',
+    'confirm.emailOk':'Vẫn tiếp tục',
     'btn.changeShow':'Đổi suất',
 
     months:['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'],
@@ -3287,6 +3309,9 @@ const I18N = {
     'confirm.changeShowTitle':'Change showtime?',
     'confirm.changeShowBodyHold':'Your current hold will be cancelled and the seats released.',
     'confirm.changeShowBodySeats':'You’ve selected {n} seat(s). Changing showtime will clear them.',
+    'confirm.emailTitle':'Confirm email?',
+    'confirm.emailBody':'You entered {email}. The domain may be mistyped. Continue with this email anyway?',
+    'confirm.emailOk':'Continue anyway',
     'btn.changeShow':'Change',
 
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
