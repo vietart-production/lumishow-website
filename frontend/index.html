@@ -307,6 +307,7 @@
   .weekend-node.active .wd-dow{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
   .weekend-node .wd-dom{font-family:var(--font-heading);font-size:clamp(22px,7vw,36px);font-weight:800;color:var(--white);line-height:1;margin:6px 0 4px;}
   .weekend-node .wd-moy{font-size:clamp(9px,2.4vw,11px);color:var(--gray-dim);white-space:nowrap;}
+  .weekend-node .wd-time{font-size:clamp(8.5px,2.2vw,10.5px);color:var(--gray);white-space:nowrap;}
 
   .schedule-cta-row{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:18px;margin-top:44px;}
   /* Nút Đặt vé — cùng cỡ với .btn-primary gốc (nút "ĐẶT VÉ NGAY" trên navbar) */
@@ -928,6 +929,11 @@
   // SEASON_END bên dat-ve.html, xem CLAUDE.md. Cập nhật lại khi mở bán lại.
   const SEASON_END   = new Date(2026, 8, 30);
 
+  // Giờ chiếu theo thứ trong tuần — khớp SHOWTIMES_BY_DAY bên backend/scripts/seedSeats.js
+  // (0=CN, 5=T6, 6=T7). Chỉ để HIỂN THỊ trên lịch trang chủ, không quyết định suất nào
+  // thật sự mở bán — việc đó do Firestore status="OPEN"/"CLOSED" quyết định.
+  const SHOWTIMES_BY_DOW = { 0:['10:00','16:30'], 5:['20:00'], 6:['16:30','20:00'] };
+
   function fmt(d){ return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0'); }
   function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
@@ -961,6 +967,7 @@
         <span class="wd-dow">${dict.dows[i]}</span>
         <span class="wd-dom">${String(date.getDate()).padStart(2,'0')}</span>
         <span class="wd-moy">${dict.months[date.getMonth()]}</span>
+        <span class="wd-time">${(SHOWTIMES_BY_DOW[date.getDay()] || []).join(' · ')}</span>
       </div>
     `).join('<div class="weekend-connector"></div>');
 
