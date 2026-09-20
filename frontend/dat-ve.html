@@ -2555,7 +2555,14 @@ function validateCustomer(){
 
   const okName  = name.length >= 2;
   const okPhone = /^(0|\+84)([0-9][ .-]?){8,10}[0-9]$/.test(phone.replace(/\s+/g, ''));
-  const okEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  // Dùng đúng bộ kiểm tra định dạng email chuẩn của trình duyệt (input đã có
+  // type="email") thay vì tự viết regex riêng — input.checkValidity() áp
+  // đúng pattern email theo chuẩn HTML Living Standard, chặt hơn hẳn regex
+  // cũ (regex cũ cho qua cả email có khoảng trắng/2 chấm liền/thiếu domain
+  // hợp lệ...). Không bắt được lỗi gõ nhầm domain thật kiểu "gmai.com" hay
+  // "gmail.con" (vẫn là định dạng hợp lệ) — cần đối chiếu domain thật mới
+  // bắt được, ngoài phạm vi "định dạng".
+  const okEmail = document.getElementById('coEmail').checkValidity();
 
   showErr('Name', !okName);
   showErr('Phone', !okPhone);
