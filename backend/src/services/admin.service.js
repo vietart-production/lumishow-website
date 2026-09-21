@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const { db } = require("../config/firebase");
 const { FieldPath } = require("firebase-admin/firestore");
+const BOOKING_CONFIG = require("../config/booking.config");
+const { sendTicketEmail } = require("./email.service");
 
 const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
 
@@ -121,6 +123,8 @@ async function createManualTicket({
     customerPhone,
     customerEmail
 }) {
+
+
 
     if (!showId || !showtimeId || !seatId || !customerName) {
         throw new Error("Thiếu showId/showtimeId/seatId/customerName");
@@ -408,11 +412,236 @@ async function updateOrderCustomerInfo({ showId, orderId, customerName, customer
     return { orderId, updatedFields: Object.keys(fields), updatedTickets: ticketsSnap.size };
 }
 
+async function findOrderByCode({ showId, orderCode }) {
+    if (!String(orderCode || "").trim()) throw new Error("Thiếu mã đơn");
+
+    let snap = await db.collection("orders").where("orderCode", "==", Number(orderCode)).limit(2).get();
+    if (snap.empty) snap = await db.collection("orders").where("orderCode", "==", String(orderCode)).limit(2).get();
+    if (snap.empty) throw new Error("Không tìm thấy đơn hàng");
+    if (snap.size > 1) throw new Error("Mã đơn không duy nhất, cần kiểm tra dữ liệu");
+
+    const orderDoc = snap.docs[0];
+    const order = orderDoc.data();
+    if (order.showId && order.showId !== showId) throw new Error("Đơn hàng không thuộc show này");
+
+    const tickets = await db.collection("tickets").where("orderId", "==", orderDoc.id).get();
+    return {
+        orderId: orderDoc.id,
+        orderCode: order.orderCode,
+        showtimeId: order.showtimeId,
+        seatIds: order.seatIds || [],
+        customerName: order.customerName || "",
+        customerPhone: order.customerPhone || "",
+        customerEmail: order.customerEmail || "",
+        amount: order.amount || 0,
+        orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus,
+        tickets: tickets.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    };
+}
+
+async function resendOrderTicketEmail({ showId, orderId }) {
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderSnap = await orderRef.get();
+    if (!orderSnap.exists) throw new Error("Không tìm thấy đơn hàng");
+    const order = orderSnap.data();
+    if (order.showId && order.showId !== showId) throw new Error("Đơn hàng không thuộc show này");
+    const tickets = await db.collection("tickets").where("orderId", "==", orderId)
+        .where("ticketStatus", "==", "valid").get();
+    if (tickets.empty) throw new Error("Đơn hàng không có vé hợp lệ để gửi");
+    if (!order.customerEmail) throw new Error("Đơn hàng chưa có email nhận vé");
+    await sendTicketEmail(order, tickets.docs.map((doc) => doc.data()));
+    return { email: order.customerEmail, ticketCount: tickets.size };
+}
+
+// ==========================================
+// ĐỔI SUẤT / GHẾ CHO ĐƠN ĐÃ THANH TOÁN — thay toàn bộ vé hợp lệ của đơn
+// trong một transaction. Vé cũ được huỷ để QR cũ không còn hiệu lực; mỗi ghế
+// mới có vé + QR mới. Không thay đổi amount vì chênh lệch do tài chính xử lý.
+// ==========================================
+
+async function exchangePaidOrderTickets({ showId, orderId, toShowtimeId, toSeatIds }) {
+
+    if (!orderId || !toShowtimeId || !Array.isArray(toSeatIds)) {
+        throw new Error("Thiếu orderId/toShowtimeId/toSeatIds");
+    }
+
+    if (toSeatIds.length === 0 || toSeatIds.length > BOOKING_CONFIG.MAX_SEATS_PER_ORDER) {
+        throw new Error(`Số ghế đổi phải từ 1 đến ${BOOKING_CONFIG.MAX_SEATS_PER_ORDER}`);
+    }
+
+    if (new Set(toSeatIds).size !== toSeatIds.length || toSeatIds.some((seatId) => !SEAT_ID_RE.test(seatId))) {
+        throw new Error("Danh sách ghế mới không hợp lệ hoặc bị trùng");
+    }
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const ticketsSnap = await db.collection("tickets")
+        .where("orderId", "==", orderId)
+        .where("ticketStatus", "==", "valid")
+        .get();
+
+    if (ticketsSnap.empty) {
+        throw new Error("Không tìm thấy vé hợp lệ của đơn hàng");
+    }
+
+    if (ticketsSnap.size !== toSeatIds.length) {
+        throw new Error("Số ghế mới phải bằng số vé hợp lệ đang đổi");
+    }
+
+    const exchangeId = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+    let emailPayload;
+
+    await db.runTransaction(async (transaction) => {
+
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists) {
+            throw new Error("Không tìm thấy đơn hàng");
+        }
+
+        const order = orderSnap.data();
+        if (order.showId && order.showId !== showId) {
+            throw new Error("Đơn hàng không thuộc show này");
+        }
+
+        if (order.orderStatus !== "PAID" || order.paymentStatus !== "PAID") {
+            throw new Error("Chỉ được đổi vé của đơn đã thanh toán");
+        }
+
+        if (!Array.isArray(order.seatIds) || order.seatIds.length !== toSeatIds.length) {
+            throw new Error("Dữ liệu ghế trên đơn không khớp với số vé cần đổi");
+        }
+
+        const fromShowtimeId = order.showtimeId;
+        if (!fromShowtimeId) {
+            throw new Error("Đơn hàng không có suất diễn");
+        }
+
+        const validTicketSnaps = await Promise.all(ticketsSnap.docs.map((doc) => transaction.get(doc.ref)));
+        const validTickets = validTicketSnaps.map((snap) => snap.data());
+        const fromSeatIds = validTickets.map((ticket) => ticket.seatId);
+
+        if (validTickets.some((ticket) =>
+            ticket.ticketStatus !== "valid" ||
+            ticket.showId !== showId ||
+            ticket.showtimeId !== fromShowtimeId ||
+            ticket.checkedIn === true
+        )) {
+            throw new Error("Có vé không còn hợp lệ hoặc đã check-in, không thể đổi");
+        }
+
+        if (new Set(fromSeatIds).size !== fromSeatIds.length ||
+            !fromSeatIds.every((seatId) => order.seatIds.includes(seatId))) {
+            throw new Error("Dữ liệu vé và ghế của đơn không khớp");
+        }
+
+        const sourceSeatRefs = fromSeatIds.map((seatId) => db.collection("shows").doc(showId)
+            .collection("showtimes").doc(fromShowtimeId).collection("seats").doc(seatId));
+        const targetSeatRefs = toSeatIds.map((seatId) => db.collection("shows").doc(showId)
+            .collection("showtimes").doc(toShowtimeId).collection("seats").doc(seatId));
+        const targetShowtimeRef = db.collection("shows").doc(showId)
+            .collection("showtimes").doc(toShowtimeId);
+        const [sourceSeatSnaps, targetSeatSnaps] = await Promise.all([
+            Promise.all(sourceSeatRefs.map((ref) => transaction.get(ref))),
+            Promise.all(targetSeatRefs.map((ref) => transaction.get(ref)))]
+        );
+
+        const targetShowtimeSnap = await transaction.get(targetShowtimeRef);
+
+        if (!targetShowtimeSnap.exists || targetShowtimeSnap.data().status !== "OPEN") {
+            throw new Error("Suất diễn mới chưa mở bán");
+        }
+
+        if (sourceSeatSnaps.some((snap) => !snap.exists || snap.data().status !== "SOLD")) {
+            throw new Error("Có ghế cũ không còn ở trạng thái đã bán");
+        }
+
+        if (targetSeatSnaps.some((snap) => !snap.exists || snap.data().status !== "AVAILABLE")) {
+            throw new Error("Có ghế mới không tồn tại hoặc không còn trống");
+        }
+
+        const now = new Date();
+        const newTickets = targetSeatSnaps.map((seatSnap, index) => {
+            const seat = seatSnap.data();
+            const seatId = toSeatIds[index];
+            return {
+                orderId,
+                showId,
+                showtimeId: toShowtimeId,
+                seatId,
+                customerName: order.customerName || "",
+                customerPhone: order.customerPhone || "",
+                customerEmail: order.customerEmail || "",
+                price: seat.price,
+                tier: seat.tier,
+                tierName: seat.tierName,
+                paymentStatus: "paid",
+                ticketStatus: "valid",
+                ticketCode: `LS-${order.orderCode}-${seatId}-${exchangeId}`,
+                source: "seat-exchange",
+                checkedIn: false,
+                checkedInAt: null,
+                createdAt: now
+            };
+        });
+
+        validTicketSnaps.forEach((ticketSnap) => {
+            transaction.update(ticketSnap.ref, {
+                ticketStatus: "cancelled",
+                cancelledAt: now,
+                cancelledBy: "seat-exchange",
+                cancellationReason: "Đổi suất diễn và ghế theo yêu cầu khách"
+            });
+        });
+
+        sourceSeatRefs.forEach((ref) => transaction.update(ref, {
+            status: "AVAILABLE",
+            holdId: null,
+            holdExpiresAt: null,
+            updatedAt: now
+        }));
+
+        targetSeatRefs.forEach((ref) => transaction.update(ref, {
+            status: "SOLD",
+            holdId: null,
+            holdExpiresAt: null,
+            updatedAt: now
+        }));
+
+        newTickets.forEach((ticket) => transaction.set(db.collection("tickets").doc(), ticket));
+
+        transaction.update(orderRef, {
+            showtimeId: toShowtimeId,
+            seatIds: toSeatIds,
+            updatedAt: now,
+            seatExchange: {
+                fromShowtimeId,
+                fromSeatIds,
+                toShowtimeId,
+                toSeatIds,
+                exchangedAt: now,
+                amountRetained: order.amount
+            }
+        });
+
+        emailPayload = {
+            order: { ...order, showtimeId: toShowtimeId, seatIds: toSeatIds },
+            tickets: newTickets,
+            cancelledTicketCodes: validTickets.map((ticket) => ticket.ticketCode)
+        };
+    });
+
+    return emailPayload;
+}
+
 module.exports = {
     checkPin,
     cancelTicketBySeat,
     createManualTicket,
+    exchangePaidOrderTickets,
     listUpcomingShowtimes,
     deleteOrder,
-    updateOrderCustomerInfo
+    updateOrderCustomerInfo,
+    findOrderByCode,
+    resendOrderTicketEmail,
+    exchangePaidOrderTickets
 };

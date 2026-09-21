@@ -178,6 +178,7 @@
     <div class="head-actions">
       <button id="downloadBtn">⬇ Tải Excel (.xlsx)</button>
       <button type="button" class="admin-toggle" id="adminToggle">🔒 Công cụ Admin</button>
+      <button type="button" class="admin-toggle" id="orderToolBtn" hidden>Quản lý đơn</button>
       <div class="admin-gate-row" id="adminGateRow" hidden>
         <input type="password" id="adminPinInput" placeholder="PIN admin" autocomplete="off">
         <button type="button" id="adminGateBtn">Mở khoá</button>
@@ -733,6 +734,7 @@ async function tryUnlockAdmin(){
     adminGateRow.hidden = true;
     adminToggle.textContent = "🔓 Admin (đã mở khoá)";
     adminToggle.classList.add("unlocked");
+    document.getElementById("orderToolBtn").hidden = false;
     fetchOrders({ reset: true }); // vẽ lại để thêm cột Thao tác
   } catch (e) {
     adminGateErr.textContent = "Không kết nối được máy chủ";
@@ -740,6 +742,10 @@ async function tryUnlockAdmin(){
 }
 document.getElementById("adminGateBtn").addEventListener("click", tryUnlockAdmin);
 adminPinInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlockAdmin(); });
+document.getElementById("orderToolBtn").addEventListener("click", () => {
+  sessionStorage.setItem("lumishow-admin-pin", adminPin);
+  window.open("admin-orders.html", "_blank", "noopener");
+});
 
 // ---- Sửa / Xoá đơn — event delegation trên toàn #app vì nút nằm trong cả
 // bảng đơn lẻ (#singleView) lẫn nhiều bảng con trong #groupedView ----

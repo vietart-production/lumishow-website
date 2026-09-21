@@ -9,8 +9,12 @@ const {
     createManualTicket,
     listUpcomingShowtimes,
     deleteOrder,
-    updateOrderCustomerInfo
+    updateOrderCustomerInfo,
+    findOrderByCode,
+    resendOrderTicketEmail,
+    exchangePaidOrderTickets
 } = require("../services/admin.service");
+const { sendTicketEmail } = require("../services/email.service");
 
 const SHOW_ID = "son-than-thuy-quai";
 
@@ -219,6 +223,77 @@ router.post("/admin/orders/update", requirePin, async (req, res) => {
         return res.status(400).json({
             success: false,
             message: error.message || "Không thể cập nhật đơn hàng"
+        });
+    }
+});
+
+router.post("/admin/orders/lookup", requirePin, async (req, res) => {
+    try {
+        const order = await findOrderByCode({ showId: SHOW_ID, orderCode: req.body.orderCode });
+        return res.status(200).json({ success: true, order });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message || "Không thể tra cứu đơn" });
+    }
+});
+
+router.post("/admin/orders/resend-ticket-email", requirePin, async (req, res) => {
+    try {
+        const result = await resendOrderTicketEmail({ showId: SHOW_ID, orderId: req.body.orderId });
+        return res.status(200).json({ success: true, ...result });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message || "Không thể gửi lại email vé" });
+    }
+});
+
+// ==========================================
+// POST /api/admin/orders/exchange-tickets
+// body: { password, orderId, toShowtimeId, toSeatIds }
+// Đổi toàn bộ vé hợp lệ của một đơn đã thanh toán. Transaction sẽ huỷ QR cũ,
+// trả ghế cũ, cấp ghế/QR mới; email chỉ được gửi sau khi commit thành công.
+// ==========================================
+
+router.post("/admin/orders/exchange-tickets", requirePin, async (req, res) => {
+
+    try {
+
+        const { orderId, toShowtimeId, toSeatIds } = req.body;
+        const result = await exchangePaidOrderTickets({
+            showId: SHOW_ID,
+            orderId,
+            toShowtimeId,
+            toSeatIds
+        });
+
+        try {
+            await sendTicketEmail(result.order, result.tickets);
+        } catch (emailError) {
+            // Đổi vé đã commit thành công; không throw để nhân viên không gọi
+            // lại endpoint và vô tình đổi một lần nữa. Có thể gửi lại mail sau.
+            console.error("ADMIN EXCHANGE TICKET EMAIL ERROR:", emailError);
+            return res.status(200).json({
+                success: true,
+                emailSent: false,
+                message: "Đã đổi vé nhưng gửi email thất bại; cần gửi lại email vé.",
+                cancelledTicketCodes: result.cancelledTicketCodes,
+                tickets: result.tickets
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            emailSent: true,
+            message: "Đã đổi vé, huỷ QR cũ và gửi email vé mới",
+            cancelledTicketCodes: result.cancelledTicketCodes,
+            tickets: result.tickets
+        });
+
+    } catch (error) {
+
+        console.error("ADMIN EXCHANGE TICKETS ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể đổi vé"
         });
     }
 });

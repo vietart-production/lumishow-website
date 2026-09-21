@@ -32,9 +32,10 @@ const TECH_ALERT_EMAILS = parseEmailList(
 );
 
 // Render tự inject biến này với URL public thật của service — dùng làm gốc
-// cho ảnh QR (xem ticket.routes.js). Fallback localhost để test ở máy local.
+// cho ảnh QR (xem ticket.routes.js). Email thật tuyệt đối không được rơi về
+// localhost vì người nhận không thể truy cập địa chỉ đó.
 const PUBLIC_API_BASE =
-    process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
+    process.env.RENDER_EXTERNAL_URL || "https://lumishow-website.onrender.com";
 
 const VENUE_NAME = "Rạp Xiếc Trung Ương";
 const VENUE_ADDRESS = "67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội";
