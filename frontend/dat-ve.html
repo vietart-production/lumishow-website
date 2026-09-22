@@ -51,7 +51,7 @@
     --r-lg:20px; --r-md:14px; --r-sm:10px; --r-pill:100px;
     --container:1240px; --gutter:clamp(20px,4vw,48px);
     --page-bg:#020509; --nav-bg:rgba(6,10,15,.72);
-    --tier-son-than:#7CFF5A; --tier-thuy-quai:#23B6FF; --tier-mi-nuong:#FFD15A;
+    --tier-vua-hung:#FF8A3D; --tier-son-than:#7CFF5A; --tier-thuy-quai:#23B6FF; --tier-mi-nuong:#FFD15A;
     --seat-sold:#454a51; --seat-held-other:#ffffff; --seat-mine:#ff2d2d;
   }
 
@@ -171,6 +171,8 @@
   #seatMap.close-up #seatLabels{display:block;}
 
   .seat{cursor:pointer;stroke:rgba(0,0,0,.12);stroke-width:1;}
+  .seat.vip-seat{stroke:#FFE3A1;stroke-width:1.2;filter:drop-shadow(0 0 1.8px rgba(255,190,62,.72));}
+  .seat.vip-seat:hover{filter:drop-shadow(0 0 3px rgba(255,209,90,.92));}
   .seat:hover{stroke:#1a1d22;stroke-width:2.4;}
   .seat.st-sold{fill:var(--seat-sold);cursor:not-allowed;stroke:rgba(0,0,0,.12);}
   .seat.st-held-other{fill:#e3e5e9;stroke:#9aa0aa;stroke-width:1.4;cursor:not-allowed;}
@@ -1019,10 +1021,10 @@ const ST = {
 
 // Hạng vé: tên (song ngữ) + màu để làm chú thích. Giá gắn theo từng ghế, không hiện ở block Hạng vé.
 const TIERS = {
+  'vua-hung':  { name:{vi:'Vua Hùng',  en:'Vua Hung'},  color:'#FF8A3D', price:400000 },
   'son-than':  { name:{vi:'Sơn Thần',  en:'Son Than'},  color:'#7CFF5A', price:300000 },
   'thuy-quai': { name:{vi:'Thủy Quái', en:'Thuy Quai'}, color:'#23B6FF', price:250000 },
-  'mi-nuong':  { name:{vi:'Mị Nương',  en:'Mi Nuong'},  color:'#FFD15A', price:200000 },
-  'vua-hung':  { name:{vi:'Vua Hùng',  en:'Vua Hung'},  color:'#FF8A3D', price:400000 }
+  'mi-nuong':  { name:{vi:'Mị Nương',  en:'Mi Nuong'},  color:'#FFD15A', price:200000 }
 };
 // Tên hạng ghế theo ngôn ngữ hiện tại (currentLang khai báo cuối file) — dùng ở mọi nơi
 // hiển thị tên hạng thay vì đọc thẳng TIERS[x].name (giờ là object {vi,en}).
@@ -1150,9 +1152,9 @@ function buildSeats(){
 /* Khu Vua Hùng mới: 3 hàng căn giữa trong vùng trung tâm theo ảnh venue.
    Đánh số liên tục từ trái sang phải: VIP1–VIP12, VIP13–VIP26, VIP27–VIP43. */
 const VIP_SEAT_XY = {
-  "VIP1":[577,1133.24], "VIP2":[595,1137.16], "VIP3":[613,1141.08], "VIP4":[631,1143.53], "VIP5":[649,1144.51], "VIP6":[667,1145], "VIP7":[693,1145], "VIP8":[711,1144.51], "VIP9":[729,1143.53], "VIP10":[747,1141.08], "VIP11":[765,1137.16], "VIP12":[783,1133.24],
-  "VIP13":[572,1155.24], "VIP14":[588,1158.67], "VIP15":[604,1162.1], "VIP16":[620,1164.55], "VIP17":[636,1166.02], "VIP18":[652,1166.51], "VIP19":[668,1167], "VIP20":[692,1167], "VIP21":[708,1166.51], "VIP22":[724,1166.02], "VIP23":[740,1164.55], "VIP24":[756,1162.1], "VIP25":[772,1158.67], "VIP26":[788,1155.24],
-  "VIP27":[564,1177.24], "VIP28":[578.5,1180.18], "VIP29":[593,1183.12], "VIP30":[607.5,1185.57], "VIP31":[622,1187.53], "VIP32":[636.5,1188.51], "VIP33":[651,1188.72], "VIP34":[665.5,1189], "VIP35":[680,1189], "VIP36":[694.5,1189], "VIP37":[709,1188.72], "VIP38":[723.5,1188.51], "VIP39":[738,1187.53], "VIP40":[752.5,1185.57], "VIP41":[767,1183.12], "VIP42":[781.5,1180.18], "VIP43":[796,1177.24]
+  "VIP1":[783,1145], "VIP2":[765,1145], "VIP3":[747,1145], "VIP4":[729,1145], "VIP5":[711,1145], "VIP6":[693,1145], "VIP7":[667,1145], "VIP8":[649,1145], "VIP9":[631,1145], "VIP10":[613,1145], "VIP11":[595,1145], "VIP12":[577,1145],
+  "VIP13":[788,1167], "VIP14":[772,1167], "VIP15":[756,1167], "VIP16":[740,1167], "VIP17":[724,1167], "VIP18":[708,1167], "VIP19":[692,1167], "VIP20":[668,1167], "VIP21":[652,1167], "VIP22":[636,1167], "VIP23":[620,1167], "VIP24":[604,1167], "VIP25":[588,1167], "VIP26":[572,1167],
+  "VIP27":[796,1189], "VIP28":[781.5,1189], "VIP29":[767,1189], "VIP30":[752.5,1189], "VIP31":[738,1189], "VIP32":[723.5,1189], "VIP33":[709,1189], "VIP34":[694.5,1189], "VIP35":[680,1189], "VIP36":[665.5,1189], "VIP37":[651,1189], "VIP38":[636.5,1189], "VIP39":[622,1189], "VIP40":[607.5,1189], "VIP41":[593,1189], "VIP42":[578.5,1189], "VIP43":[564,1189]
 };
 
 const SEATS = buildSeats();
@@ -1676,6 +1678,7 @@ function drawSeats(){
       width:seatSize, height:seatSize, rx:seatSize/2,
       fill:TIERS[s.tier].color, class:'seat'
     });
+    if (s.row === 'VIP') rect.classList.add('vip-seat');
     rect.dataset.id = s.id;
     rect.dataset.tier = s.tier;
     frag.appendChild(rect);
@@ -2065,7 +2068,7 @@ function updateVisibleLabels(){
     if (labelNodes.has(s.id)) return;
     const t = mk('text', {x:s.x.toFixed(1), y:s.y.toFixed(1),
       'text-anchor':'middle', 'dominant-baseline':'central', class:'seat-label'});
-    t.textContent = s.num;
+    t.textContent = s.row === 'VIP' ? `V${s.num}` : s.num;
     gLabels.appendChild(t);
     labelNodes.set(s.id, t);
   });
