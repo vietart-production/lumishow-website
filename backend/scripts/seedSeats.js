@@ -37,6 +37,11 @@ const TIERS = {
     "mi-nuong": {
         name: "Mị Nương",
         price: 200000
+    },
+
+    "vua-hung": {
+        name: "Vua Hùng",
+        price: 400000
     }
 };
 

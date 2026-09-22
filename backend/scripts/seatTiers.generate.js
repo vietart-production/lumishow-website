@@ -43,26 +43,33 @@ function inExitRange(row, num) {
 
 function extractSeatXY(html) {
 
-    const startTag = "const SEAT_XY";
-    const idx = html.indexOf(startTag);
+    function extractNamedObject(name) {
+        const startTag = `const ${name}`;
+        const idx = html.indexOf(startTag);
 
-    if (idx === -1) {
-        throw new Error("Không tìm thấy SEAT_XY trong BookingTicket.html");
-    }
-
-    const braceStart = html.indexOf("{", idx);
-    let depth = 0;
-    let i = braceStart;
-
-    for (; i < html.length; i++) {
-        if (html[i] === "{") depth++;
-        else if (html[i] === "}") {
-            depth--;
-            if (depth === 0) { i++; break; }
+        if (idx === -1) {
+            throw new Error(`Không tìm thấy ${name} trong dat-ve.html`);
         }
+
+        const braceStart = html.indexOf("{", idx);
+        let depth = 0;
+        let i = braceStart;
+
+        for (; i < html.length; i++) {
+            if (html[i] === "{") depth++;
+            else if (html[i] === "}") {
+                depth--;
+                if (depth === 0) { i++; break; }
+            }
+        }
+
+        return JSON.parse(html.slice(braceStart, i));
     }
 
-    return JSON.parse(html.slice(braceStart, i));
+    return {
+        ...extractNamedObject("SEAT_XY"),
+        ...extractNamedObject("VIP_SEAT_XY")
+    };
 }
 
 function main() {
@@ -71,7 +78,7 @@ function main() {
     const seatXY = extractSeatXY(html);
 
     const tiers = {};
-    const counts = { "son-than": 0, "thuy-quai": 0, "mi-nuong": 0 };
+    const counts = { "son-than": 0, "thuy-quai": 0, "mi-nuong": 0, "vua-hung": 0 };
 
     for (const [seatCode, [, y]] of Object.entries(seatXY)) {
 
@@ -81,7 +88,8 @@ function main() {
         const front = y > CY;
 
         let tier;
-        if (front && INNER_ROWS.has(row)) tier = "son-than";
+        if (row === "VIP") tier = "vua-hung";
+        else if (front && INNER_ROWS.has(row)) tier = "son-than";
         else if (front && OUTER_ROWS.has(row)) tier = "thuy-quai";
         else if (inExitRange(row, num)) tier = "thuy-quai";
         else tier = "mi-nuong";

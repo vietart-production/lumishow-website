@@ -1021,7 +1021,8 @@ const ST = {
 const TIERS = {
   'son-than':  { name:{vi:'Sơn Thần',  en:'Son Than'},  color:'#7CFF5A', price:300000 },
   'thuy-quai': { name:{vi:'Thủy Quái', en:'Thuy Quai'}, color:'#23B6FF', price:250000 },
-  'mi-nuong':  { name:{vi:'Mị Nương',  en:'Mi Nuong'},  color:'#FFD15A', price:200000 }
+  'mi-nuong':  { name:{vi:'Mị Nương',  en:'Mi Nuong'},  color:'#FFD15A', price:200000 },
+  'vua-hung':  { name:{vi:'Vua Hùng',  en:'Vua Hung'},  color:'#FF8A3D', price:400000 }
 };
 // Tên hạng ghế theo ngôn ngữ hiện tại (currentLang khai báo cuối file) — dùng ở mọi nơi
 // hiển thị tên hạng thay vì đọc thẳng TIERS[x].name (giờ là object {vi,en}).
@@ -1045,6 +1046,7 @@ const CX = 680, CY = 680;
 const R_STAGE_IN = 148, R_STAGE_OUT = 184;   // vòng diễn (vành đỏ)
 const R_OUTER = 636;                          // vành ngoài khán phòng — chừa ~40px ngoài hàng P để đặt nhãn khu vực
 const SEAT_SIZE = 15;
+const VIP_SEAT_SIZE = 15.5;
 
 /* mirror(a) = góc đối xứng qua trục dọc (lối vào–hậu trường): bên chẵn = 360° − bên lẻ */
 const mirror = a => (360 - a + 360) % 360;
@@ -1094,6 +1096,7 @@ const EXIT_SIDE_UPGRADE = {
 
 function tierOf(rowCode, y, num){
   const front = y > CY;
+  if (rowCode === 'VIP') return 'vua-hung';
   if (front && INNER_ROWS.has(rowCode)) return 'son-than';
   if (front && OUTER_ROWS.has(rowCode)) return 'thuy-quai';
   const exit = EXIT_SIDE_UPGRADE[rowCode];
@@ -1132,10 +1135,11 @@ function buildSeats(){
   /* Dựng thẳng từ SEAT_XY (toạ độ ghế thật) — không còn công thức chia đều/polar
      giả lập. Chỉ những ghế THẬT SỰ tồn tại ở rạp mới được tạo ra, nên không còn
      ghế "ảo" phải chen vào chỗ đã hết chỗ (từng gây dồn cục ở vài điểm). */
-  return Object.keys(SEAT_XY).map(id => {
+  const seatCoordinates = {...SEAT_XY, ...VIP_SEAT_XY};
+  return Object.keys(seatCoordinates).map(id => {
     const m = id.match(/^([A-Z]+)(\d+)$/);
     const rowCode = m[1], num = parseInt(m[2], 10);
-    const [x, y] = SEAT_XY[id];
+    const [x, y] = seatCoordinates[id];
     const tier = tierOf(rowCode, y, num);
     return {
       id, row: rowCode, num, side: num % 2 === 1 ? 'odd' : 'even',
@@ -1143,6 +1147,14 @@ function buildSeats(){
     };
   });
 }
+/* Khu Vua Hùng mới: 3 hàng căn giữa trong vùng trung tâm theo ảnh venue.
+   Đánh số liên tục từ trái sang phải: VIP1–VIP12, VIP13–VIP26, VIP27–VIP43. */
+const VIP_SEAT_XY = {
+  "VIP1":[577,1133.24], "VIP2":[595,1137.16], "VIP3":[613,1141.08], "VIP4":[631,1143.53], "VIP5":[649,1144.51], "VIP6":[667,1145], "VIP7":[693,1145], "VIP8":[711,1144.51], "VIP9":[729,1143.53], "VIP10":[747,1141.08], "VIP11":[765,1137.16], "VIP12":[783,1133.24],
+  "VIP13":[572,1155.24], "VIP14":[588,1158.67], "VIP15":[604,1162.1], "VIP16":[620,1164.55], "VIP17":[636,1166.02], "VIP18":[652,1166.51], "VIP19":[668,1167], "VIP20":[692,1167], "VIP21":[708,1166.51], "VIP22":[724,1166.02], "VIP23":[740,1164.55], "VIP24":[756,1162.1], "VIP25":[772,1158.67], "VIP26":[788,1155.24],
+  "VIP27":[564,1177.24], "VIP28":[578.5,1180.18], "VIP29":[593,1183.12], "VIP30":[607.5,1185.57], "VIP31":[622,1187.53], "VIP32":[636.5,1188.51], "VIP33":[651,1188.72], "VIP34":[665.5,1189], "VIP35":[680,1189], "VIP36":[694.5,1189], "VIP37":[709,1188.72], "VIP38":[723.5,1188.51], "VIP39":[738,1187.53], "VIP40":[752.5,1185.57], "VIP41":[767,1183.12], "VIP42":[781.5,1180.18], "VIP43":[796,1177.24]
+};
+
 const SEATS = buildSeats();
 const SEAT_BY_ID = new Map(SEATS.map(s => [s.id, s]));
 
@@ -1658,9 +1670,10 @@ function drawSafetyBoxes(){
 function drawSeats(){
   const frag = document.createDocumentFragment();
   SEATS.forEach(s => {
+    const seatSize = s.row === 'VIP' ? VIP_SEAT_SIZE : SEAT_SIZE;
     const rect = mk('rect', {
-      x:(s.x - SEAT_SIZE/2).toFixed(1), y:(s.y - SEAT_SIZE/2).toFixed(1),
-      width:SEAT_SIZE, height:SEAT_SIZE, rx:SEAT_SIZE/2,
+      x:(s.x - seatSize/2).toFixed(1), y:(s.y - seatSize/2).toFixed(1),
+      width:seatSize, height:seatSize, rx:seatSize/2,
       fill:TIERS[s.tier].color, class:'seat'
     });
     rect.dataset.id = s.id;
