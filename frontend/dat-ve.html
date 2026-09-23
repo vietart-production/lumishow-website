@@ -180,6 +180,9 @@
   .seat.st-held-me{fill:var(--seat-mine);stroke:var(--green);stroke-width:2.6;}
   .seat.muted{pointer-events:none;opacity:.1;}
   .seat-label{font-family:var(--font-body);font-size:7px;font-weight:600;fill:#06120a;}
+  .seat-label.vip-label{font-size:4.3px;letter-spacing:-.1px;}
+  .seat-label.vip-label-top{font-weight:800;}
+  .vip-divider{stroke:rgba(6,18,10,.35);stroke-width:.6px;}
   .stage-label{font-family:var(--font-heading);font-weight:800;letter-spacing:5px;font-size:24px;fill:var(--white);text-anchor:middle;dominant-baseline:central;}
   .zone-label{font-family:var(--font-body);font-size:15px;font-weight:700;letter-spacing:3.4px;fill:rgba(230,241,234,.42);dominant-baseline:central;}
   .side-label{font-family:var(--font-heading);font-size:21px;font-weight:800;letter-spacing:1.6px;fill:rgba(230,241,234,.55);text-anchor:middle;dominant-baseline:central;}
@@ -1048,7 +1051,13 @@ const CX = 680, CY = 680;
 const R_STAGE_IN = 148, R_STAGE_OUT = 184;   // vòng diễn (vành đỏ)
 const R_OUTER = 636;                          // vành ngoài khán phòng — chừa ~40px ngoài hàng P để đặt nhãn khu vực
 const SEAT_SIZE = 15;
-const VIP_SEAT_SIZE = 15.5;
+/* Ghế VIP vẽ hình chữ nhật đứng (không phải hình tròn như ghế thường), chia
+   2 nửa trên/dưới bằng 1 đường kẻ — nửa trên chữ "VIP", nửa dưới nhãn hàng+số
+   riêng của khu VIP (xem vipSeatLabel bên dưới). Rộng giữ gần bằng ghế thường
+   để không đè lên ghế bên cạnh (khoảng cách X giữa 2 ghế VIP liền kề ~18px),
+   cao hơn nhưng vẫn < khoảng cách Y giữa 2 hàng VIP (~22px) để không đè hàng dưới. */
+const VIP_SEAT_W = 14;
+const VIP_SEAT_H = 20;
 
 /* mirror(a) = góc đối xứng qua trục dọc (lối vào–hậu trường): bên chẵn = 360° − bên lẻ */
 const mirror = a => (360 - a + 360) % 360;
@@ -1153,9 +1162,18 @@ function buildSeats(){
    Đánh số liên tục từ trái sang phải: VIP1–VIP12, VIP13–VIP26, VIP27–VIP43. */
 const VIP_SEAT_XY = {
   "VIP1":[783,1145], "VIP2":[765,1145], "VIP3":[747,1145], "VIP4":[729,1145], "VIP5":[711,1145], "VIP6":[693,1145], "VIP7":[667,1145], "VIP8":[649,1145], "VIP9":[631,1145], "VIP10":[613,1145], "VIP11":[595,1145], "VIP12":[577,1145],
-  "VIP13":[788,1167], "VIP14":[772,1167], "VIP15":[756,1167], "VIP16":[740,1167], "VIP17":[724,1167], "VIP18":[708,1167], "VIP19":[692,1167], "VIP20":[668,1167], "VIP21":[652,1167], "VIP22":[636,1167], "VIP23":[620,1167], "VIP24":[604,1167], "VIP25":[588,1167], "VIP26":[572,1167],
-  "VIP27":[796,1189], "VIP28":[781.5,1189], "VIP29":[767,1189], "VIP30":[752.5,1189], "VIP31":[738,1189], "VIP32":[723.5,1189], "VIP33":[709,1189], "VIP34":[694.5,1189], "VIP35":[680,1189], "VIP36":[665.5,1189], "VIP37":[651,1189], "VIP38":[636.5,1189], "VIP39":[622,1189], "VIP40":[607.5,1189], "VIP41":[593,1189], "VIP42":[578.5,1189], "VIP43":[564,1189]
+  "VIP13":[801,1167], "VIP14":[783,1167], "VIP15":[765,1167], "VIP16":[747,1167], "VIP17":[729,1167], "VIP18":[711,1167], "VIP19":[693,1167], "VIP20":[667,1167], "VIP21":[649,1167], "VIP22":[631,1167], "VIP23":[613,1167], "VIP24":[595,1167], "VIP25":[577,1167], "VIP26":[559,1167],
+  "VIP27":[809.6,1189], "VIP28":[793.4,1189], "VIP29":[777.2,1189], "VIP30":[761,1189], "VIP31":[744.8,1189], "VIP32":[728.6,1189], "VIP33":[712.4,1189], "VIP34":[696.2,1189], "VIP35":[680,1189], "VIP36":[663.8,1189], "VIP37":[647.6,1189], "VIP38":[631.4,1189], "VIP39":[615.2,1189], "VIP40":[599,1189], "VIP41":[582.8,1189], "VIP42":[566.6,1189], "VIP43":[550.4,1189]
 };
+/* Nhãn hiển thị riêng cho khu VIP: hàng 1 (VIP1-12) = A, hàng 2 (VIP13-26) = B,
+   hàng 3 (VIP27-43) = C, số ghế đánh lại từ 1 trong mỗi hàng (A1-A12, B1-B14,
+   C1-C17) — chỉ là NHÃN HIỂN THỊ, không đổi mã ghế (seatCode) thật vẫn là
+   VIPn để không đụng hàng B/C đã tồn tại trong sơ đồ chính (SEAT_XY). */
+function vipSeatLabel(num){
+  if (num <= 12) return 'A' + num;
+  if (num <= 26) return 'B' + (num - 12);
+  return 'C' + (num - 26);
+}
 
 const SEATS = buildSeats();
 const SEAT_BY_ID = new Map(SEATS.map(s => [s.id, s]));
@@ -1672,13 +1690,15 @@ function drawSafetyBoxes(){
 function drawSeats(){
   const frag = document.createDocumentFragment();
   SEATS.forEach(s => {
-    const seatSize = s.row === 'VIP' ? VIP_SEAT_SIZE : SEAT_SIZE;
+    const isVip = s.row === 'VIP';
+    const w = isVip ? VIP_SEAT_W : SEAT_SIZE;
+    const h = isVip ? VIP_SEAT_H : SEAT_SIZE;
     const rect = mk('rect', {
-      x:(s.x - seatSize/2).toFixed(1), y:(s.y - seatSize/2).toFixed(1),
-      width:seatSize, height:seatSize, rx:seatSize/2,
+      x:(s.x - w/2).toFixed(1), y:(s.y - h/2).toFixed(1),
+      width:w, height:h, rx:isVip ? 2 : w/2,
       fill:TIERS[s.tier].color, class:'seat'
     });
-    if (s.row === 'VIP') rect.classList.add('vip-seat');
+    if (isVip) rect.classList.add('vip-seat');
     rect.dataset.id = s.id;
     rect.dataset.tier = s.tier;
     frag.appendChild(rect);
@@ -2066,11 +2086,30 @@ function updateVisibleLabels(){
   SEATS.forEach(s => {
     if (s.x < minX || s.x > maxX || s.y < minY || s.y > maxY) return;
     if (labelNodes.has(s.id)) return;
-    const t = mk('text', {x:s.x.toFixed(1), y:s.y.toFixed(1),
-      'text-anchor':'middle', 'dominant-baseline':'central', class:'seat-label'});
-    t.textContent = s.row === 'VIP' ? `V${s.num}` : s.num;
-    gLabels.appendChild(t);
-    labelNodes.set(s.id, t);
+    let node;
+    if (s.row === 'VIP'){
+      /* Icon ghế VIP = hình chữ nhật đứng chia 2 nửa: nửa trên "VIP", nửa
+         dưới nhãn hàng+số riêng (vipSeatLabel). Gộp 3 phần tử (đường kẻ chia
+         + 2 dòng chữ) vào 1 <g> để labelNodes vẫn track theo id như ghế thường. */
+      node = mk('g', {class:'vip-label-group'});
+      const divider = mk('line', {
+        x1:(s.x - VIP_SEAT_W/2).toFixed(1), x2:(s.x + VIP_SEAT_W/2).toFixed(1),
+        y1:s.y.toFixed(1), y2:s.y.toFixed(1), class:'vip-divider'
+      });
+      const top = mk('text', {x:s.x.toFixed(1), y:(s.y - VIP_SEAT_H/4).toFixed(1),
+        'text-anchor':'middle', 'dominant-baseline':'central', class:'seat-label vip-label vip-label-top'});
+      top.textContent = 'VIP';
+      const bottom = mk('text', {x:s.x.toFixed(1), y:(s.y + VIP_SEAT_H/4).toFixed(1),
+        'text-anchor':'middle', 'dominant-baseline':'central', class:'seat-label vip-label vip-label-bottom'});
+      bottom.textContent = vipSeatLabel(s.num);
+      node.append(divider, top, bottom);
+    } else {
+      node = mk('text', {x:s.x.toFixed(1), y:s.y.toFixed(1),
+        'text-anchor':'middle', 'dominant-baseline':'central', class:'seat-label'});
+      node.textContent = s.num;
+    }
+    gLabels.appendChild(node);
+    labelNodes.set(s.id, node);
   });
 }
 
