@@ -170,10 +170,10 @@
   #seatLabels{pointer-events:none;display:none;}
   #seatMap.close-up #seatLabels{display:block;}
 
-  .seat{cursor:pointer;stroke:rgba(0,0,0,.12);stroke-width:1;}
+  .seat{cursor:pointer;stroke:#000;stroke-width:1.2;filter:drop-shadow(0 0 1.8px rgba(0,0,0,.55));}
   .seat.vip-seat{stroke:#FFE3A1;stroke-width:1.2;filter:drop-shadow(0 0 1.8px rgba(255,190,62,.72));}
   .seat.vip-seat:hover{filter:drop-shadow(0 0 3px rgba(255,209,90,.92));}
-  .seat:hover{stroke:#1a1d22;stroke-width:2.4;}
+  .seat:hover{stroke:#1a1d22;stroke-width:2.4;filter:drop-shadow(0 0 3px rgba(0,0,0,.75));}
   .seat.st-sold{fill:var(--seat-sold);cursor:not-allowed;stroke:rgba(0,0,0,.12);}
   .seat.st-held-other{fill:#e3e5e9;stroke:#9aa0aa;stroke-width:1.4;cursor:not-allowed;}
   .seat.st-selected{fill:var(--seat-mine);stroke:#1a1d22;stroke-width:2.2;}
