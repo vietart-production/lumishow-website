@@ -6,9 +6,10 @@ const { sendTicketEmail } = require("./email.service");
 
 const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
 
-// Chỉ cho phép mã ghế dạng {hàng}{số}: 1-2 chữ cái hoa + 1-3 số (vd B12, AB9).
+// Chỉ cho phép mã ghế dạng {hàng}{số}: 1-2 chữ cái hoa + 1-3 số (vd B12, AB9),
+// hoặc mã khu VIP dạng VIP{số} (VIP1-VIP43, xem VIP_SEAT_XY ở frontend/dat-ve.html).
 // Chặn chuỗi độc hại (path injection kiểu "../..") lọt vào đường dẫn Firestore.
-const SEAT_ID_RE = /^[A-Z]{1,2}\d{1,3}$/;
+const SEAT_ID_RE = /^([A-Z]{1,2}\d{1,3}|VIP\d{1,2})$/;
 
 // ==========================================
 // PIN ADMIN — kiểm tra ở SERVER, không hardcode trong app Unity (APK có
