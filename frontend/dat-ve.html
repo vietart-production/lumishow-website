@@ -2860,7 +2860,10 @@ coNextBtn.addEventListener('click', async () => {
    12. LỊCH DIỄN
    ========================================================= */
 const SEASON_START = new Date(2026, 8, 25);
-const SEASON_END   = new Date(2026, 8, 30); // Tạm khoá suất sau tháng 9 — khớp với status CLOSED bên Firestore, xem CLAUDE.md
+// Đã mở hết tháng 10 (status Firestore đổi OPEN 2026-09-25) — nới đến hết
+// 31.10 để lộ đủ 5 cuối tuần tháng 10 trên lịch. SEASON_END bên index.html
+// phải khớp, xem CLAUDE.md. Tháng 11-12 vẫn CLOSED, chưa nới thêm.
+const SEASON_END   = new Date(2026, 9, 31);
 /* Mỗi ngày trong tuần diễn có suất giờ riêng — Thứ 6 chỉ diễn 1 suất tối,
    Thứ 7 & Chủ nhật diễn 2 suất. Thứ tự khớp với DOWS (index 0=Thứ 6,
    1=Thứ 7, 2=Chủ nhật). */

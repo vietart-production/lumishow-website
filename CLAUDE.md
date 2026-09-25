@@ -79,6 +79,19 @@ Chưa chốt lịch diễn tháng 10-12 nên tạm dừng bán vé các suất s
 
 Khi có lịch tháng 10-12 chính thức: đổi `status` các showtime muốn mở lại về `"OPEN"`, rồi nới `SEASON_END` ở **cả hai** file frontend cho khớp — thiếu 1 trong 2 bước sẽ tái diễn tình trạng "đặt được nhưng thật ra không mở".
 
+## Mở lịch diễn tháng 10/2026 (2026-09-25)
+
+Đã mở bán thật 23 suất diễn tháng 10 (5 cuối tuần: 2-4/10, 9-11/10, 16-18/10, 23-25/10, 30-31/10), theo đúng 2 lớp ở mục "Tạm khoá bán vé..." phía trên:
+
+1. **Firestore** — cả 23 doc `shows/son-than-thuy-quai/showtimes/{showtimeId}` tháng 10 đổi `status: "CLOSED"` → `"OPEN"` (script tạm `backend/scripts/tmp_openOctober.js`, xoá ngay sau khi chạy theo đúng quy ước — không có endpoint admin bulk cho việc này).
+2. **Frontend** — `SEASON_END` ở cả `frontend/index.html` và `frontend/dat-ve.html` nới `2026-08-30` → `2026-10-31`. `OPEN_TIMES_BY_DATE` (chỉ có ở `index.html`, quyết định khung giờ hiển thị trên widget lịch trang chủ) bổ sung đủ 17 ngày tháng 10.
+
+Tháng 11-12 vẫn `CLOSED`, chưa đụng — theo yêu cầu user, mở **từng tháng một trong các bước/phiên làm việc riêng**, không gộp nhiều tháng cùng lúc khi làm tiếp sau này.
+
+**Quy trình nên lặp lại cho các lần mở tháng/suất sau:**
+- Trước khi ghi Firestore, LUÔN xác minh script đang trỏ đúng project thật (đối chiếu 1 sự thật đã biết chắc trong Firestore — ví dụ số đơn/vé thật đã ghi lại ở CLAUDE.md, như 218 đơn "Rạp Xiếc Customer" ở mục "Bán buôn toàn bộ ghế Thủy Quái..." — KHÔNG tin suông biến `FIREBASE_SERVICE_ACCOUNT_FILE` trong `.env` local, vì từng có lúc bị trỏ tạm sang project test).
+- `SEASON_END` dựng lịch theo **khối tuần** (Thứ 6+7+CN liền nhau, xem hàm `runs` ở cả 2 file frontend) chứ không theo từng suất lẻ — nới `SEASON_END` sẽ lộ nguyên cả cuối tuần đó trên lịch, dù Firestore có thể chưa `OPEN` hết các suất trong cuối tuần đó. Nên chỉ nới `SEASON_END` đến đúng ranh giới đã thật sự mở hết ở Firestore, không nới trước để tránh lộ suất chưa sẵn sàng.
+
 ## Khóa 1 phần ghế (không phải đóng cả suất) — trạng thái ghế `BLOCKED` (2026-09-16)
 
 3 suất diễn cuối tháng 9 (`2026-09-25_20:00`, `2026-09-26_16:30`, `2026-09-27_10:00`) cần khóa bớt 1 phần ghế (toàn bộ bên lẻ + 1 số range bên chẵn theo yêu cầu venue) — **không dùng `status:"SOLD"`** vì ghế khóa không phải ghế bán thật, để `SOLD` sẽ làm sai lệch mọi thống kê/đối soát doanh thu sau này (partner-orders, báo cáo...). Thêm hẳn giá trị `status` thứ 4: **`BLOCKED`**, song song với `AVAILABLE`/`HELD`/`SOLD` đã có (xem `CLAUDE.md` mục "Backend architecture" gốc).
