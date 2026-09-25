@@ -170,10 +170,20 @@
   #seatLabels{pointer-events:none;display:none;}
   #seatMap.close-up #seatLabels{display:block;}
 
-  .seat{cursor:pointer;stroke:#000;stroke-width:1.2;filter:drop-shadow(0 0 1.8px rgba(0,0,0,.55));}
-  .seat.vip-seat{stroke:#FFE3A1;stroke-width:1.2;filter:drop-shadow(0 0 1.8px rgba(255,190,62,.72));}
-  .seat.vip-seat:hover{filter:drop-shadow(0 0 3px rgba(255,209,90,.92));}
-  .seat:hover{stroke:#1a1d22;stroke-width:2.4;filter:drop-shadow(0 0 3px rgba(0,0,0,.75));}
+  /* filter:drop-shadow() TỪNG áp riêng cho mỗi <rect> ghế (.seat) — tới ~1218
+     ghế/suất, tức 1218 lần blur riêng biệt mỗi khi lớp #viewport cần vẽ lại.
+     Đây là nguyên nhân chính gây giật khi vuốt sơ đồ trên điện thoại (rõ hơn
+     sau khi tăng PAN_SENS vì vuốt cùng 1 đoạn tay giờ lộ ra nhiều vùng ghế mới
+     hơn mỗi khung hình). Gộp lại thành 1 filter DUY NHẤT ở group cha #allSeats
+     — cùng hiệu ứng bóng đổ nhìn gần như y hệt (ghế không chạm nhau nên mỗi
+     ghế vẫn tự có viền mờ riêng trong ảnh raster gộp), nhưng chỉ tốn 1 lần
+     blur/frame thay vì 1218 lần. Đánh đổi: mất riêng biệt màu bóng vàng của
+     ghế VIP (trước lẻ tẻ khác ghế thường) và hiệu ứng đậm bóng khi hover
+     (desktop, không ảnh hưởng mobile) — viền (stroke) hover vẫn giữ nguyên. */
+  #allSeats{filter:drop-shadow(0 0 1.8px rgba(0,0,0,.55));}
+  .seat{cursor:pointer;stroke:#000;stroke-width:1.2;}
+  .seat.vip-seat{stroke:#FFE3A1;stroke-width:1.2;}
+  .seat:hover{stroke:#1a1d22;stroke-width:2.4;}
   .seat.st-sold{fill:var(--seat-sold);cursor:not-allowed;stroke:rgba(0,0,0,.12);}
   .seat.st-held-other{fill:#e3e5e9;stroke:#9aa0aa;stroke-width:1.4;cursor:not-allowed;}
   .seat.st-selected{fill:var(--seat-mine);stroke:#1a1d22;stroke-width:2.2;}
@@ -1968,6 +1978,15 @@ document.getElementById('scBtn').addEventListener('click', () => {
    fallback bên dưới vẫn cho kéo/lăn bình thường.
    ========================================================= */
 const MIN_SCALE = 1, MAX_SCALE = 6, CLOSE_UP = 1.9;
+// Panzoom tính pan bằng pixel di chuyển thật của ngón tay/chuột chia cho scale,
+// KHÔNG biết gì về viewBoxK (tỉ lệ SVG hiển thị nhỏ hơn viewBox thật) — nên 1px
+// kéo thật chỉ đẩy khung nhìn đi viewBoxK px trên màn hình (viewBoxK < 1, càng
+// nhỏ trên điện thoại vì SVG hiển thị thu nhỏ nhiều), cảm giác kéo bị "ì". Bản
+// fallback bên dưới đã tự chia /viewBoxK để bù đúng 1:1, nhưng Panzoom (thư viện
+// ngoài) không có option sensitivity nào để làm vậy — nhân bù thủ công bằng
+// PAN_SENS (giữ scale/zoom nguyên, chỉ khuếch đại phần pan) qua setTransform +
+// đồng bộ lại ở pan()/setView() bên dưới để hit-test chọn ghế không bị lệch.
+const PAN_SENS = 3;
 let svgRect = null, viewBoxK = 1, offX = 0, offY = 0;
 let isCloseUp = false;
 
@@ -1987,17 +2006,28 @@ const zoomer = (function(){
   if (typeof Panzoom === 'function'){
     const pz = Panzoom(gViewport, {
       minScale: MIN_SCALE, maxScale: MAX_SCALE, step: .35,
-      cursor: 'grab', canvas: true, animate: false, duration: 220
+      cursor: 'grab', canvas: true, animate: false, duration: 220,
+      // Ghi đè cách áp transform mặc định (scale(s) translate(x,y)) để nhân
+      // riêng phần translate với PAN_SENS — scale giữ nguyên, không đụng zoom.
+      setTransform: (elem, { x, y, scale }) => {
+        elem.style.transform = 'scale(' + scale + ') translate(' + (x * PAN_SENS) + 'px, ' + (y * PAN_SENS) + 'px)';
+      }
     });
     mapStage.addEventListener('wheel', e => { pz.zoomWithWheel(e); }, { passive:false });
     gViewport.addEventListener('panzoomchange', onViewChange);
     return {
       scale: () => pz.getScale(),
-      pan:   () => pz.getPan(),
+      // pz.getPan() trả pan "gốc" (chưa nhân PAN_SENS) — nhân lại ở đây để
+      // khớp đúng với những gì đang thực sự hiển thị (setTransform ở trên),
+      // nếu không hit-test chọn ghế (svgToScreen/screenToLocal) sẽ bị lệch.
+      pan:   () => { const p = pz.getPan(); return { x: p.x * PAN_SENS, y: p.y * PAN_SENS }; },
       zoomIn:  () => pz.zoomIn({ animate:true }),
       zoomOut: () => pz.zoomOut({ animate:true }),
       reset:   () => pz.reset({ animate:true }),
-      setView: (s, x, y) => { pz.zoom(s, { animate:true }); pz.pan(x, y, { animate:true }); }
+      // x,y truyền vào đây là toạ độ pan MONG MUỐN sau khi hiển thị (vd canh
+      // giữa 1 ghế) — chia trước cho PAN_SENS để sau khi setTransform nhân lại
+      // thì ra đúng đúng vị trí, không bị lệch xa gấp PAN_SENS lần.
+      setView: (s, x, y) => { pz.zoom(s, { animate:true }); pz.pan(x / PAN_SENS, y / PAN_SENS, { animate:true }); }
     };
   }
 
