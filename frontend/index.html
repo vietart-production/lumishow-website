@@ -939,7 +939,7 @@
   // Đã mở hết tháng 10 (status Firestore đổi OPEN 2026-09-25) — nới đến hết
   // 31.10 để lộ đủ 5 cuối tuần tháng 10 trên lịch. SEASON_END bên dat-ve.html
   // phải khớp, xem CLAUDE.md. Tháng 11-12 vẫn CLOSED, chưa nới thêm.
-  const SEASON_END   = new Date(2026, 9, 31);
+  const SEASON_END   = new Date(2026, 8, 30); // KHẨN CẤP 2026-09-26: đóng hết booking + ẩn tháng 10 khỏi lịch, trả về mốc trước khi mở tháng 10 (tháng=8 tức 09 dương lịch, JS đếm tháng từ 0)
 
   // Giờ chiếu THỰC SỰ đang mở bán, theo TỪNG NGÀY cụ thể (isoDate -> mảng giờ) —
   // KHÔNG dùng quy luật chung theo thứ (SHOWTIMES_BY_DAY bên seedSeats.js liệt kê

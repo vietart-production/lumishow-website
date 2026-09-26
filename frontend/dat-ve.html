@@ -2863,7 +2863,7 @@ const SEASON_START = new Date(2026, 8, 25);
 // Đã mở hết tháng 10 (status Firestore đổi OPEN 2026-09-25) — nới đến hết
 // 31.10 để lộ đủ 5 cuối tuần tháng 10 trên lịch. SEASON_END bên index.html
 // phải khớp, xem CLAUDE.md. Tháng 11-12 vẫn CLOSED, chưa nới thêm.
-const SEASON_END   = new Date(2026, 9, 31);
+const SEASON_END   = new Date(2026, 8, 30); // KHẨN CẤP 2026-09-26: đóng hết booking + ẩn tháng 10 khỏi lịch, trả về mốc trước khi mở tháng 10 (tháng=8 tức 09 dương lịch, JS đếm tháng từ 0)
 /* Mỗi ngày trong tuần diễn có suất giờ riêng — Thứ 6 chỉ diễn 1 suất tối,
    Thứ 7 & Chủ nhật diễn 2 suất. Thứ tự khớp với DOWS (index 0=Thứ 6,
    1=Thứ 7, 2=Chủ nhật). */
