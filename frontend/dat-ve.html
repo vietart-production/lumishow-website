@@ -2964,11 +2964,25 @@ function findScheduleIndexByShowKey(showKey){
 
 function renderSchedule(){
   // Chỉ có 4 suất rải rác đang mở thật (xem OPEN_SHOWTIMES ở trên) — không
-  // vẽ day-track/time-row kiểu Thứ6-7-CN nữa (không khớp thực tế), chỉ hiện
-  // đúng 1 nhãn suất hiện tại + cho next/prev lướt qua danh sách OPEN_SHOWTIMES.
+  // còn nhóm theo Thứ6-7-CN nữa, nhưng vẫn vẽ day-track thành các "thẻ ngày"
+  // bấm chọn thẳng được (giống bản cũ), chỉ khác là liệt kê đủ 4 suất thay
+  // vì 3 ngày cố định trong tuần. timeRow để trống vì mỗi ngày hiện chỉ có
+  // đúng 1 khung giờ mở thật (không cần chọn thêm giờ).
   const info = OPEN_SHOWTIMES[openIndex];
   document.getElementById('weekLabel').textContent = MONTHS[info.m - 1] + ' · ' + info.y;
-  document.getElementById('dayTrack').textContent = '';
+
+  const track = document.getElementById('dayTrack');
+  track.textContent = '';
+  OPEN_SHOWTIMES.forEach((s, i) => {
+    const node = document.createElement('div');
+    node.className = 'day-node' + (i === openIndex ? ' active' : '');
+    node.innerHTML = '<span class="d-dow">' + DOWS[s.dow] + '</span>' +
+                     '<span class="d-dom">' + pad(s.d) + '</span>' +
+                     '<span class="d-moy">' + MONTHS[s.m - 1] + '</span>';
+    node.addEventListener('click', () => switchShow(() => { openIndex = i; }));
+    track.appendChild(node);
+  });
+
   document.getElementById('timeRow').textContent = '';
   document.getElementById('weekPrev').disabled = openIndex === 0;
   document.getElementById('weekNext').disabled = openIndex === OPEN_SHOWTIMES.length - 1;
