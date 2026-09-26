@@ -140,8 +140,8 @@
   .week-nav-btn:hover:not(:disabled){color:var(--bg);background:var(--white);}
   .week-nav-btn .icon{width:14px;height:14px;}
   .week-nav-btn:disabled{opacity:.3;pointer-events:none;}
-  .day-track{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-  .day-node{display:flex;flex-direction:column;align-items:center;padding:12px 4px 10px;border-radius:var(--r-md);border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s;}
+  .day-track{display:flex;justify-content:center;gap:8px;}
+  .day-node{flex:0 0 calc((100% - 16px)/3);display:flex;flex-direction:column;align-items:center;padding:12px 4px 10px;border-radius:var(--r-md);border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s;}
   .day-node:hover{border-color:var(--line-2);transform:translateY(-2px);}
   .day-node.active{border-color:transparent;box-shadow:0 0 0 1.5px var(--green),0 0 26px rgba(242,121,12,.22);}
   .day-node .d-dow{font-size:10.5px;letter-spacing:1.2px;color:var(--gray);text-transform:uppercase;font-weight:600;white-space:nowrap;}
