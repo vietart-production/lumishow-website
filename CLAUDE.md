@@ -4,59 +4,84 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-LumiShow is a ticketing website for a Vietnamese circus show ("Sơn Thần Thủy Quái" at Rạp Xiếc Trung Ương). It has two independent parts that are developed and run separately:
+LumiShow is a ticketing website for a Vietnamese circus show ("Sơn Thần Thủy Quái" at Rạp Xiếc Trung Ương). It has two independent parts that are developed and deployed separately:
 
-- `frontend/` — static, framework-free HTML/CSS/JS pages, no build step.
-- `backend/` — a Node/Express API backed by Firebase Firestore, handling seat inventory and holds.
+- `frontend/` — static, framework-free HTML/CSS/JS pages, no build step. Deployed as-is to Firebase Hosting (project `sonthanthuyquai-ticket`, see `firebase.json`/`.firebaserc`).
+- `backend/` — a Node/Express API backed by Firebase Firestore, handling seat inventory/holds, PayOS payments, ticket emails/QR, and a couple of PIN/API-key-gated ops endpoints (manual ticketing, partner order reconciliation). Deployed to Render; production URL is `https://lumishow-website.onrender.com` (hardcoded as `API_BASE_URL` in the frontend pages that call it).
 
-There is no root-level package.json tying the two together; each half has its own tooling (or none).
+There is no root-level package.json tying the two together; each half has its own tooling (or none). There's also a separate Unity app (`../SonThanThuyQuai_TicketManager`, outside this repo) used at the venue gate that talks to this backend's `/api/admin/*` endpoints and reads/writes Firestore `tickets` directly for check-in — see the `firestore.rules` note and the security-audit section below.
 
 ## Commands
 
 Backend (run from `backend/`):
 ```
-npm install         # install dependencies
-npm run dev          # start API server (node src/index.js, no watch/reload)
-npm run start        # same as dev
-npm run seed:seats   # seed one showtime's full seat map into Firestore (backend/scripts/seedSeats.js)
+npm install          # install dependencies
+npm run dev           # start API server (node src/index.js, no watch/reload)
+npm run start          # same as dev
+npm run seed:seats     # seed one showtime's full seat map into Firestore (backend/scripts/seedSeats.js)
+npm run seed:season    # same script as seed:seats (alias)
+npm run coupons        # backend/scripts/manageCoupons.js — create/inspect/deactivate discount coupons
 ```
-There is no lint or test script configured in `backend/package.json`.
+There is no lint or test script configured in `backend/package.json`. A handful of other one-off scripts are run directly with `node` (not wired into `package.json`) and are the standard way to do bulk/manual Firestore edits — see `backend/scripts/`:
+- `seatTiers.generate.js` — regenerates `backend/scripts/seatTiers.json`, the generated source-of-truth mapping every seat code to its pricing tier (used both by `seedSeats.js` when seeding new showtimes and, conceptually, mirrored by `tierOf()` in `frontend/dat-ve.html`). Never hand-edit `seatTiers.json`; edit the tier logic in this script and regenerate.
+- `blockStaffSeats.js`, `removeRetiredSeats.js` — batch seat-status maintenance scripts.
+- `reconcilePendingOrders.js` — manual/CLI entry point for the same reconciliation logic that also runs on a timer inside `index.js` (pass `--commit` to actually write; without it, it's a dry run).
+- One-off `tmp_*.js` scripts get written for ad-hoc bulk seat edits (e.g. blocking/unblocking a range) and deleted right after running — see the seat-tier/blocking history further down this file for the established pattern (always resolve real seat codes from `seatTiers.json`, never assume a contiguous numeric range exists; skip `SOLD`/`HELD` seats rather than overwriting them).
 
-Frontend: no build tooling. Pages are opened/served directly — the backend's CORS allowlist (`backend/src/index.js`) only permits origins `http://127.0.0.1:5500` and `http://localhost:5500`, so the frontend is expected to run via VS Code Live Server (or an equivalent static server on port 5500), not via `file://`.
+Frontend: no build tooling, two ways to run it:
+- **Local dev**: open pages via VS Code Live Server (or an equivalent static server on port 5500), not `file://`. The backend's CORS allowlist (`backend/src/index.js`) only opens `http://127.0.0.1:5500`/`http://localhost:5500` when `NODE_ENV !== "production"`. Every page's `API_BASE_URL` is hardcoded to the production Render URL by default — edit it locally (e.g. to `http://localhost:3000/api`) to point at a local backend instead.
+- **Deploy**: `firebase deploy --only hosting` publishes `frontend/` verbatim (`firebase.json`: `cleanUrls: true`, plus 301 redirects from the old PascalCase filenames — `GioiThieu.html`→`/gioi-thieu`, `LienHe.html`→`/lien-he`, `BookingTicket.html`→`/dat-ve` — to the current kebab-case ones). `firebase deploy --only firestore:rules,firestore:indexes` deploys `firestore.rules`/`firestore.indexes.json` separately.
 
-The backend requires two local files that are gitignored and not present by default:
-- `backend/.env` — at minimum `PORT`, `NODE_ENV`, `FRONTEND_URL`.
-- `backend/serviceAccountKey.json` — a Firebase service account key, loaded by `backend/src/config/firebase.js`.
+The backend requires local files that are gitignored and not present by default:
+- `backend/.env` — `PORT`, `NODE_ENV`, `FRONTEND_URL`, `ADMIN_PIN`, `PARTNER_API_KEY`, `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `CONTACT_TO_EMAIL`, `ORDER_NOTIFY_EMAIL`, `TECH_ALERT_EMAIL`, `RENDER_EXTERNAL_URL` (used to build absolute QR/email links; see local-ops memory note about it being missing locally).
+- `backend/serviceAccountKey.json` — a Firebase service account key, loaded by `backend/src/config/firebase.js` (or point `FIREBASE_SERVICE_ACCOUNT_FILE` at a different file, e.g. for a second/test project).
 
 ## Backend architecture
 
-Entry point `backend/src/index.js` wires up Express: CORS (strict allowlist, see above), `express.json()`, mounts all API routes under `/api` from `booking.routes.js`, and exposes `GET /health` which pings Firestore.
+Entry point `backend/src/index.js` wires up Express: `helmet()`, `trust proxy` (1 hop, for Render), a global `apiLimiter` (60 req/min/IP on all of `/api`, explicitly skipping `/api/payments/webhook` so PayOS bursts don't get 429'd), a strict CORS allowlist (`lumishow.vn`, `www.lumishow.vn`, `sonthanthuyquai-ticket.web.app`, plus the two `:5500` localhost origins outside production), `express.json()`, then mounts seven route modules under `/api`, a static `GET /health` (no Firestore ping — a prior version pinged Firestore per call and got rate-limited), and a final JSON error handler that never leaks stack traces. At the bottom, a `setInterval` runs `reconcilePendingOrders({ commit: true })` every 10 minutes as a standing safety net (see the "C6" note further down — the PayOS webhook isn't registered yet).
 
-Firestore data model (see `backend/src/services/booking.service.js` and `backend/scripts/seedSeats.js`):
-- `shows/{showId}/showtimes/{showtimeId}/seats/{seatCode}` — one doc per seat, with `status` (`AVAILABLE` | `HELD` | `SOLD`), `holdId`, `holdExpiresAt`, `tier`, `price`, etc. `seatCode` is `{rowLetter}{number}` (e.g. `B12`).
+Route module → service module map (each route file also carries its own `express-rate-limit` instance sized to how sensitive/expensive the endpoint is — e.g. `adminLimiter` and `couponLimiter` are much stricter than the general `apiLimiter`):
+- `booking.routes.js` → `booking.service.js` — seat states, hold create/status.
+- `payment.routes.js` → `payment.service.js` — PayOS order creation, webhook handler, status polling.
+- `ticket.routes.js` — `GET /api/tickets/:ticketCode/qr.png`, generates a QR PNG on the fly via the `qrcode` package (nothing stored/looked up); used instead of an embedded base64 image because mail clients strip those.
+- `contact.routes.js` → `email.service.js` — contact form → Resend email.
+- `admin.routes.js` → `admin.service.js` — `ADMIN_PIN`-gated (`requirePin` middleware): manual ticket create/cancel, showtime listing, order update/delete. Used by both the venue's Unity gate app and the admin tools on `frontend/partner-orders.html`.
+- `coupon.routes.js` → `coupon.service.js` — coupon validate (display-only, doesn't consume a use); the real atomic reserve/release happens inside `payment.service.js` at order-creation time.
+- `partner.routes.js` → `partner.service.js` — `PARTNER_API_KEY`-gated, read-only order listing with cursor pagination, for accounting/venue reconciliation.
+
+Firestore data model:
+- `shows/{showId}/showtimes/{showtimeId}` — has a `status` (`OPEN` | `CLOSED`); `createHold()` refuses to hold seats on a non-`OPEN` showtime.
+- `shows/{showId}/showtimes/{showtimeId}/seats/{seatCode}` — one doc per seat: `status` (`AVAILABLE` | `HELD` | `SOLD` | `BLOCKED`), `holdId`, `holdExpiresAt`, `tier`, `tierName`, `price`. `seatCode` is `{rowLetter}{number}` (e.g. `B12`). `BLOCKED` is a manually-set fourth status for seats withheld from sale (venue holdbacks) without misrepresenting them as `SOLD` in revenue reports.
 - `holds/{holdId}` — top-level collection, `status` (`ACTIVE` | `EXPIRED`), `seatIds`, `expiresAt`, `bookingSessionId`.
+- `orders/{orderId}` — one per checkout attempt: `orderStatus` (`PENDING_PAYMENT` | `PAID` | `CANCELLED` | `EXPIRED`), `paymentStatus`, `holdId`, customer contact info, coupon code, amount.
+- `tickets/{ticketId}` — created once an order is confirmed `PAID` (one per seat): `orderId`, `ticketCode`, `ticketStatus` (`valid` | `cancelled` | `conflict_needs_review`), `checkedIn`/`checkedInAt`. These last two are the only fields the Unity gate app can write directly (see `firestore.rules`, and the C1/C7 note below for why that's still a known gap).
+- `coupons/{code}` — `percentOff`, `usedCount`, etc.
 
 Seat holding is transactional and lazily expired, not cron-driven:
-- `createHold()` (booking.service.js) runs inside a single `db.runTransaction`: validates the showtime is `OPEN`, re-reads every requested seat to confirm it's still `AVAILABLE`, then atomically writes the hold doc and flips the seats to `HELD`.
+- `createHold()` (`booking.service.js`) runs inside a single `db.runTransaction`: validates the showtime is `OPEN`, re-reads every requested seat to confirm it's still `AVAILABLE`, then atomically writes the hold doc and flips the seats to `HELD`.
 - `cleanupExpiredHolds()` / `releaseExpiredHold()` walk `holds` where `status == ACTIVE && expiresAt <= now`, flip their seats back to `AVAILABLE`, and mark the hold `EXPIRED`. This is invoked at the top of both `getSeatStates()` and `createHold()` — there is no background job, expiry only happens as a side effect of the next read/write.
 - Booking limits live in `backend/src/config/booking.config.js` (`MAX_SEATS_PER_ORDER`, `HOLD_DURATION_MS`, `MAX_ACTIVE_HOLDS_PER_SESSION`) — change limits there, not inline.
 
-`backend/src/routes/payment.routes.js` and `backend/src/services/payment.service.js` currently exist but are empty — payment (via the `@payos/node` dependency, converting a hold into a `SOLD` seat) is not yet implemented. `helmet` and `express-rate-limit` are also dependencies not yet wired into `index.js`.
+Payment/pricing money flow, all server-truth: `createPaymentForHold()` (`payment.service.js`) re-reads the real Firestore `price` for every held seat (never trusts a client-submitted amount) and, if a coupon code is present, re-validates and re-reserves it from scratch (the earlier `/api/coupons/validate` call was display-only). The PayOS webhook handler (`handlePaymentWebhook`) is idempotent on `orderStatus`, flips seats `HELD → SOLD` and the order to `PAID` inside a transaction, then creates one `tickets` doc per seat and emails them out. Note the frontend's own `tierOf()` pricing logic in `dat-ve.html` is only for pre-hold display — `GET /api/.../seats` never returns `price`, so the charge is always computed here from Firestore, not from anything the client sent.
 
-`backend/scripts/seedSeats.js` is the source of truth for the venue layout: it hardcodes `SHOW_ID`, `SHOWTIME_ID`, the row list (`ROWS`, each with a seat count), and the row→pricing-tier mapping (`NEAR_ROWS` → "Sơn Thần", `MID_ROWS` → "Thủy Quái", rest → "Mị Nương"). It requires `../src/config/firebase` directly (run as a standalone script, not through the Express app) and writes seats in batches of 400. Any change to row layout/tiers here must stay in sync with the seat map building logic in `frontend/BookingTicket.html`, since seat codes must match exactly.
+`backend/scripts/seedSeats.js` is the source of truth for the venue layout when seeding a *new* showtime: it hardcodes `SHOW_ID`, `SHOWTIME_ID`, the row list (`ROWS`, each with a seat count), and reads per-seat tiers from `seatTiers.json` (generated by `seatTiers.generate.js`, see Commands above). It requires `../src/config/firebase` directly (run as a standalone script, not through the Express app) and writes seats in batches of 400. Any change to row layout/tiers must stay in sync with the seat-map building/pricing logic in `frontend/dat-ve.html`, since seat codes and tier boundaries must match exactly — see the seat-tier change history further down this file for how that's been done in practice.
 
 ## Frontend architecture
 
-Each page in `frontend/` (`index.html`, `GioiThieu.html`, `LienHe.html`, `BookingTicket.html`) is fully self-contained — inline `<style>` and `<script>`, no shared JS/CSS modules, no framework or bundler.
+`frontend/` (`index.html`, `gioi-thieu.html`, `lien-he.html`, `dat-ve.html`, `partner-orders.html`, `404.html`) — each page is fully self-contained: inline `<style>` and `<script>`, no shared JS/CSS modules, no framework or bundler. Filenames are kebab-case matching the Firebase Hosting clean URLs (the old PascalCase names 301-redirect, see Commands above). `partner-orders.html` isn't linked from site nav — it's an internal ops tool for partner order lookup plus (behind a second, `ADMIN_PIN`-gated unlock) admin edit/delete tools, see the dedicated section on it further down this file.
 
-`BookingTicket.html` is by far the largest page (~2300 lines) and does the real work of the app:
+`dat-ve.html` is by far the largest page (~3300 lines) and does the real work of the app:
 - It procedurally builds an interactive circular SVG seat map (rows B–P, odd/even sides mirrored) purely via `document.createElementNS` calls — no charting/SVG library.
-- `API_BASE_URL` is hardcoded to `http://localhost:3000/api`; `fetchSeatStates()` calls `GET /api/shows/:showId/showtimes/:showtimeId/seats` and maps backend seat `status` values (`AVAILABLE`/`HELD`/`SOLD`) onto frontend seat-state constants. Update this URL when pointing at a non-local backend.
+- `tierOf()` computes each seat's price tier/color client-side from hardcoded row/coordinate rules that must mirror `backend/scripts/seatTiers.generate.js` exactly (see the several seat-tier change entries further down this file for the established process, including the `TEST_MODE` flag used to visually QA tier changes against Live Server without touching production Firestore).
+- `API_BASE_URL` is hardcoded to the production Render URL; `fetchSeatStates()` calls `GET /api/shows/:showId/showtimes/:showtimeId/seats` and maps backend seat `status` values (`AVAILABLE`/`HELD`/`SOLD`/`BLOCKED`) onto frontend seat-state constants. Update this URL locally when pointing at a non-production backend.
 - Seat IDs used here must match the `{row}{number}` `seatCode` scheme produced by `backend/scripts/seedSeats.js`.
+- Only 3 showtimes' calendars are currently open for booking (see the season-closure section further down this file) — `SEASON_START`/`SEASON_END` here and in `index.html` are hardcoded and don't query Firestore, so they must be kept in sync with each showtime's Firestore `status` by hand.
 
 ## Conventions
 
 Comments, log messages, and user-facing strings throughout the codebase (both backend and frontend) are written in Vietnamese, consistent with the domain vocabulary already in use (e.g. `ghế` = seat, `giữ ghế` = hold seat, `suất diễn` = showtime, `hạng ghế` = seat tier). Match this when adding new code/comments in these files.
+
+There's no automated test suite — changes to seat/pricing logic are verified with disposable `backend/scripts/tmp_*.js` scripts (deleted right after running) and, on the frontend, manual walkthroughs via Live Server with `dat-ve.html`'s `TEST_MODE` flag flipped on locally (never committed on) before a change goes live. See the dated history sections below for the concrete precedent each time this codebase's pricing, seat-blocking, season, or security posture has changed — they carry context (what was tried, reverted, and why) that isn't recoverable from the code alone.
 
 ## Lỗ hổng bảo mật đã biết, HOÃN sửa (audit 2026-09-12)
 
@@ -91,6 +116,7 @@ Tháng 11-12 vẫn `CLOSED`, chưa đụng — theo yêu cầu user, mở **từ
 **Quy trình nên lặp lại cho các lần mở tháng/suất sau:**
 - Trước khi ghi Firestore, LUÔN xác minh script đang trỏ đúng project thật (đối chiếu 1 sự thật đã biết chắc trong Firestore — ví dụ số đơn/vé thật đã ghi lại ở CLAUDE.md, như 218 đơn "Rạp Xiếc Customer" ở mục "Bán buôn toàn bộ ghế Thủy Quái..." — KHÔNG tin suông biến `FIREBASE_SERVICE_ACCOUNT_FILE` trong `.env` local, vì từng có lúc bị trỏ tạm sang project test).
 - `SEASON_END` dựng lịch theo **khối tuần** (Thứ 6+7+CN liền nhau, xem hàm `runs` ở cả 2 file frontend) chứ không theo từng suất lẻ — nới `SEASON_END` sẽ lộ nguyên cả cuối tuần đó trên lịch, dù Firestore có thể chưa `OPEN` hết các suất trong cuối tuần đó. Nên chỉ nới `SEASON_END` đến đúng ranh giới đã thật sự mở hết ở Firestore, không nới trước để tránh lộ suất chưa sẵn sàng.
+- **Quy tắc rollout cho các thay đổi ghế/giá của tháng 10 (2026-09-26, user chốt):** bất kỳ sửa đổi nào lên dữ liệu ghế tháng 10 (đổi hạng/giá, khoá/mở range...) chỉ áp dụng thử lên **1 suất mốc `2026-10-02_*`** trước — KHÔNG áp cả tháng ngay. Đợi user xem/chốt "ok" trên suất mốc đó rồi mới lặp lại đúng thay đổi cho toàn bộ 23 suất tháng 10 còn lại. Áp dụng cho các phiên làm việc sau này khi có yêu cầu sửa sơ đồ ghế tháng 10.
 
 ## Khóa 1 phần ghế (không phải đóng cả suất) — trạng thái ghế `BLOCKED` (2026-09-16)
 
