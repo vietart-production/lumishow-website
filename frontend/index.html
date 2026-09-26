@@ -934,37 +934,55 @@
 
   langToggle?.addEventListener('click', () => setLang(currentLang === 'vi' ? 'en' : 'vi'));
 
-  // ============ LỊCH DIỄN — chỉ hiển thị các suất ĐANG MỞ THẬT (2026-09-26) ============
-  // Mùa diễn hiện KHÔNG còn liên tục (chỉ 4 suất rải rác đang OPEN thật
-  // trong Firestore) nên KHÔNG dùng SEASON_START/END + chuỗi tuần Thứ6-7-CN
-  // nữa — thay bằng danh sách suất mở thật, nhóm theo cặp cuối tuần (mỗi
-  // cặp = 1 "run" để nút prev/next tuần vẫn hoạt động y như cũ). PHẢI khớp
-  // tay với status OPEN thật + OPEN_SHOWTIMES bên frontend/dat-ve.html mỗi
-  // khi mở/khoá thêm suất khác. dow: 0=Thứ 6, 1=Thứ 7, 2=Chủ nhật (index vào
-  // dict.dows), dùng để hiển thị đúng nhãn thứ dù nhóm chỉ có 2 ngày (không
-  // có Thứ 6 trong cặp preview này).
-  const OPEN_PAIRS = [
-    [ { y: 2026, m: 10, d: 3,  dow: 1 }, { y: 2026, m: 10, d: 4,  dow: 2 } ], // 3-4/10, đều 16h30
-    [ { y: 2026, m: 10, d: 10, dow: 1 }, { y: 2026, m: 10, d: 11, dow: 2 } ]  // 10-11/10, đều 16h30
-  ];
+  // ============ LỊCH DIỄN — chọn chuỗi 3 ngày liên tục (Thứ 6 · Thứ 7 · Chủ nhật) ============
+  const SEASON_START = new Date(2026, 8, 25); // Thứ 6 đầu tiên: 25.09.2026
+  // Đã mở hết tháng 10 (status Firestore đổi OPEN 2026-09-25) — nới đến hết
+  // 31.10 để lộ đủ 5 cuối tuần tháng 10 trên lịch. SEASON_END bên dat-ve.html
+  // phải khớp, xem CLAUDE.md. Tháng 11-12 vẫn CLOSED, chưa nới thêm.
+  const SEASON_END   = new Date(2026, 8, 30); // KHẨN CẤP 2026-09-26: đóng hết booking + ẩn tháng 10 khỏi lịch, trả về mốc trước khi mở tháng 10 (tháng=8 tức 09 dương lịch, JS đếm tháng từ 0)
+
+  // Giờ chiếu THỰC SỰ đang mở bán, theo TỪNG NGÀY cụ thể (isoDate -> mảng giờ) —
+  // KHÔNG dùng quy luật chung theo thứ (SHOWTIMES_BY_DAY bên seedSeats.js liệt kê
+  // giờ chiếu MẶC ĐỊNH của mỗi thứ, nhưng không phải suất nào cũng đang mở). Đồng
+  // bộ với status OPEN thật trong Firestore — cập nhật tay ở đây khi mở/khoá thêm
+  // suất khác, cùng lúc với SEASON_END.
   const OPEN_TIMES_BY_DATE = {
-    '2026-10-03': ['16:30'],
-    '2026-10-04': ['16:30'],
-    '2026-10-10': ['16:30'],
-    '2026-10-11': ['16:30']
+    '2026-09-25': ['20:00'],
+    '2026-09-26': ['16:30'],
+    '2026-09-27': ['10:00'],
+    '2026-10-02': ['20:00'],
+    '2026-10-03': ['16:30', '20:00'],
+    '2026-10-04': ['10:00', '16:30'],
+    '2026-10-09': ['20:00'],
+    '2026-10-10': ['16:30', '20:00'],
+    '2026-10-11': ['10:00', '16:30'],
+    '2026-10-16': ['20:00'],
+    '2026-10-17': ['16:30', '20:00'],
+    '2026-10-18': ['10:00', '16:30'],
+    '2026-10-23': ['20:00'],
+    '2026-10-24': ['16:30', '20:00'],
+    '2026-10-25': ['10:00', '16:30'],
+    '2026-10-30': ['20:00'],
+    '2026-10-31': ['16:30', '20:00']
   };
 
   function fmt(d){ return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0'); }
   function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-  // Mỗi "run" giờ là 1 cặp ngày mở thật (info -> Date thật), không còn Thứ6+Thứ7+CN.
-  const runs = OPEN_PAIRS.map(pair => pair.map(info => new Date(info.y, info.m - 1, info.d)));
-  const dowByRunDay = OPEN_PAIRS.map(pair => pair.map(info => info.dow));
+  // Sinh danh sách các chuỗi 3 ngày (T6 + T7 + CN) trong suốt mùa diễn
+  const runs = [];
+  for (let d = new Date(SEASON_START); d <= SEASON_END; d.setDate(d.getDate() + 7)) {
+    const fri = new Date(d);
+    const sat = new Date(d); sat.setDate(sat.getDate() + 1);
+    const sun = new Date(d); sun.setDate(sun.getDate() + 2);
+    runs.push([fri, sat, sun]);
+  }
 
-  // Mặc định chọn cặp gần nhất, và trong cặp đó chọn suất gần thứ 2 (index 1)
-  // thay vì suất gần nhất — chốt 2026-09-26.
-  let runIndex = 0;
-  let selectedDay = Math.min(1, runs[0].length - 1);
+  // Tự động chọn chuỗi ngày gần nhất so với hôm nay
+  const today = new Date(); today.setHours(0,0,0,0);
+  let runIndex = runs.findIndex(r => r[2] >= today);
+  if (runIndex === -1) runIndex = 0;
+  let selectedDay = 1; // 0 = Thứ 6, 1 = Thứ 7, 2 = Chủ nhật — mặc định chọn Thứ 7
 
   const weekendTrack = document.getElementById('weekendTrack');
   const weekPrevBtn = document.getElementById('weekPrev');
@@ -978,7 +996,7 @@
 
     weekendTrack.innerHTML = run.map((date, i) => `
       <div class="weekend-node${i === selectedDay ? ' active' : ''}" data-day="${i}">
-        <span class="wd-dow">${dict.dows[dowByRunDay[runIndex][i]]}</span>
+        <span class="wd-dow">${dict.dows[i]}</span>
         <span class="wd-dom">${String(date.getDate()).padStart(2,'0')}</span>
         <span class="wd-moy">${dict.months[date.getMonth()]}</span>
         <span class="wd-time">${(OPEN_TIMES_BY_DATE[isoDate(date)] || []).join(' · ')}</span>
@@ -994,9 +1012,7 @@
 
     if (scheduleBookBtn) {
       scheduleBookBtn.innerHTML = `<span>${dict['sch.book']}</span> <svg class="icon"><use href="#ic-arrow-right"/></svg>`;
-      const chosenDate = run[selectedDay];
-      const chosenTime = (OPEN_TIMES_BY_DATE[isoDate(chosenDate)] || [])[0] || '';
-      scheduleBookBtn.href = `/dat-ve?suat=${isoDate(chosenDate)}_${chosenTime}`;
+      scheduleBookBtn.href = `/dat-ve?ngay=${isoDate(run[selectedDay])}`;
     }
 
     if (weekPrevBtn) weekPrevBtn.disabled = runIndex === 0;
@@ -1004,10 +1020,10 @@
   }
 
   weekPrevBtn?.addEventListener('click', () => {
-    if (runIndex > 0) { runIndex--; selectedDay = Math.min(1, runs[runIndex].length - 1); renderWeekend(); }
+    if (runIndex > 0) { runIndex--; selectedDay = 1; renderWeekend(); }
   });
   weekNextBtn?.addEventListener('click', () => {
-    if (runIndex < runs.length - 1) { runIndex++; selectedDay = Math.min(1, runs[runIndex].length - 1); renderWeekend(); }
+    if (runIndex < runs.length - 1) { runIndex++; selectedDay = 1; renderWeekend(); }
   });
 
   renderWeekend();
