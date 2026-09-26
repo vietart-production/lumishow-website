@@ -140,8 +140,8 @@
   .week-nav-btn:hover:not(:disabled){color:var(--bg);background:var(--white);}
   .week-nav-btn .icon{width:14px;height:14px;}
   .week-nav-btn:disabled{opacity:.3;pointer-events:none;}
-  .day-track{display:flex;justify-content:center;gap:8px;}
-  .day-node{flex:0 0 calc((100% - 16px)/3);display:flex;flex-direction:column;align-items:center;padding:12px 4px 10px;border-radius:var(--r-md);border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s;}
+  .day-track{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .day-node{display:flex;flex-direction:column;align-items:center;padding:12px 4px 10px;border-radius:var(--r-md);border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s;}
   .day-node:hover{border-color:var(--line-2);transform:translateY(-2px);}
   .day-node.active{border-color:transparent;box-shadow:0 0 0 1.5px var(--green),0 0 26px rgba(242,121,12,.22);}
   .day-node .d-dow{font-size:10.5px;letter-spacing:1.2px;color:var(--gray);text-transform:uppercase;font-weight:600;white-space:nowrap;}
@@ -1111,7 +1111,7 @@ const EXIT_SIDE_UPGRADE = {
   B:{odd:[35,51], even:[36,52]},   C:{odd:[41,61], even:[42,62]},
   D:{odd:[47,69], even:[48,70]},   E:{odd:[51,75], even:[42,80]},
   G:{odd:[53,87], even:[42,88]},   H:{odd:[47,93], even:[60,94]},
-  I:{odd:[41,65], even:[50,70]},   K:{odd:[51,93], even:[74,94]},
+  I:{odd:[41,65], even:[46,66]},   K:{odd:[51,93], even:[74,94]},
   L:{odd:[73,101],even:[82,104]},  M:{odd:[83,103],even:[86,106]}
 };
 
@@ -2893,46 +2893,9 @@ let runIndex = Math.max(0, runs.findIndex(r => r[2] >= today));
 let dayIndex = 0, timeIndex = 0;
 const pad = n => String(n).padStart(2,'0');
 
-/* =========================================================
-   12b. SUẤT DIỄN ĐANG MỞ THẬT (2026-09-26)
-   -----------------------------------------------------------
-   Mùa diễn hiện KHÔNG còn liên tục (chỉ 4 suất rải rác đang OPEN thật trong
-   Firestore, không phải trọn Thứ6+Thứ7+CN) nên lịch tuần 3-ngày phía trên
-   (SEASON_START/END + runs/SHOWTIMES_BY_DAY) tạm thời KHÔNG dùng để chọn
-   suất nữa — vẫn giữ nguyên code cũ bên dưới (renderSchedule/tryResumeHold
-   có nhánh fallback riêng) để dùng lại ngay khi mở liên tục cả mùa, khỏi
-   phải viết lại từ đầu.
-   Nhóm theo TUẦN (mỗi mảng con = các suất mở thật trong 1 tuần) để mỗi lần
-   xem chỉ hiện đúng các ngày của 1 tuần, không nhét chung nhiều tuần vào 1
-   dayTrack — next/prev chuyển giữa các tuần. PHẢI khớp tay với status OPEN
-   thật trong Firestore mỗi khi mở/khoá thêm suất khác — đồng bộ với
-   OPEN_PAIRS ở frontend/index.html. dow: index khớp DOWS (0=Thứ 6, 1=Thứ 7,
-   2=Chủ nhật) — chỉ để hiển thị nhãn. */
-const OPEN_SHOWTIME_GROUPS = [
-  [
-    { id: '2026-10-03_16:30', y: 2026, m: 10, d: 3, dow: 1 }, // Thứ 7
-    { id: '2026-10-04_16:30', y: 2026, m: 10, d: 4, dow: 2 }  // Chủ nhật
-  ],
-  [
-    { id: '2026-10-10_16:30', y: 2026, m: 10, d: 10, dow: 1 }, // Thứ 7
-    { id: '2026-10-11_16:30', y: 2026, m: 10, d: 11, dow: 2 }  // Chủ nhật
-  ]
-];
-let openRunIndex = 0;
-// Mặc định chọn suất gần thứ 2 trong tuần (index 1, không phải suất gần
-// nhất) — chốt 2026-09-26. Trang chủ có thể truyền thẳng ?suat= suất khác.
-let openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[0].length - 1);
-(function applyOpenShowtimeFromUrl(){
-  const suat = new URLSearchParams(location.search).get('suat');
-  if (!suat) return;
-  for (let g = 0; g < OPEN_SHOWTIME_GROUPS.length; g++){
-    const idx = OPEN_SHOWTIME_GROUPS[g].findIndex(s => s.id === suat);
-    if (idx !== -1){ openRunIndex = g; openDayIndex = idx; return; }
-  }
-})();
-
 function currentShowKey(){
-  return OPEN_SHOWTIME_GROUPS[openRunIndex][openDayIndex].id;
+  const d = runs[runIndex][dayIndex];
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + '_' + SHOWTIMES_BY_DAY[dayIndex][timeIndex];
 }
 
 /* Tìm vị trí lịch diễn (tuần + ngày) khớp với một mốc ngày YYYY-MM-DD,
@@ -2973,39 +2936,6 @@ function findScheduleIndexByShowKey(showKey){
 })();
 
 function renderSchedule(){
-  // Chỉ có 2 tuần đang mở thật (xem OPEN_SHOWTIME_GROUPS ở trên) — mỗi lần
-  // chỉ vẽ dayTrack với ĐÚNG các ngày của 1 tuần (openRunIndex), không nhét
-  // chung nhiều tuần vào 1 view. next/prev đổi tuần, bấm thẳng vào thẻ ngày
-  // đổi ngày trong cùng tuần. timeRow để trống vì mỗi ngày hiện chỉ có đúng
-  // 1 khung giờ mở thật (không cần chọn thêm giờ).
-  const group = OPEN_SHOWTIME_GROUPS[openRunIndex];
-  const info = group[openDayIndex];
-  document.getElementById('weekLabel').textContent = MONTHS[info.m - 1] + ' · ' + info.y;
-
-  const track = document.getElementById('dayTrack');
-  track.textContent = '';
-  group.forEach((s, i) => {
-    const node = document.createElement('div');
-    node.className = 'day-node' + (i === openDayIndex ? ' active' : '');
-    node.innerHTML = '<span class="d-dow">' + DOWS[s.dow] + '</span>' +
-                     '<span class="d-dom">' + pad(s.d) + '</span>' +
-                     '<span class="d-moy">' + MONTHS[s.m - 1] + '</span>';
-    node.addEventListener('click', () => switchShow(() => { openDayIndex = i; }));
-    track.appendChild(node);
-  });
-
-  document.getElementById('timeRow').textContent = '';
-  document.getElementById('weekPrev').disabled = openRunIndex === 0;
-  document.getElementById('weekNext').disabled = openRunIndex === OPEN_SHOWTIME_GROUPS.length - 1;
-  document.getElementById('showWhen').textContent =
-    DOWS[info.dow] + ', ' + pad(info.d) + '.' + pad(info.m) + '.' + info.y + ' · ' + fmtShowTime(info.id.split('_')[1]);
-}
-
-/* Bản lịch tuần liên tục (Thứ6+Thứ7+CN) cũ — TẠM BẤT HOẠT, không hàm nào gọi
-   tới (xem ghi chú ở khối OPEN_SHOWTIME_GROUPS phía trên). Giữ nguyên để dùng lại
-   ngay khi mở liên tục cả mùa, khỏi phải viết lại renderSchedule() từ đầu —
-   lúc đó đổi tên hàm này lại thành renderSchedule() và xoá bản mới ở trên. */
-function renderScheduleFullSeasonLegacy(){
   const run = runs[runIndex];
   document.getElementById('weekLabel').textContent = MONTHS[run[0].getMonth()] + ' · ' + run[0].getFullYear();
 
@@ -3063,13 +2993,9 @@ function switchShow(mutate){
 }
 
 document.getElementById('weekPrev').addEventListener('click',
-  () => { if (openRunIndex > 0) switchShow(() => {
-    openRunIndex--; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1);
-  }); });
+  () => { if (runIndex > 0) switchShow(() => { runIndex--; dayIndex = 0; timeIndex = 0; }); });
 document.getElementById('weekNext').addEventListener('click',
-  () => { if (openRunIndex < OPEN_SHOWTIME_GROUPS.length - 1) switchShow(() => {
-    openRunIndex++; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1);
-  }); });
+  () => { if (runIndex < runs.length - 1) switchShow(() => { runIndex++; dayIndex = 0; timeIndex = 0; }); });
 
 async function loadShow() {
   if (holdSession) {
@@ -3150,21 +3076,15 @@ async function tryResumeHold(){
     return false;
   }
 
-  let matchedOpenGroup = -1, matchedOpenDay = -1;
-  for (let g = 0; g < OPEN_SHOWTIME_GROUPS.length; g++){
-    const idx = OPEN_SHOWTIME_GROUPS[g].findIndex(s => s.id === saved.showKey);
-    if (idx !== -1){ matchedOpenGroup = g; matchedOpenDay = idx; break; }
-  }
-  if (matchedOpenGroup !== -1){
-    openRunIndex = matchedOpenGroup;
-    openDayIndex = matchedOpenDay;
-  } else {
-    // Không khớp suất nào đang mở thật (vd. suất đã bị khoá lại sau khi
-    // khách giữ ghế) — không có lịch tuần liên tục để khôi phục vào, coi
-    // như phiên hết hạn.
+  const idx = findScheduleIndexByShowKey(saved.showKey);
+  if (!idx){
     clearSavedOrder();
     return false;
   }
+
+  runIndex = idx.runIndex;
+  dayIndex = idx.dayIndex;
+  timeIndex = idx.timeIndex;
   renderSchedule();
 
   const showtimeId = currentShowKey();
