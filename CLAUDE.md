@@ -224,3 +224,23 @@ Bảo vệ bằng `PARTNER_API_KEY` — **key riêng, tách hẳn khỏi `ADMIN_
 **Công cụ Admin trên cùng trang (2026-09-16):** nút "🔒 Công cụ Admin" trên `partner-orders.html` mở khoá bằng **`ADMIN_PIN`** (PIN huỷ/tạo vé sẵn có, KHÔNG phải `PARTNER_API_KEY`) — gọi `POST /api/admin/verify-pin` để xác nhận trước khi vẽ thêm cột "Thao tác" (Sửa/Xoá) trên từng dòng. Sửa gọi `POST /api/admin/orders/update`, xoá gọi `POST /api/admin/orders/delete` (`deleteOrder()`/`updateOrderCustomerInfo()` trong `admin.service.js`) — cả hai đều dùng `requirePin` + `adminLimiter` có sẵn trong `admin.routes.js`, không phải endpoint mới tách riêng rate-limit. Xoá là xoá hẳn (order + ticket liên quan, trả ghế về AVAILABLE) — không hoàn tác được, khác với `cancelTicketBySeat()` (giữ dấu vết `ticketStatus="cancelled"`).
 
 Trang cũng có nút "Tải Excel (.xlsx)" — xuất file `.xlsx` thật (dùng thư viện SheetJS qua CDN `cdnjs.cloudflare.com/ajax/libs/xlsx`, không cần build tool) từ đúng danh sách `lastLoadedOrders` đang hiển thị sau khi lọc: header in đậm, đóng băng hàng đầu, autofilter, độ rộng cột tự tính theo nội dung dài nhất (min 10/max 45 ký tự), cột "Tiền" định dạng số có dấu phẩy ngăn nghìn (`#,##0`) thay vì chuỗi text (2026-09-16, thay cho bản CSV trước đó vì Excel hiển thị CSV xấu/cột hẹp).
+
+## Mở 4 suất diễn tháng 10 (đều 16h30) qua link riêng `?suat=`, KHÔNG lộ lịch tháng 10 (2026-09-26)
+
+Theo yêu cầu "khách đặt được vé của những suất đó và CHỈ những suất đó ở tháng 10, không có suất khác ở tháng 10" — đã mở đúng **4 suất, đều 16h30** (suất 20h00 dự kiến ban đầu cho 3/10 đã bỏ theo yêu cầu sau đó):
+
+- `2026-10-03_16:30` (Thứ 7), `2026-10-04_16:30` (Chủ nhật), `2026-10-10_16:30` (Thứ 7), `2026-10-11_16:30` (Chủ nhật)
+
+**Lớp Firestore:** mỗi suất đổi `status: "CLOSED"` → `"OPEN"` + khóa (`BLOCKED`) **453 ghế/suất** thuộc 2 hạng **VIP (vua-hung)** và **Mị Nương (mi-nuong)** (43 VIP + 410 Mị Nương, lọc từ `seatTiers.json`). Ghế Sơn Thần + Thủy Quái giữ `AVAILABLE`, mở bán bình thường. `blockNote` ghi rõ lý do — muốn mở lại VIP/Mị Nương sau thì đổi ngược `BLOCKED`→`AVAILABLE` đúng 453 mã ghế này mỗi suất. (`2026-10-03_20:00` đã được mở+khóa tương tự lúc đầu rồi **revert hoàn toàn** về `CLOSED`+`AVAILABLE` khi quyết định bỏ suất này — coi như chưa từng đụng.)
+
+**Lớp frontend — CƠ CHẾ MỚI, khác các lần mở suất trước:** **KHÔNG đụng `SEASON_END`** (vẫn giữ nguyên ẩn tháng 10 khỏi lịch tuần công khai ở cả `index.html` lẫn `dat-ve.html`, đúng mốc khẩn cấp 2026-09-26 phía trên) — vì nới `SEASON_END` sẽ lộ nguyên cả tuần chứa các ngày này (kể cả Thứ 6 2/10, 9/10 đang `CLOSED`), vi phạm yêu cầu "không suất nào khác ở tháng 10". Thay vào đó, `frontend/dat-ve.html` thêm cơ chế **"suất xem trước"** hoàn toàn mới:
+
+- `PREVIEW_SHOWTIMES` (object hardcode 4 showtimeId ở trên + thông tin ngày/thứ để hiển thị) và biến `previewShowKey`, set từ URL param **`?suat=YYYY-MM-DD_HH:MM`** nếu khớp whitelist (đọc lúc khởi tạo lịch, gần `SHOWTIMES_BY_DAY`).
+- `currentShowKey()` trả thẳng `previewShowKey` nếu có, bỏ qua `runs`/`SHOWTIMES_BY_DAY` — đây là nơi DUY NHẤT quyết định showtimeId thật sự gửi lên backend.
+- `renderSchedule()`: khi có `previewShowKey`, xoá trắng `dayTrack`/`timeRow` (không còn nút ngày/giờ nào để bấm sang suất khác), khóa `weekPrev`/`weekNext` (`disabled=true`), chỉ hiện đúng 1 dòng nhãn cố định (vd. "Chủ nhật, 04.10.2026 · 16H30"). Khách vào đúng link chỉ thấy 1 suất, không có đường điều hướng sang suất/ngày tháng 10 nào khác.
+- `tryResumeHold()` (khôi phục phiên giữ ghế sau reload): kiểm tra `saved.showKey` có trong `PREVIEW_SHOWTIMES` không TRƯỚC khi gọi `findScheduleIndexByShowKey()` (hàm này chỉ tìm trong `runs`, sẽ không thấy showKey preview và xoá nhầm phiên nếu không có nhánh riêng này).
+- Lý do chọn cách này thay vì nới `SEASON_END`: Chủ nhật (4/10, 11/10) theo `SHOWTIMES_BY_DAY` mặc định là 10:00 chứ không phải 16:30, và nới lịch tuần sẽ kéo theo lộ cả các ngày/suất khác trong cùng tuần — không thể đạt yêu cầu "chỉ đúng 4 suất này" nếu chỉ chỉnh `SEASON_END`.
+
+Đã tắt lại `TEST_MODE = false` (buộc phải tắt trước khi làm bước này — trước đó từng bật `true` cục bộ để test, suýt bị lẫn vào lúc thao tác). Chưa deploy — file đang ở trạng thái sẵn sàng deploy khi được yêu cầu.
+
+Script tạm dùng (đã xoá sau khi chạy theo đúng quy ước): `backend/scripts/tmp_openAndBlock202610.js`, `tmp_closeOct3_2000.js`, và các script audit `tmp_auditOpen202610.js`/`tmp_verifyProject.js`/`tmp_finalAudit.js`.
