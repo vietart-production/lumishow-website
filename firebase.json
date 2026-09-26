@@ -9,7 +9,8 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "preview-so-do-ghe.html"
     ],
     "redirects": [
       { "source": "/GioiThieu.html", "destination": "/gioi-thieu", "type": 301 },

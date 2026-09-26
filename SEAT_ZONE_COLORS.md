@@ -66,21 +66,21 @@ Mỗi màu là 1 trong 8 khu — chia theo: **Bên lẻ/chẵn** (trái/phải) 
 | P | 49–71 | 12 |
 
 ## 🔷 Xanh navy (dark blue) — Bên lẻ, Khu vực phía sau, nửa số lớn
-126 ghế
+115 ghế
 
 | Hàng | Range | Số lượng |
 |---|---|---|
-| B | 53–63 | 6 |
+| B | 53–61 | 5 |
 | C | 63–77 | 8 |
 | D | 71–87 | 9 |
 | E | 77–93 | 9 |
-| G | 89–105 | 9 |
+| G | 89–103 | 8 |
 | H | 95–107 | 7 |
 | I | 67–81 | 8 |
-| K | 95–115 | 11 |
-| L | 103–125 | 12 |
-| M | 105–127 | 12 |
-| N | 69–91 | 12 |
+| K | 95–109 | 8 |
+| L | 103–119 | 9 |
+| M | 105–123 | 10 |
+| N | 69–89 | 11 |
 | O | 69–89 | 11 |
 | P | 73–95 | 12 |
 
@@ -104,7 +104,7 @@ Mỗi màu là 1 trong 8 khu — chia theo: **Bên lẻ/chẵn** (trái/phải) 
 | P | 2–24 | 12 |
 
 ## ⚫ Xám (grey) — Bên chẵn, Khu vực phía trước, nửa số lớn
-158 ghế
+156 ghế
 
 | Hàng | Range | Số lượng |
 |---|---|---|
@@ -115,7 +115,7 @@ Mỗi màu là 1 trong 8 khu — chia theo: **Bên lẻ/chẵn** (trái/phải) 
 | G | 30–58 | 15 |
 | H | 32–62 | 16 |
 | I | 24–44 | 11 |
-| K | 24–48 | 13 |
+| K | 24–44 | 11 |
 | L | 26–48 | 12 |
 | M | 26–48 | 12 |
 | N | 26–48 | 12 |
@@ -123,7 +123,7 @@ Mỗi màu là 1 trong 8 khu — chia theo: **Bên lẻ/chẵn** (trái/phải) 
 | P | 26–42 | 9 |
 
 ## 🟡 Vàng (yellow) — Bên chẵn, Khu vực phía sau, nửa số lớn
-126 ghế
+114 ghế
 
 | Hàng | Range | Số lượng |
 |---|---|---|
@@ -133,12 +133,12 @@ Mỗi màu là 1 trong 8 khu — chia theo: **Bên lẻ/chẵn** (trái/phải) 
 | E | 82–98 | 9 |
 | G | 90–106 | 9 |
 | H | 96–108 | 7 |
-| I | 72–86 | 8 |
-| K | 96–116 | 11 |
-| L | 106–128 | 12 |
-| M | 108–130 | 12 |
-| N | 74–96 | 12 |
-| O | 72–92 | 11 |
+| I | 68–82 | 8 |
+| K | 96–110 | 8 |
+| L | 106–122 | 9 |
+| M | 108–124 | 9 |
+| N | 74–92 | 10 |
+| O | 72–90 | 10 |
 | P | 74–96 | 12 |
 
 ## 🔴 Đỏ (red) — Bên chẵn, Khu vực phía sau, nửa số nhỏ
@@ -152,7 +152,7 @@ Mỗi màu là 1 trong 8 khu — chia theo: **Bên lẻ/chẵn** (trái/phải) 
 | E | 54–80 | 14 |
 | G | 60–88 | 15 |
 | H | 64–94 | 16 |
-| I | 50–70 | 11 |
+| I | 46–66 | 11 |
 | K | 74–94 | 11 |
 | L | 82–104 | 12 |
 | M | 86–106 | 11 |
@@ -164,5 +164,5 @@ Mỗi màu là 1 trong 8 khu — chia theo: **Bên lẻ/chẵn** (trái/phải) 
 
 ## Lưu ý
 - Range hiển thị là min–max của dãy số **có thật** trong khu đó (chỉ toàn số lẻ hoặc toàn số chẵn tuỳ khu — không phải khoảng liên tục mọi số nguyên). Một số hàng có lỗ hổng số do kiến trúc thật (cửa thoát hiểm/WC) — khi cần danh sách đầy đủ từng mã ghế thật (không chỉ min/max) cho 1 khu cụ thể, hỏi lại để tôi xuất chi tiết.
-- Tổng 8 khu = 1175 ghế = đúng toàn bộ số ghế thường trong `SEAT_XY` — không sót/trùng ghế nào.
+- Tổng 8 khu = **1150 ghế** (đã cập nhật sau khi sửa khu Đỏ hàng I, khu Vàng, khu Navy, khu Xám hàng K — mất tổng 25 ghế so với 1175 gốc). Không sót/trùng ghế nào trong 8 khu.
 - Nếu sơ đồ ghế (`SEAT_XY`) thay đổi trong tương lai (thêm/bớt ghế, đổi toạ độ), file này cần làm lại từ ảnh mới, không tự động cập nhật theo code.
