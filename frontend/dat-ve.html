@@ -2863,7 +2863,7 @@ const SEASON_START = new Date(2026, 8, 25);
 // Đã mở hết tháng 10 (status Firestore đổi OPEN 2026-09-25) — nới đến hết
 // 31.10 để lộ đủ 5 cuối tuần tháng 10 trên lịch. SEASON_END bên index.html
 // phải khớp, xem CLAUDE.md. Tháng 11-12 vẫn CLOSED, chưa nới thêm.
-const SEASON_END   = new Date(2026, 8, 30); // Tháng 10 vẫn ẩn khỏi lịch tuần công khai — 4 suất preview mở riêng qua ?suat=, xem PREVIEW_SHOWTIMES + CLAUDE.md
+const SEASON_END   = new Date(2026, 8, 30); // Tháng 10 vẫn ẩn khỏi lịch tuần công khai — chọn suất thật đọc từ OPEN_SHOWTIMES, xem CLAUDE.md
 /* Mỗi ngày trong tuần diễn có suất giờ riêng — Thứ 6 chỉ diễn 1 suất tối,
    Thứ 7 & Chủ nhật diễn 2 suất. Thứ tự khớp với DOWS (index 0=Thứ 6,
    1=Thứ 7, 2=Chủ nhật). */
@@ -2894,29 +2894,35 @@ let dayIndex = 0, timeIndex = 0;
 const pad = n => String(n).padStart(2,'0');
 
 /* =========================================================
-   12b. SUẤT XEM TRƯỚC (preview) — mở riêng ngoài mùa diễn công khai
+   12b. SUẤT DIỄN ĐANG MỞ THẬT (2026-09-26)
    -----------------------------------------------------------
-   2026-09-26: mở 4 suất tháng 10 (đều 16h30) CHỈ qua link trực tiếp
-   ?suat=YYYY-MM-DD_HH:MM — KHÔNG đụng SEASON_END (tháng 10 vẫn ẩn khỏi lịch
-   tuần công khai), nên các ngày/suất tháng 10 khác (kể cả Thứ 6 2/10, 9/10)
-   không thể bị lộ ra qua lịch chọn tuần bình thường. dow: index khớp DOWS
-   (0=Thứ 6, 1=Thứ 7, 2=Chủ nhật) — CHỈ để hiển thị nhãn, không đụng runs. */
-const PREVIEW_SHOWTIMES = {
-  '2026-10-03_16:30': { y: 2026, m: 10, d: 3,  dow: 1 }, // Thứ 7
-  '2026-10-04_16:30': { y: 2026, m: 10, d: 4,  dow: 2 }, // Chủ nhật
-  '2026-10-10_16:30': { y: 2026, m: 10, d: 10, dow: 1 }, // Thứ 7
-  '2026-10-11_16:30': { y: 2026, m: 10, d: 11, dow: 2 }  // Chủ nhật
-};
-let previewShowKey = null;
-(function applyPreviewShowtimeFromUrl(){
+   Mùa diễn hiện KHÔNG còn liên tục (chỉ 4 suất rải rác đang OPEN thật trong
+   Firestore, không phải trọn Thứ6+Thứ7+CN) nên lịch tuần 3-ngày phía trên
+   (SEASON_START/END + runs/SHOWTIMES_BY_DAY) tạm thời KHÔNG dùng để chọn
+   suất nữa — vẫn giữ nguyên code cũ bên dưới (renderSchedule/tryResumeHold
+   có nhánh fallback riêng) để dùng lại ngay khi mở liên tục cả mùa, khỏi
+   phải viết lại từ đầu.
+   Danh sách dưới đây PHẢI khớp tay với status OPEN thật trong Firestore mỗi
+   khi mở/khoá thêm suất khác — đồng bộ với OPEN_PAIRS ở frontend/index.html.
+   Sắp xếp theo thời gian tăng dần (dùng cho next/prev). dow: index khớp
+   DOWS (0=Thứ 6, 1=Thứ 7, 2=Chủ nhật) — chỉ để hiển thị nhãn. */
+const OPEN_SHOWTIMES = [
+  { id: '2026-10-03_16:30', y: 2026, m: 10, d: 3,  dow: 1 }, // Thứ 7
+  { id: '2026-10-04_16:30', y: 2026, m: 10, d: 4,  dow: 2 }, // Chủ nhật
+  { id: '2026-10-10_16:30', y: 2026, m: 10, d: 10, dow: 1 }, // Thứ 7
+  { id: '2026-10-11_16:30', y: 2026, m: 10, d: 11, dow: 2 }  // Chủ nhật
+];
+// Mặc định chọn suất gần thứ 2 (index 1, không phải suất gần nhất) — chốt
+// 2026-09-26. Trang chủ có thể truyền thẳng ?suat= một suất cụ thể khác.
+let openIndex = Math.min(1, OPEN_SHOWTIMES.length - 1);
+(function applyOpenShowtimeFromUrl(){
   const suat = new URLSearchParams(location.search).get('suat');
-  if (suat && PREVIEW_SHOWTIMES[suat]) previewShowKey = suat;
+  const idx = OPEN_SHOWTIMES.findIndex(s => s.id === suat);
+  if (idx !== -1) openIndex = idx;
 })();
 
 function currentShowKey(){
-  if (previewShowKey) return previewShowKey;
-  const d = runs[runIndex][dayIndex];
-  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + '_' + SHOWTIMES_BY_DAY[dayIndex][timeIndex];
+  return OPEN_SHOWTIMES[openIndex].id;
 }
 
 /* Tìm vị trí lịch diễn (tuần + ngày) khớp với một mốc ngày YYYY-MM-DD,
@@ -2957,21 +2963,24 @@ function findScheduleIndexByShowKey(showKey){
 })();
 
 function renderSchedule(){
-  // Chế độ xem trước (?suat=...): khóa cứng lịch về đúng 1 suất, không cho
-  // điều hướng sang ngày/giờ/tuần khác — tránh lộ suất/ngày tháng 10 nào
-  // khác ngoài whitelist PREVIEW_SHOWTIMES.
-  if (previewShowKey){
-    const info = PREVIEW_SHOWTIMES[previewShowKey];
-    document.getElementById('weekLabel').textContent = MONTHS[info.m - 1] + ' · ' + info.y;
-    document.getElementById('dayTrack').textContent = '';
-    document.getElementById('timeRow').textContent = '';
-    document.getElementById('weekPrev').disabled = true;
-    document.getElementById('weekNext').disabled = true;
-    document.getElementById('showWhen').textContent =
-      DOWS[info.dow] + ', ' + pad(info.d) + '.' + pad(info.m) + '.' + info.y + ' · ' + fmtShowTime(previewShowKey.split('_')[1]);
-    return;
-  }
+  // Chỉ có 4 suất rải rác đang mở thật (xem OPEN_SHOWTIMES ở trên) — không
+  // vẽ day-track/time-row kiểu Thứ6-7-CN nữa (không khớp thực tế), chỉ hiện
+  // đúng 1 nhãn suất hiện tại + cho next/prev lướt qua danh sách OPEN_SHOWTIMES.
+  const info = OPEN_SHOWTIMES[openIndex];
+  document.getElementById('weekLabel').textContent = MONTHS[info.m - 1] + ' · ' + info.y;
+  document.getElementById('dayTrack').textContent = '';
+  document.getElementById('timeRow').textContent = '';
+  document.getElementById('weekPrev').disabled = openIndex === 0;
+  document.getElementById('weekNext').disabled = openIndex === OPEN_SHOWTIMES.length - 1;
+  document.getElementById('showWhen').textContent =
+    DOWS[info.dow] + ', ' + pad(info.d) + '.' + pad(info.m) + '.' + info.y + ' · ' + fmtShowTime(info.id.split('_')[1]);
+}
 
+/* Bản lịch tuần liên tục (Thứ6+Thứ7+CN) cũ — TẠM BẤT HOẠT, không hàm nào gọi
+   tới (xem ghi chú ở khối OPEN_SHOWTIMES phía trên). Giữ nguyên để dùng lại
+   ngay khi mở liên tục cả mùa, khỏi phải viết lại renderSchedule() từ đầu —
+   lúc đó đổi tên hàm này lại thành renderSchedule() và xoá bản mới ở trên. */
+function renderScheduleFullSeasonLegacy(){
   const run = runs[runIndex];
   document.getElementById('weekLabel').textContent = MONTHS[run[0].getMonth()] + ' · ' + run[0].getFullYear();
 
@@ -3029,9 +3038,9 @@ function switchShow(mutate){
 }
 
 document.getElementById('weekPrev').addEventListener('click',
-  () => { if (runIndex > 0) switchShow(() => { runIndex--; dayIndex = 0; timeIndex = 0; }); });
+  () => { if (openIndex > 0) switchShow(() => { openIndex--; }); });
 document.getElementById('weekNext').addEventListener('click',
-  () => { if (runIndex < runs.length - 1) switchShow(() => { runIndex++; dayIndex = 0; timeIndex = 0; }); });
+  () => { if (openIndex < OPEN_SHOWTIMES.length - 1) switchShow(() => { openIndex++; }); });
 
 async function loadShow() {
   if (holdSession) {
@@ -3112,20 +3121,15 @@ async function tryResumeHold(){
     return false;
   }
 
-  if (PREVIEW_SHOWTIMES[saved.showKey]){
-    // Phiên giữ ghế thuộc suất xem trước — không nằm trong runs bình thường,
-    // khôi phục trực tiếp qua previewShowKey thay vì tìm trong lịch tuần.
-    previewShowKey = saved.showKey;
+  const savedOpenIdx = OPEN_SHOWTIMES.findIndex(s => s.id === saved.showKey);
+  if (savedOpenIdx !== -1){
+    openIndex = savedOpenIdx;
   } else {
-    const idx = findScheduleIndexByShowKey(saved.showKey);
-    if (!idx){
-      clearSavedOrder();
-      return false;
-    }
-
-    runIndex = idx.runIndex;
-    dayIndex = idx.dayIndex;
-    timeIndex = idx.timeIndex;
+    // Không khớp suất nào đang mở thật (vd. suất đã bị khoá lại sau khi
+    // khách giữ ghế) — không có lịch tuần liên tục để khôi phục vào, coi
+    // như phiên hết hạn.
+    clearSavedOrder();
+    return false;
   }
   renderSchedule();
 
