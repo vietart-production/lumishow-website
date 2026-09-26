@@ -140,8 +140,8 @@
   .week-nav-btn:hover:not(:disabled){color:var(--bg);background:var(--white);}
   .week-nav-btn .icon{width:14px;height:14px;}
   .week-nav-btn:disabled{opacity:.3;pointer-events:none;}
-  .day-track{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-  .day-node{display:flex;flex-direction:column;align-items:center;padding:12px 4px 10px;border-radius:var(--r-md);border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s;}
+  .day-track{display:flex;justify-content:center;gap:8px;}
+  .day-node{flex:0 0 calc((100% - 16px)/3);display:flex;flex-direction:column;align-items:center;padding:12px 4px 10px;border-radius:var(--r-md);border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .25s,box-shadow .25s,transform .25s;}
   .day-node:hover{border-color:var(--line-2);transform:translateY(-2px);}
   .day-node.active{border-color:transparent;box-shadow:0 0 0 1.5px var(--green),0 0 26px rgba(242,121,12,.22);}
   .day-node .d-dow{font-size:10.5px;letter-spacing:1.2px;color:var(--gray);text-transform:uppercase;font-weight:600;white-space:nowrap;}
@@ -2893,9 +2893,31 @@ let runIndex = Math.max(0, runs.findIndex(r => r[2] >= today));
 let dayIndex = 0, timeIndex = 0;
 const pad = n => String(n).padStart(2,'0');
 
+// TẠM MỞ LOCAL ĐỂ TEST (2026-09-26) — KHÔNG commit/push/deploy. Xem CLAUDE.md
+// mục "Mở 4 suất tháng 10..." để biết cơ chế đầy đủ khi cần deploy thật lại.
+const OPEN_SHOWTIME_GROUPS = [
+  [
+    { id: '2026-10-03_16:30', y: 2026, m: 10, d: 3, dow: 1 },
+    { id: '2026-10-04_16:30', y: 2026, m: 10, d: 4, dow: 2 }
+  ],
+  [
+    { id: '2026-10-10_16:30', y: 2026, m: 10, d: 10, dow: 1 },
+    { id: '2026-10-11_16:30', y: 2026, m: 10, d: 11, dow: 2 }
+  ]
+];
+let openRunIndex = 0;
+let openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[0].length - 1);
+(function applyOpenShowtimeFromUrl(){
+  const suat = new URLSearchParams(location.search).get('suat');
+  if (!suat) return;
+  for (let g = 0; g < OPEN_SHOWTIME_GROUPS.length; g++){
+    const idx = OPEN_SHOWTIME_GROUPS[g].findIndex(s => s.id === suat);
+    if (idx !== -1){ openRunIndex = g; openDayIndex = idx; return; }
+  }
+})();
+
 function currentShowKey(){
-  const d = runs[runIndex][dayIndex];
-  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + '_' + SHOWTIMES_BY_DAY[dayIndex][timeIndex];
+  return OPEN_SHOWTIME_GROUPS[openRunIndex][openDayIndex].id;
 }
 
 /* Tìm vị trí lịch diễn (tuần + ngày) khớp với một mốc ngày YYYY-MM-DD,
@@ -2936,40 +2958,27 @@ function findScheduleIndexByShowKey(showKey){
 })();
 
 function renderSchedule(){
-  const run = runs[runIndex];
-  document.getElementById('weekLabel').textContent = MONTHS[run[0].getMonth()] + ' · ' + run[0].getFullYear();
+  const group = OPEN_SHOWTIME_GROUPS[openRunIndex];
+  const info = group[openDayIndex];
+  document.getElementById('weekLabel').textContent = MONTHS[info.m - 1] + ' · ' + info.y;
 
   const track = document.getElementById('dayTrack');
   track.textContent = '';
-  run.forEach((date, i) => {
+  group.forEach((s, i) => {
     const node = document.createElement('div');
-    node.className = 'day-node' + (i === dayIndex ? ' active' : '');
-    node.innerHTML = '<span class="d-dow">' + DOWS[i] + '</span>' +
-                     '<span class="d-dom">' + pad(date.getDate()) + '</span>' +
-                     '<span class="d-moy">' + MONTHS[date.getMonth()] + '</span>';
-    // Đổi ngày thì suất giờ của ngày cũ có thể không tồn tại ở ngày mới
-    // (vd. đang xem suất 20:00 của Thứ 7, bấm sang Thứ 6 chỉ có 1 suất
-    // 20:00 ở index 0) — luôn về suất đầu tiên của ngày vừa chọn.
-    node.addEventListener('click', () => switchShow(() => { dayIndex = i; timeIndex = 0; }));
+    node.className = 'day-node' + (i === openDayIndex ? ' active' : '');
+    node.innerHTML = '<span class="d-dow">' + DOWS[s.dow] + '</span>' +
+                     '<span class="d-dom">' + pad(s.d) + '</span>' +
+                     '<span class="d-moy">' + MONTHS[s.m - 1] + '</span>';
+    node.addEventListener('click', () => switchShow(() => { openDayIndex = i; }));
     track.appendChild(node);
   });
 
-  const timeRow = document.getElementById('timeRow');
-  timeRow.textContent = '';
-  SHOWTIMES_BY_DAY[dayIndex].forEach((t, i) => {
-    const b = document.createElement('button');
-    b.className = 'time-btn' + (i === timeIndex ? ' active' : '');
-    b.textContent = fmtShowTime(t);
-    b.addEventListener('click', () => switchShow(() => { timeIndex = i; }));
-    timeRow.appendChild(b);
-  });
-
-  document.getElementById('weekPrev').disabled = runIndex === 0;
-  document.getElementById('weekNext').disabled = runIndex === runs.length - 1;
-
-  const d = run[dayIndex];
+  document.getElementById('timeRow').textContent = '';
+  document.getElementById('weekPrev').disabled = openRunIndex === 0;
+  document.getElementById('weekNext').disabled = openRunIndex === OPEN_SHOWTIME_GROUPS.length - 1;
   document.getElementById('showWhen').textContent =
-    DOWS[dayIndex] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' · ' + fmtShowTime(SHOWTIMES_BY_DAY[dayIndex][timeIndex]);
+    DOWS[info.dow] + ', ' + pad(info.d) + '.' + pad(info.m) + '.' + info.y + ' · ' + fmtShowTime(info.id.split('_')[1]);
 }
 
 /* Đổi suất: nếu đang có ghế chọn thì hỏi trước, tránh mất công chọn lại */
@@ -2993,9 +3002,13 @@ function switchShow(mutate){
 }
 
 document.getElementById('weekPrev').addEventListener('click',
-  () => { if (runIndex > 0) switchShow(() => { runIndex--; dayIndex = 0; timeIndex = 0; }); });
+  () => { if (openRunIndex > 0) switchShow(() => {
+    openRunIndex--; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1);
+  }); });
 document.getElementById('weekNext').addEventListener('click',
-  () => { if (runIndex < runs.length - 1) switchShow(() => { runIndex++; dayIndex = 0; timeIndex = 0; }); });
+  () => { if (openRunIndex < OPEN_SHOWTIME_GROUPS.length - 1) switchShow(() => {
+    openRunIndex++; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1);
+  }); });
 
 async function loadShow() {
   if (holdSession) {
@@ -3076,15 +3089,18 @@ async function tryResumeHold(){
     return false;
   }
 
-  const idx = findScheduleIndexByShowKey(saved.showKey);
-  if (!idx){
+  let matchedOpenGroup = -1, matchedOpenDay = -1;
+  for (let g = 0; g < OPEN_SHOWTIME_GROUPS.length; g++){
+    const idx = OPEN_SHOWTIME_GROUPS[g].findIndex(s => s.id === saved.showKey);
+    if (idx !== -1){ matchedOpenGroup = g; matchedOpenDay = idx; break; }
+  }
+  if (matchedOpenGroup !== -1){
+    openRunIndex = matchedOpenGroup;
+    openDayIndex = matchedOpenDay;
+  } else {
     clearSavedOrder();
     return false;
   }
-
-  runIndex = idx.runIndex;
-  dayIndex = idx.dayIndex;
-  timeIndex = idx.timeIndex;
   renderSchedule();
 
   const showtimeId = currentShowKey();
