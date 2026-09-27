@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiShow — Quản lý tin tức</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#08100c; --panel:#111a14; --panel2:#0d1310; --border:rgba(255,255,255,.1);
+    --text:#e8eee9; --dim:#8fa196; --green:#3ddc84; --red:#ef6b68; --gold:#fbbb21;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:28px 24px 60px;}
+  h1{font-size:20px;font-weight:700;margin:0 0 4px;color:var(--gold);}
+  .sub{color:var(--dim);font-size:13px;margin:0 0 22px;}
+  h2{font-size:15px;margin:0 0 14px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+  label{display:block;font-size:12px;color:var(--dim);margin:12px 0 5px;}
+  label:first-child{margin-top:0;}
+  input[type=text],input[type=url],input[type=date],textarea,select{
+    width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--border);
+    background:var(--panel2);color:var(--text);font-size:13.5px;font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:56px;}
+  .hint{color:var(--dim);font-size:11.5px;margin-top:4px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .radio-row{display:flex;gap:16px;align-items:center;font-size:13px;}
+  .radio-row label{display:inline-flex;align-items:center;gap:6px;margin:0;color:var(--text);}
+  button{font-family:inherit;cursor:pointer;}
+  #submitBtn{margin-top:18px;padding:10px 20px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:13.5px;}
+  #submitBtn:hover{opacity:.9;}
+  #formErr{color:var(--red);font-size:12.5px;min-height:18px;margin-top:10px;}
+  #formOk{color:var(--green);font-size:12.5px;min-height:18px;margin-top:10px;}
+
+  .news-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .news-item:last-child{border-bottom:none;}
+  .news-item img{width:96px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#000;}
+  .news-item .ni-body{flex:1;min-width:0;}
+  .news-item .ni-title{font-size:13.5px;font-weight:700;margin-bottom:3px;}
+  .news-item .ni-meta{font-size:11.5px;color:var(--dim);}
+  .news-item .ni-meta a{color:var(--dim);}
+  .news-item button{padding:6px 12px;border-radius:7px;border:1px solid rgba(239,107,104,.4);background:none;color:var(--red);font-size:11.5px;flex-shrink:0;}
+  .news-item button:hover{background:rgba(239,107,104,.1);}
+  .empty-hint{color:var(--dim);font-size:13px;}
+  [hidden]{display:none!important;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Quản lý tin tức</h1>
+  <p class="sub">Tạo/xoá tin cho mục "TIN TỨC" ở trang chủ. Ảnh minh hoạ phải được đặt sẵn vào <code>frontend/image/News/</code> (deploy frontend) trước khi nhập tên file ở đây — trang này không tải ảnh lên.</p>
+
+  <div class="card">
+    <h2>Thêm tin mới</h2>
+
+    <label>Loại nội dung</label>
+    <div class="radio-row">
+      <label><input type="radio" name="kind" value="img" checked> Ảnh</label>
+      <label><input type="radio" name="kind" value="youtube"> Video YouTube</label>
+    </div>
+
+    <div id="imgFields">
+      <label>Tên file ảnh trong frontend/image/News/</label>
+      <input type="text" id="imgFile" placeholder="news3.jpg">
+      <p class="hint">File phải đã tồn tại trên server (đặt vào thư mục rồi deploy hosting) trước khi lưu.</p>
+      <label>Vị trí crop ảnh (tuỳ chọn, CSS object-position)</label>
+      <input type="text" id="imgPosition" placeholder="center 67% (để trống nếu không cần)">
+    </div>
+    <div id="ytFields" hidden>
+      <label>Mã video YouTube (phần sau youtube.com/watch?v=)</label>
+      <input type="text" id="youtubeId" placeholder="Xo8B3rfir-k">
+    </div>
+
+    <label>Link bài viết / video gốc</label>
+    <input type="url" id="href" placeholder="https://...">
+
+    <div class="row2">
+      <div>
+        <label>Tổ chức / nguồn tin</label>
+        <input type="text" id="org" placeholder="Dân trí">
+      </div>
+      <div>
+        <label>Ngày đăng</label>
+        <input type="date" id="publishedAt">
+      </div>
+    </div>
+
+    <label>Tiêu đề (tiếng Việt)</label>
+    <input type="text" id="titleVi" placeholder="Tiêu đề bài viết...">
+    <label>Tiêu đề (tiếng Anh, tuỳ chọn — để trống sẽ dùng lại tiếng Việt)</label>
+    <input type="text" id="titleEn" placeholder="">
+
+    <label>Nội dung tóm tắt (tiếng Việt)</label>
+    <textarea id="descVi" placeholder="Tóm tắt nội dung..."></textarea>
+    <label>Nội dung tóm tắt (tiếng Anh, tuỳ chọn)</label>
+    <textarea id="descEn" placeholder=""></textarea>
+
+    <button type="button" id="submitBtn">Tạo tin tức</button>
+    <div id="formErr"></div>
+    <div id="formOk"></div>
+  </div>
+
+  <div class="card">
+    <h2>Tin hiện có</h2>
+    <div id="newsList"><div class="empty-hint">Đang tải...</div></div>
+  </div>
+</div>
+
+<script>
+const API = "https://lumishow-website.onrender.com/api";
+
+let pin = sessionStorage.getItem("lumishow-admin-pin") || prompt("Nhập PIN admin");
+
+async function callAdmin(path, body){
+  const res = await fetch(`${API}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...(body || {}), password: pin })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Thao tác thất bại");
+  return data;
+}
+
+async function ensurePin(){
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await callAdmin("/admin/verify-pin", {});
+      sessionStorage.setItem("lumishow-admin-pin", pin);
+      return;
+    } catch (e) {
+      pin = prompt("Sai PIN admin, nhập lại:");
+      if (!pin) break;
+    }
+  }
+  document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#e8eee9;font-family:sans-serif">Cần đúng PIN admin để dùng trang này.</div>';
+  throw new Error("Không có PIN hợp lệ");
+}
+
+document.querySelectorAll('input[name="kind"]').forEach(r => {
+  r.addEventListener("change", () => {
+    const isImg = document.querySelector('input[name="kind"]:checked').value === "img";
+    document.getElementById("imgFields").hidden = !isImg;
+    document.getElementById("ytFields").hidden = isImg;
+  });
+});
+
+document.getElementById("publishedAt").valueAsDate = new Date();
+
+function escapeHtml(s){ return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+async function loadNewsList(){
+  const listEl = document.getElementById("newsList");
+  try {
+    const res = await fetch(`${API}/news`);
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Không tải được danh sách tin");
+    if (data.news.length === 0) { listEl.innerHTML = '<div class="empty-hint">Chưa có tin nào.</div>'; return; }
+    listEl.innerHTML = data.news.map(n => {
+      const thumb = n.img ? n.img : (n.youtubeId ? `https://img.youtube.com/vi/${n.youtubeId}/hqdefault.jpg` : "");
+      const dateLabel = n.publishedAt ? new Date(n.publishedAt).toLocaleDateString("vi-VN") : "";
+      return `<div class="news-item" data-id="${n.id}">
+        ${thumb ? `<img src="${thumb}" alt="">` : ""}
+        <div class="ni-body">
+          <div class="ni-title">${escapeHtml(n.title?.vi || "")}</div>
+          <div class="ni-meta">${escapeHtml(n.org || "")} · ${dateLabel} · <a href="${n.href}" target="_blank" rel="noopener">link gốc</a></div>
+        </div>
+        <button type="button" class="del-btn" data-id="${n.id}">Xoá</button>
+      </div>`;
+    }).join("");
+  } catch (e) {
+    listEl.innerHTML = `<div class="empty-hint">Lỗi tải danh sách: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+document.getElementById("newsList").addEventListener("click", async (e) => {
+  const btn = e.target.closest(".del-btn");
+  if (!btn) return;
+  if (!confirm("Xoá hẳn tin này khỏi trang chủ? Không hoàn tác được.")) return;
+  try {
+    await callAdmin("/admin/news/delete", { newsId: btn.dataset.id });
+    await loadNewsList();
+  } catch (err) { alert(err.message); }
+});
+
+document.getElementById("submitBtn").addEventListener("click", async () => {
+  const formErr = document.getElementById("formErr");
+  const formOk = document.getElementById("formOk");
+  formErr.textContent = "";
+  formOk.textContent = "";
+
+  const isImg = document.querySelector('input[name="kind"]:checked').value === "img";
+  const imgFile = document.getElementById("imgFile").value.trim();
+  const imgPosition = document.getElementById("imgPosition").value.trim();
+  const youtubeId = document.getElementById("youtubeId").value.trim();
+  const href = document.getElementById("href").value.trim();
+  const org = document.getElementById("org").value.trim();
+  const publishedAt = document.getElementById("publishedAt").value;
+  const titleVi = document.getElementById("titleVi").value.trim();
+  const titleEn = document.getElementById("titleEn").value.trim();
+  const descVi = document.getElementById("descVi").value.trim();
+  const descEn = document.getElementById("descEn").value.trim();
+
+  const body = {
+    href, org, publishedAt,
+    title: { vi: titleVi, en: titleEn || undefined },
+    desc: { vi: descVi, en: descEn || undefined }
+  };
+  if (isImg) {
+    body.img = imgFile ? `image/News/${imgFile}` : undefined;
+    body.imgPosition = imgPosition || undefined;
+  } else {
+    body.youtubeId = youtubeId || undefined;
+  }
+
+  try {
+    await callAdmin("/admin/news/create", body);
+    formOk.textContent = "Đã tạo tin tức mới.";
+    ["imgFile","imgPosition","youtubeId","href","org","titleVi","titleEn","descVi","descEn"].forEach(id => {
+      document.getElementById(id).value = "";
+    });
+    document.getElementById("publishedAt").valueAsDate = new Date();
+    await loadNewsList();
+  } catch (e) {
+    formErr.textContent = e.message;
+  }
+});
+
+(async function init(){
+  await ensurePin();
+  await loadNewsList();
+})();
+</script>
+
+</body>
+</html>

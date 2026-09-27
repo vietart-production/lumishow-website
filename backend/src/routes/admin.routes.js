@@ -21,6 +21,7 @@ const {
     renameSeat
 } = require("../services/admin.service");
 const { sendTicketEmail } = require("../services/email.service");
+const { createNews, deleteNews } = require("../services/news.service");
 
 const SHOW_ID = "son-than-thuy-quai";
 
@@ -372,6 +373,33 @@ router.post("/admin/seats/rename", requirePin, async (req, res) => {
     } catch (error) {
         console.error("ADMIN RENAME SEAT ERROR:", error);
         return res.status(400).json({ success: false, message: error.message || "Không thể đổi mã ghế" });
+    }
+});
+
+// ==========================================
+// TRANG "QUẢN LÝ TIN TỨC" (admin-news.html) — tạo/xoá tin trong collection
+// "news" (đọc công khai qua GET /api/news, xem news.service.js).
+// ==========================================
+
+router.post("/admin/news/create", requirePin, async (req, res) => {
+    try {
+        const { img, youtubeId, imgPosition, href, org, title, desc, publishedAt } = req.body;
+        const result = await createNews({ img, youtubeId, imgPosition, href, org, title, desc, publishedAt });
+        return res.status(201).json({ success: true, message: "Đã tạo tin tức mới", ...result });
+    } catch (error) {
+        console.error("ADMIN CREATE NEWS ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể tạo tin tức" });
+    }
+});
+
+router.post("/admin/news/delete", requirePin, async (req, res) => {
+    try {
+        const { newsId } = req.body;
+        const result = await deleteNews({ newsId });
+        return res.status(200).json({ success: true, message: "Đã xoá tin tức", ...result });
+    } catch (error) {
+        console.error("ADMIN DELETE NEWS ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể xoá tin tức" });
     }
 });
 

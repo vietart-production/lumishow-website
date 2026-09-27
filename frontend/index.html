@@ -1026,54 +1026,59 @@
 
   /* =========================================================
      TIN TỨC — 1 tin nổi bật (trái) + tối đa 3 tin phụ (phải)
-     Thêm bài mới: chỉ cần thêm 1 object vào mảng NEWS_ITEMS bên dưới.
+     Trước đây hardcode thẳng mảng NEWS_ITEMS ở đây, sửa xong phải deploy lại
+     mới lên. Giờ đọc từ Firestore qua GET /api/news (backend/src/services/
+     news.service.js) — thêm/xoá tin qua trang admin-news.html, không cần
+     đụng code. Cache nhẹ vào localStorage (10 phút) để lần vào sau trong TTL
+     hiện ngay, không phải chờ Render (free tier) thức dậy; trang chủ vốn
+     hoàn toàn tĩnh nên nếu API lỗi/chậm, mục Tin tức chỉ tạm trống chứ không
+     làm hỏng phần còn lại của trang.
      ========================================================= */
-  const NEWS_ITEMS = [
-    {
-      img: 'image/News/news_2.jpg',
-      href: 'https://www.facebook.com/reel/2305341970219277',
-      date: '12.09', cat: { vi: 'Rạp Xiếc Trung Ương', en: 'Central Circus' },
-      title: {
-        vi: 'SƠN THẦN - THỦY QUÁI: Vở diễn kết hợp nghệ thuật Xiếc và công nghệ hiện đại — chính thức công diễn từ 25.09.2026.',
-        en: 'SON THAN - THUY QUAI: A circus spectacle reimagined with modern technology — officially opening 25.09.2026.'
-      },
-      desc: {
-        vi: 'Truyền thuyết Sơn Tinh - Thủy Tinh được tái hiện bằng ngôn ngữ Xiếc, 3D Mapping Panorama và không gian sân khấu đa chiều — cuộc tranh tài, chuyện tình yêu và sự lựa chọn của Mị Nương, tại Rạp Xiếc Trung Ương, 67-69 Trần Nhân Tông, Hà Nội.',
-        en: 'The legend of Son Tinh - Thuy Tinh comes alive through circus artistry, 3D Mapping Panorama, and multi-dimensional staging — at the Central Circus, 67-69 Tran Nhan Tong, Hanoi.'
-      }
-    },
-    {
-      img: 'image/News/news1.jpg',
-      // Ảnh vuông 1440x1440 nhét vào khung 16:9 (object-fit:cover) crop theo
-      // chiều dọc, mặc định center cắt trúng giữa dòng chữ tiêu đề trong ảnh
-      // ("Sơn Thần - Thuỷ Quái" chỉ còn nửa dưới) — dịch điểm neo xuống dưới
-      // dòng chữ để chữ mất hẳn (sạch) thay vì bị cắt dở dang.
-      imgPosition: 'center 67%',
-      href: 'https://www.facebook.com/share/p/1FbaoHQk5g/',
-      date: '15.09', cat: { vi: 'Lumishow', en: 'Lumishow' },
-      title: {
-        vi: 'Một đại chiến hỗn loạn bắt đầu vì một cuộc kén rể?! 🎭',
-        en: 'A chaotic clash sparked by a contest to choose a son-in-law?! 🎭'
-      },
-      desc: {
-        vi: 'Panorama 360° mở rộng trận chiến Sơn Tinh - Thủy Tinh ra khắp vòm rạp trong tiếng sấm, mưa bão và ánh sáng chuyển động — SƠN THẦN - THỦY QUÁI đưa khán giả qua trọn 5 hồi: Đất Nước Thanh Bình, Giang Sơn Của Sơn Tinh, Vương Quốc Thủy Tinh, Đại Dương Cuộn Sóng và Huyền Thoại Đất - Nước.',
-        en: 'A 360° Panorama expands the Son Tinh - Thuy Tinh battle across the entire dome amid thunder, storm, and moving light — SON THAN - THUY QUAI takes the audience through 5 full acts, from peaceful beginnings to the legendary clash of mountain and water.'
-      }
-    },
-    {
-      youtubeId: 'Xo8B3rfir-k',
-      href: 'https://www.facebook.com/reel/949089674930842',
-      date: '05.09', cat: { vi: 'Lumishow', en: 'Lumishow' },
-      title: {
-        vi: 'TEASER SHOW DIỄN XIẾC SƠN THẦN - THỦY QUÁI 🎭',
-        en: 'TEASER: SON THAN - THUY QUAI CIRCUS SHOW 🎭'
-      },
-      desc: {
-        vi: 'LumiShow mang tới góc nhìn mới của câu chuyện Sơn Tinh - Thủy Tinh, kết hợp nghệ thuật Xiếc và công nghệ trình chiếu hiện đại. Công diễn từ 25.09.2026 tại Rạp Xiếc Trung Ương, 67-69 Trần Nhân Tông, Hà Nội.',
-        en: 'LumiShow brings a fresh perspective to the legend of Son Tinh - Thuy Tinh, blending circus artistry with cutting-edge projection technology. Opening 25.09.2026 at the Central Circus, 67-69 Tran Nhan Tong, Hanoi.'
-      }
+  const NEWS_API_URL = 'https://lumishow-website.onrender.com/api/news';
+  const NEWS_CACHE_KEY = 'lumishow_news_cache_v1';
+  const NEWS_CACHE_TTL_MS = 10 * 60 * 1000;
+
+  function fmtNewsDate(iso){
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  function mapNewsFromApi(list){
+    return list.map(n => ({
+      img: n.img || undefined,
+      youtubeId: n.youtubeId || undefined,
+      imgPosition: n.imgPosition || undefined,
+      href: n.href,
+      org: n.org,
+      date: fmtNewsDate(n.publishedAt),
+      title: n.title,
+      desc: n.desc
+    }));
+  }
+
+  let NEWS_ITEMS = [];
+  try {
+    const cached = JSON.parse(localStorage.getItem(NEWS_CACHE_KEY) || 'null');
+    if (cached && Date.now() - cached.ts < NEWS_CACHE_TTL_MS && Array.isArray(cached.items) && cached.items.length) {
+      NEWS_ITEMS = cached.items;
     }
-  ];
+  } catch (e) {}
+
+  async function loadNews(){
+    try {
+      const res = await fetch(NEWS_API_URL);
+      const data = await res.json();
+      if (res.ok && data.success && Array.isArray(data.news) && data.news.length > 0) {
+        NEWS_ITEMS = mapNewsFromApi(data.news);
+        try { localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify({ ts: Date.now(), items: NEWS_ITEMS })); } catch (e) {}
+      }
+    } catch (e) {
+      // Lỗi mạng/API — dùng tạm NEWS_ITEMS đã có (cache cũ hoặc rỗng), không throw.
+    }
+    renderNews();
+  }
 
   const escapeHtml = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const newsTrack = document.getElementById('newsTrack');
@@ -1088,7 +1093,7 @@
     newsTrack?.querySelectorAll('.news-slide').forEach(el => {
       const n = NEWS_ITEMS[Number(el.dataset.newsIdx)];
       if (!n) return;
-      const cat = n.cat[currentLang] || n.cat.vi;
+      const cat = n.org;
       const titleEl = el.querySelector('.news-slide-title');
       if (titleEl) titleEl.textContent = n.title[currentLang];
       const descEl = el.querySelector('.nsg-desc');
@@ -1109,12 +1114,12 @@
           ? `<iframe src="https://www.youtube-nocookie.com/embed/${n.youtubeId}?controls=0&modestbranding=1&rel=0" title="${escapeHtml(n.title.vi)}" loading="lazy" allow="encrypted-media; picture-in-picture"></iframe>`
           : `<img src="${n.img}" alt="${escapeHtml(n.title.vi)}" loading="lazy"${n.imgPosition ? ` style="object-position:${n.imgPosition}"` : ''}>`}
         <div class="news-slide-scrim"></div>
-        <div class="news-slide-badge">${n.date} · <span class="nb-cat">${escapeHtml(n.cat.vi)}</span></div>
+        <div class="news-slide-badge">${n.date} · <span class="nb-cat">${escapeHtml(n.org)}</span></div>
         <div class="news-slide-content">
           <div class="news-slide-title"></div>
           <div class="news-slide-actions">
             <span class="news-slide-btn"><span data-i18n="news.watchBtn">Xem ngay</span> <svg class="icon" style="width:14px;height:14px"><use href="#ic-arrow-right"/></svg></span>
-            <span class="news-slide-genre"><b>${escapeHtml(n.cat.vi)}</b><span class="nsg-desc"></span></span>
+            <span class="news-slide-genre"><b>${escapeHtml(n.org)}</b><span class="nsg-desc"></span></span>
           </div>
         </div>
       </a>`;
@@ -1214,7 +1219,7 @@
     }
   }
 
-  renderNews();
+  loadNews();
   setLang(currentLang);
 </script>
 </body>
