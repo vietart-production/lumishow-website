@@ -3,6 +3,7 @@ const { db } = require("../config/firebase");
 const { FieldPath } = require("firebase-admin/firestore");
 const BOOKING_CONFIG = require("../config/booking.config");
 const { sendTicketEmail } = require("./email.service");
+const SEAT_TIERS = require("../../scripts/seatTiers.json");
 
 const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
 
@@ -634,6 +635,350 @@ async function exchangePaidOrderTickets({ showId, orderId, toShowtimeId, toSeatI
     return emailPayload;
 }
 
+// ==========================================
+// TRANG "QUẢN LÝ SUẤT DIỄN" (admin-showtimes.html) — thay thế quy trình
+// script tmp_*.js thủ công để thêm/xoá/khoá suất diễn và sửa sơ đồ ghế.
+// Không có collection "ngày diễn" riêng — lịch được tính (derive) trực tiếp
+// từ các doc showtimes hiện có, nhóm theo phần ngày của showtimeId.
+// ==========================================
+
+const SHOWTIME_ID_RE = /^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}$/;
+
+const TIER_PRICES = {
+    "son-than": { name: "Sơn Thần", price: 300000 },
+    "thuy-quai": { name: "Thủy Quái", price: 250000 },
+    "mi-nuong": { name: "Mị Nương", price: 200000 },
+    "vua-hung": { name: "Vua Hùng", price: 400000 }
+};
+
+// G1-G58 dành riêng cho staff/lãnh đạo — mặc định SOLD ngay từ lúc seed, y
+// hệt quy ước trong seedSeats.js, để suất diễn thêm qua trang admin cũng tự
+// chặn đúng những ghế này ngay từ đầu.
+const STAFF_ROW = "G";
+const STAFF_SEAT_MAX = 58;
+
+// Seed "sạch" từ seatTiers.json — mọi ghế AVAILABLE (trừ staff-seat) — KHÔNG
+// copy trạng thái từ suất khác. Đây chính là điểm sửa cho lỗi 20-ghế-SOLD-ảo
+// từng xảy ra khi thêm suất 2026-10-04_10:00 bằng script tạm copy nguyên
+// trạng thái từ suất tham chiếu (xem CLAUDE.md/lịch sử phiên làm việc).
+function buildFreshSeatDocs() {
+    return Object.keys(SEAT_TIERS).map((seatCode) => {
+        const [, row, numberStr] = seatCode.match(/^([A-Z]+)(\d+)$/);
+        const number = parseInt(numberStr, 10);
+        const tier = SEAT_TIERS[seatCode];
+        const price = TIER_PRICES[tier].price;
+
+        return {
+            seatCode,
+            row,
+            number,
+            side: number % 2 === 1 ? "odd" : "even",
+            tier,
+            tierName: TIER_PRICES[tier].name,
+            price,
+            status: (row === STAFF_ROW && number <= STAFF_SEAT_MAX) ? "SOLD" : "AVAILABLE",
+            holdId: null,
+            holdExpiresAt: null
+        };
+    });
+}
+
+// ==========================================
+// LỊCH SUẤT DIỄN THEO THÁNG — dùng đúng kỹ thuật orderBy(documentId()) +
+// startAt/endAt như listUpcomingShowtimes() (showtimeId dạng YYYY-MM-DD_HH:MM
+// nên so chuỗi = so thời gian thật). hasOrders dùng 2 filter bằng nhau
+// (showId, showtimeId) nên không cần composite index mới.
+// ==========================================
+
+async function getShowtimesCalendar({ showId, year, month }) {
+
+    const y = Number(year);
+    const m = Number(month);
+
+    if (!showId || !Number.isInteger(y) || !Number.isInteger(m) || m < 1 || m > 12) {
+        throw new Error("Thiếu hoặc sai year/month");
+    }
+
+    const mm = String(m).padStart(2, "0");
+    const startKey = `${y}-${mm}-01`;
+    const endKey = `${y}-${mm}-32`;
+
+    const snap = await db.collection("shows").doc(showId)
+        .collection("showtimes")
+        .orderBy(FieldPath.documentId())
+        .startAt(startKey)
+        .endAt(endKey)
+        .get();
+
+    const showtimes = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+            showtimeId: doc.id,
+            status: data.status,
+            seatCount: data.seatCount || 0,
+            seatsSeeded: data.seatsSeeded === true
+        };
+    });
+
+    await Promise.all(showtimes.map(async (st) => {
+        const ordersSnap = await db.collection("orders")
+            .where("showId", "==", showId)
+            .where("showtimeId", "==", st.showtimeId)
+            .limit(1)
+            .get();
+        st.hasOrders = !ordersSnap.empty;
+    }));
+
+    return showtimes;
+}
+
+// ==========================================
+// TẠO SUẤT DIỄN MỚI — seed sạch từ seatTiers.json, status mặc định "CLOSED"
+// (khác seedSeats.js CLI mặc định OPEN — đây là thêm suất đơn lẻ qua UI, để
+// admin tự cấu hình khoá/mở ghế xong mới bấm mở bán, tránh lộ suất chưa sẵn
+// sàng cho khách như từng nhắc trong CLAUDE.md).
+// ==========================================
+
+async function createShowtime({ showId, showtimeId }) {
+
+    if (!SHOWTIME_ID_RE.test(showtimeId)) {
+        throw new Error("showtimeId không đúng định dạng YYYY-MM-DD_HH:MM");
+    }
+
+    const showtimeRef = db.collection("shows").doc(showId).collection("showtimes").doc(showtimeId);
+    const existing = await showtimeRef.get();
+
+    if (existing.exists) {
+        throw new Error("Suất diễn này đã tồn tại");
+    }
+
+    const seats = buildFreshSeatDocs();
+    const now = new Date();
+
+    await showtimeRef.set({
+        status: "CLOSED",
+        seatsSeeded: true,
+        seatCount: seats.length,
+        createdAt: now,
+        createdBy: "admin-panel"
+    });
+
+    const seatsCollection = showtimeRef.collection("seats");
+    const BATCH_SIZE = 400;
+    const writes = [];
+
+    for (let i = 0; i < seats.length; i += BATCH_SIZE) {
+        const batch = db.batch();
+        const chunk = seats.slice(i, i + BATCH_SIZE);
+        chunk.forEach((seat) => {
+            batch.create(seatsCollection.doc(seat.seatCode), {
+                ...seat,
+                createdAt: now,
+                updatedAt: now
+            });
+        });
+        writes.push(batch.commit());
+    }
+
+    await Promise.all(writes);
+
+    return { showtimeId, seatCount: seats.length, status: "CLOSED" };
+}
+
+// ==========================================
+// KHOÁ/MỞ HÀNG LOẠT SUẤT DIỄN — dùng cho cả 1 suất lẻ lẫn "khoá/mở cả ngày"
+// (client tự gom danh sách showtimeId của ngày đó rồi gọi 1 lần).
+// ==========================================
+
+async function setShowtimesStatus({ showId, showtimeIds, status }) {
+
+    if (!Array.isArray(showtimeIds) || showtimeIds.length === 0) {
+        throw new Error("Thiếu danh sách suất diễn");
+    }
+
+    if (status !== "OPEN" && status !== "CLOSED") {
+        throw new Error("status không hợp lệ");
+    }
+
+    const now = new Date();
+    const batch = db.batch();
+
+    showtimeIds.forEach((showtimeId) => {
+        const ref = db.collection("shows").doc(showId).collection("showtimes").doc(showtimeId);
+        batch.update(ref, { status, updatedAt: now });
+    });
+
+    await batch.commit();
+
+    return { updated: showtimeIds.length, status };
+}
+
+// ==========================================
+// XOÁ SUẤT DIỄN — chặn cứng nếu có đơn hàng thật (dữ liệu khách hàng, không
+// được xoá âm thầm) hoặc có ghế đang HELD (khách đang giữ dở, tránh cướp hold
+// đang thanh toán). Ghế SOLD do quy ước staff-seat (G1-G58, không có order
+// thật đứng sau) KHÔNG chặn xoá.
+// ==========================================
+
+async function deleteShowtime({ showId, showtimeId }) {
+
+    if (!showtimeId) {
+        throw new Error("Thiếu showtimeId");
+    }
+
+    const ordersSnap = await db.collection("orders")
+        .where("showId", "==", showId)
+        .where("showtimeId", "==", showtimeId)
+        .limit(1)
+        .get();
+
+    if (!ordersSnap.empty) {
+        throw new Error("Suất diễn đã có đơn hàng thật, không thể xoá");
+    }
+
+    const showtimeRef = db.collection("shows").doc(showId).collection("showtimes").doc(showtimeId);
+    const seatsCollection = showtimeRef.collection("seats");
+    const seatsSnap = await seatsCollection.get();
+
+    const heldCount = seatsSnap.docs.filter((doc) => doc.data().status === "HELD").length;
+    if (heldCount > 0) {
+        throw new Error(`Có ${heldCount} ghế đang được giữ, thử lại sau`);
+    }
+
+    const docs = seatsSnap.docs;
+    const BATCH_SIZE = 400;
+    const writes = [];
+
+    for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+        const batch = db.batch();
+        docs.slice(i, i + BATCH_SIZE).forEach((doc) => batch.delete(doc.ref));
+        writes.push(batch.commit());
+    }
+
+    await Promise.all(writes);
+    await showtimeRef.delete();
+
+    return { showtimeId, deletedSeats: docs.length };
+}
+
+// ==========================================
+// SỬA HÀNG LOẠT TRẠNG THÁI GHẾ (mở/khoá) — dùng cho thao tác kéo-chọn nhiều
+// ghế trên sơ đồ. Bỏ qua (báo lại trong "skipped") ghế đang SOLD/HELD thay vì
+// ghi đè, đúng quy ước đã áp dụng xuyên suốt các script tmp_*.js trước đây.
+// ==========================================
+
+async function bulkUpdateSeats({ showId, showtimeId, seatIds, status, blockNote }) {
+
+    if (!showtimeId || !Array.isArray(seatIds) || seatIds.length === 0) {
+        throw new Error("Thiếu showtimeId/seatIds");
+    }
+
+    if (status !== "AVAILABLE" && status !== "BLOCKED") {
+        throw new Error("status không hợp lệ");
+    }
+
+    if (seatIds.some((id) => !SEAT_ID_RE.test(id))) {
+        throw new Error("Có mã ghế không hợp lệ");
+    }
+
+    const seatsCollection = db.collection("shows").doc(showId)
+        .collection("showtimes").doc(showtimeId).collection("seats");
+
+    const snaps = await Promise.all(seatIds.map((id) => seatsCollection.doc(id).get()));
+
+    const updated = [];
+    const skipped = [];
+    const now = new Date();
+    const batch = db.batch();
+
+    snaps.forEach((snap, i) => {
+        const seatId = seatIds[i];
+
+        if (!snap.exists) {
+            skipped.push({ seatId, reason: "not_found" });
+            return;
+        }
+
+        const current = snap.data().status;
+        if (current === "SOLD" || current === "HELD") {
+            skipped.push({ seatId, reason: current });
+            return;
+        }
+
+        batch.update(snap.ref, {
+            status,
+            blockNote: status === "BLOCKED" ? (blockNote || "Khoá thủ công qua trang quản trị") : null,
+            updatedAt: now
+        });
+        updated.push(seatId);
+    });
+
+    if (updated.length > 0) {
+        await batch.commit();
+    }
+
+    return { updated, skipped };
+}
+
+// ==========================================
+// ĐỔI MÃ GHẾ — chỉ cho ghế AVAILABLE/BLOCKED (không phải SOLD/HELD), dùng khi
+// phát hiện sai mã lúc thêm suất mới. Transaction để tránh vừa tạo mã mới vừa
+// còn sót mã cũ nếu có lỗi giữa chừng.
+// ==========================================
+
+async function renameSeat({ showId, showtimeId, oldSeatId, newSeatId }) {
+
+    if (!SEAT_ID_RE.test(oldSeatId) || !SEAT_ID_RE.test(newSeatId)) {
+        throw new Error("Mã ghế không hợp lệ");
+    }
+
+    if (oldSeatId === newSeatId) {
+        throw new Error("Mã ghế mới trùng mã cũ");
+    }
+
+    const seatsCollection = db.collection("shows").doc(showId)
+        .collection("showtimes").doc(showtimeId).collection("seats");
+    const oldRef = seatsCollection.doc(oldSeatId);
+    const newRef = seatsCollection.doc(newSeatId);
+    const m = newSeatId.match(/^([A-Z]+)(\d+)$/);
+
+    await db.runTransaction(async (transaction) => {
+
+        const [oldSnap, newSnap] = await Promise.all([
+            transaction.get(oldRef),
+            transaction.get(newRef)
+        ]);
+
+        if (!oldSnap.exists) {
+            throw new Error(`Ghế ${oldSeatId} không tồn tại`);
+        }
+
+        if (newSnap.exists) {
+            throw new Error(`Ghế ${newSeatId} đã tồn tại`);
+        }
+
+        const data = oldSnap.data();
+
+        if (data.status === "SOLD" || data.status === "HELD") {
+            throw new Error("Không thể đổi mã ghế đã bán hoặc đang được giữ");
+        }
+
+        const number = parseInt(m[2], 10);
+
+        transaction.set(newRef, {
+            ...data,
+            seatCode: newSeatId,
+            row: m[1],
+            number,
+            side: number % 2 === 1 ? "odd" : "even",
+            updatedAt: new Date()
+        });
+        transaction.delete(oldRef);
+    });
+
+    return { oldSeatId, newSeatId };
+}
+
 module.exports = {
     checkPin,
     cancelTicketBySeat,
@@ -644,5 +989,10 @@ module.exports = {
     updateOrderCustomerInfo,
     findOrderByCode,
     resendOrderTicketEmail,
-    exchangePaidOrderTickets
+    getShowtimesCalendar,
+    createShowtime,
+    setShowtimesStatus,
+    deleteShowtime,
+    bulkUpdateSeats,
+    renameSeat
 };

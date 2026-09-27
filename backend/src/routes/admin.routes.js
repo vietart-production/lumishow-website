@@ -12,7 +12,13 @@ const {
     updateOrderCustomerInfo,
     findOrderByCode,
     resendOrderTicketEmail,
-    exchangePaidOrderTickets
+    exchangePaidOrderTickets,
+    getShowtimesCalendar,
+    createShowtime,
+    setShowtimesStatus,
+    deleteShowtime,
+    bulkUpdateSeats,
+    renameSeat
 } = require("../services/admin.service");
 const { sendTicketEmail } = require("../services/email.service");
 
@@ -295,6 +301,77 @@ router.post("/admin/orders/exchange-tickets", requirePin, async (req, res) => {
             success: false,
             message: error.message || "Không thể đổi vé"
         });
+    }
+});
+
+// ==========================================
+// TRANG "QUẢN LÝ SUẤT DIỄN" (admin-showtimes.html) — xem admin.service.js
+// cho chi tiết guard/logic từng hàm.
+// ==========================================
+
+router.post("/admin/showtimes/calendar", requirePin, async (req, res) => {
+    try {
+        const { year, month } = req.body;
+        const showtimes = await getShowtimesCalendar({ showId: SHOW_ID, year, month });
+        return res.status(200).json({ success: true, showtimes });
+    } catch (error) {
+        console.error("ADMIN CALENDAR ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể tải lịch suất diễn" });
+    }
+});
+
+router.post("/admin/showtimes/create", requirePin, async (req, res) => {
+    try {
+        const { showtimeId } = req.body;
+        const result = await createShowtime({ showId: SHOW_ID, showtimeId });
+        return res.status(201).json({ success: true, message: "Đã tạo suất diễn mới (trạng thái CLOSED)", ...result });
+    } catch (error) {
+        console.error("ADMIN CREATE SHOWTIME ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể tạo suất diễn" });
+    }
+});
+
+router.post("/admin/showtimes/set-status", requirePin, async (req, res) => {
+    try {
+        const { showtimeIds, status } = req.body;
+        const result = await setShowtimesStatus({ showId: SHOW_ID, showtimeIds, status });
+        return res.status(200).json({ success: true, message: "Đã cập nhật trạng thái suất diễn", ...result });
+    } catch (error) {
+        console.error("ADMIN SET STATUS ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật trạng thái" });
+    }
+});
+
+router.post("/admin/showtimes/delete", requirePin, async (req, res) => {
+    try {
+        const { showtimeId } = req.body;
+        const result = await deleteShowtime({ showId: SHOW_ID, showtimeId });
+        return res.status(200).json({ success: true, message: "Đã xoá suất diễn", ...result });
+    } catch (error) {
+        console.error("ADMIN DELETE SHOWTIME ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể xoá suất diễn" });
+    }
+});
+
+router.post("/admin/seats/bulk-update", requirePin, async (req, res) => {
+    try {
+        const { showtimeId, seatIds, status, blockNote } = req.body;
+        const result = await bulkUpdateSeats({ showId: SHOW_ID, showtimeId, seatIds, status, blockNote });
+        return res.status(200).json({ success: true, message: "Đã cập nhật trạng thái ghế", ...result });
+    } catch (error) {
+        console.error("ADMIN BULK UPDATE SEATS ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật ghế" });
+    }
+});
+
+router.post("/admin/seats/rename", requirePin, async (req, res) => {
+    try {
+        const { showtimeId, oldSeatId, newSeatId } = req.body;
+        const result = await renameSeat({ showId: SHOW_ID, showtimeId, oldSeatId, newSeatId });
+        return res.status(200).json({ success: true, message: "Đã đổi mã ghế", ...result });
+    } catch (error) {
+        console.error("ADMIN RENAME SEAT ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể đổi mã ghế" });
     }
 });
 

@@ -179,6 +179,7 @@
       <button id="downloadBtn">⬇ Tải Excel (.xlsx)</button>
       <button type="button" class="admin-toggle" id="adminToggle">🔒 Công cụ Admin</button>
       <button type="button" class="admin-toggle" id="orderToolBtn" hidden>Quản lý đơn</button>
+      <button type="button" class="admin-toggle" id="showtimeToolBtn" hidden>📅 Quản lý suất diễn</button>
       <div class="admin-gate-row" id="adminGateRow" hidden>
         <input type="password" id="adminPinInput" placeholder="PIN admin" autocomplete="off">
         <button type="button" id="adminGateBtn">Mở khoá</button>
@@ -735,6 +736,7 @@ async function tryUnlockAdmin(){
     adminToggle.textContent = "🔓 Admin (đã mở khoá)";
     adminToggle.classList.add("unlocked");
     document.getElementById("orderToolBtn").hidden = false;
+    document.getElementById("showtimeToolBtn").hidden = false;
     fetchOrders({ reset: true }); // vẽ lại để thêm cột Thao tác
   } catch (e) {
     adminGateErr.textContent = "Không kết nối được máy chủ";
@@ -745,6 +747,10 @@ adminPinInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnloc
 document.getElementById("orderToolBtn").addEventListener("click", () => {
   sessionStorage.setItem("lumishow-admin-pin", adminPin);
   window.open("admin-orders.html", "_blank", "noopener");
+});
+document.getElementById("showtimeToolBtn").addEventListener("click", () => {
+  sessionStorage.setItem("lumishow-admin-pin", adminPin);
+  window.open("admin-showtimes.html", "_blank", "noopener");
 });
 
 // ---- Sửa / Xoá đơn — event delegation trên toàn #app vì nút nằm trong cả
