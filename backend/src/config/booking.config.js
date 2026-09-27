@@ -1,6 +1,6 @@
 const BOOKING_CONFIG = {
     // Tối đa số ghế được giữ trong một lượt booking
-    MAX_SEATS_PER_ORDER: 6,
+    MAX_SEATS_PER_ORDER: 15,
 
     // Thời gian giữ ghế: 10 phút
     HOLD_DURATION_MS: 10 * 60 * 1000,

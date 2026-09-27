@@ -627,7 +627,7 @@ async function callOrdersApi(body){
 
 // Gộp số liệu tổng hợp cho dòng "Đã tải..." — khách tính theo SĐT (fallback
 // tên/email nếu thiếu SĐT) để không đếm trùng khách có nhiều đơn (VD 1 khách
-// đặt >6 ghế bị tách nhiều đơn do MAX_SEATS_PER_ORDER).
+// đặt >15 ghế bị tách nhiều đơn do MAX_SEATS_PER_ORDER).
 function summarizeOrders(orders){
   const customers = new Set();
   const showtimes = new Set();
