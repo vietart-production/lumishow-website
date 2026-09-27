@@ -164,8 +164,7 @@
   .sim-btn{font-size:12px;font-weight:600;color:var(--gray-dim);border:1px dashed var(--line-2);padding:5px 10px;border-radius:var(--r-pill);transition:all .2s;}
   .sim-btn:hover{color:var(--danger);border-color:var(--danger);}
   .map-stage{position:relative;background:#080B0F;}
-  #seatMap{width:100%;height:clamp(420px,64vh,720px);display:block;touch-action:none;cursor:grab;}
-  #seatMap:active{cursor:grabbing;}
+  #seatMap{width:100%;height:clamp(420px,64vh,720px);display:block;touch-action:none;cursor:default;}
   #viewport{will-change:transform;}
   #seatLabels{pointer-events:none;display:none;}
   #seatMap.close-up #seatLabels{display:block;}
@@ -181,7 +180,7 @@
      ghế VIP (trước lẻ tẻ khác ghế thường) và hiệu ứng đậm bóng khi hover
      (desktop, không ảnh hưởng mobile) — viền (stroke) hover vẫn giữ nguyên. */
   #allSeats{filter:drop-shadow(0 0 1.8px rgba(0,0,0,.55));}
-  .seat{cursor:pointer;stroke:#000;stroke-width:1.2;}
+  .seat{cursor:default;stroke:#000;stroke-width:1.2;}
   .seat.vip-seat{stroke:#FFE3A1;stroke-width:1.2;}
   .seat:hover{stroke:#1a1d22;stroke-width:2.4;}
   .seat.st-sold{fill:var(--seat-sold);cursor:not-allowed;stroke:rgba(0,0,0,.12);}
@@ -232,6 +231,21 @@
   .sc-state.warn{color:var(--danger);}
   .sc-btn{width:100%;padding:11px;border-radius:var(--r-pill);background:var(--grad-btn);color:#fff;font-weight:700;font-size:13.5px;transition:transform .2s,box-shadow .2s;}
   .sc-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(242,121,12,.3);}
+
+  /* Tooltip xem trước khi rê chuột qua ghế, không cần chạm để mở thẻ chi
+     tiết — đã thử nghiệm ở preview-so-do-ghe.html, áp dụng thật tại đây. */
+  .hover-tip{
+    position:absolute;left:0;top:0;z-index:15;
+    background:rgba(10,14,18,.92);border:1px solid var(--line-2);border-radius:8px;
+    padding:6px 11px;font-size:12px;line-height:1.55;color:var(--white);
+    white-space:nowrap;pointer-events:none;
+    opacity:0;transform:translate3d(-50%,-100%,0) translateY(-10px);
+    transition:opacity .12s ease;
+  }
+  .hover-tip.show{opacity:1;}
+  .hover-tip b{font-family:var(--font-heading);font-size:13px;}
+  .hover-tip .ht-price{color:var(--ht-c,var(--gold));font-weight:700;}
+  .hover-tip .ht-status{color:var(--danger);font-weight:700;}
   .sc-btn.remove{background:none;border:1px solid var(--danger);color:var(--danger);}
   .sc-btn.remove:hover{background:rgba(255,90,90,.12);box-shadow:none;}
   .sc-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
@@ -750,6 +764,7 @@
         <div class="sc-state" id="scState">—</div>
         <button class="sc-btn" id="scBtn" data-i18n="sc.addTicket">Thêm vé</button>
       </div>
+      <div class="hover-tip" id="hoverTip"></div>
     </div>
   </section>
 </div>
@@ -1947,7 +1962,7 @@ function placeSeatCard(id){
   card.style.left = p.x + 'px';
   card.style.top  = (p.y - 14) + 'px';
 }
-function openSeatCard(id){ activeSeat = id; updateSeatCard(id); placeSeatCard(id); card.classList.add('show'); }
+function openSeatCard(id){ activeSeat = id; updateSeatCard(id); placeSeatCard(id); card.classList.add('show'); hideHoverTip(); }
 function closeSeatCard(){ activeSeat = null; card.classList.remove('show'); }
 
 document.getElementById('scClose').addEventListener('click', closeSeatCard);
@@ -2006,7 +2021,7 @@ const zoomer = (function(){
   if (typeof Panzoom === 'function'){
     const pz = Panzoom(gViewport, {
       minScale: MIN_SCALE, maxScale: MAX_SCALE, step: .35,
-      cursor: 'grab', canvas: true, animate: false, duration: 220,
+      cursor: 'default', canvas: true, animate: false, duration: 220,
       // Ghi đè cách áp transform mặc định (scale(s) translate(x,y)) để nhân
       // riêng phần translate với PAN_SENS — scale giữ nguyên, không đụng zoom.
       setTransform: (elem, { x, y, scale }) => {
@@ -2201,6 +2216,55 @@ function handleSeatTap(node){
   if (st === ST.SELECTED_BY_ME){ removeSeat(id); closeSeatCard(); toast(t('msg.seatRemoved', { id })); return; }
   focusSeat(id, 2.4);
   openSeatCard(id);
+}
+
+/* =========================================================
+   9b. HOVER TOOLTIP — xem trước mã ghế + giá khi rê chuột qua, không cần
+   chạm để mở thẻ chi tiết (seat-card). Đã thử nghiệm ở preview-so-do-ghe.html
+   trước khi áp dụng thật ở đây. Chỉ bật trên thiết bị có chuột thật
+   (matchMedia hover) — trên cảm ứng chạm đã mở thẻ chi tiết ngay nên tooltip
+   sẽ chỉ gây nhấp nháy thừa.
+   ========================================================= */
+const hoverTip = document.getElementById('hoverTip');
+const SUPPORTS_HOVER = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+
+function hoverTipContent(id){
+  const s = SEAT_BY_ID.get(id);
+  const st = seatStates[id];
+  let statusHtml;
+  if (st === ST.SOLD) statusHtml = `<span class="ht-status">${t('seat.sold')}</span>`;
+  else if (st === ST.BLOCKED) statusHtml = `<span class="ht-status">${t('seat.blocked')}</span>`;
+  else if (st === ST.HELD_BY_OTHER) statusHtml = `<span class="ht-status">${t('seat.heldOther')}</span>`;
+  else if (st === ST.SELECTED_BY_ME || st === ST.HELD_BY_ME) statusHtml = `<span class="ht-price">${t('seat.selected')}</span>`;
+  else statusHtml = `<span class="ht-price">${fmtVND(s.price)}</span>`;
+  return `<b>${s.id}</b> — ${tierName(s.tier)}<br>${statusHtml}`;
+}
+
+function showHoverTip(id){
+  if (activeSeat === id) return; // thẻ chi tiết đã mở đúng ghế này, khỏi chồng tooltip
+  const s = SEAT_BY_ID.get(id);
+  const p = svgToScreen(s.x, s.y);
+  hoverTip.innerHTML = hoverTipContent(id);
+  hoverTip.style.setProperty('--ht-c', TIERS[s.tier].color);
+  hoverTip.style.left = p.x + 'px';
+  hoverTip.style.top = (p.y - 14) + 'px';
+  hoverTip.classList.add('show');
+}
+function hideHoverTip(){ hoverTip.classList.remove('show'); }
+
+if (SUPPORTS_HOVER){
+  svg.addEventListener('mouseover', e => {
+    if (tapStart) return; // đang kéo/chạm bản đồ — bỏ qua, tránh tooltip nhấp nháy theo từng ghế lướt qua
+    const node = e.target.closest('.seat');
+    if (!node) return;
+    showHoverTip(node.dataset.id);
+  });
+  svg.addEventListener('mouseout', e => {
+    const node = e.target.closest('.seat');
+    if (!node) return;
+    if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.seat') === node) return;
+    hideHoverTip();
+  });
 }
 
 /* =========================================================
