@@ -1778,7 +1778,7 @@ function addSeat(id){
   if (holdSession){ toast(t('msg.holdActive'), 'warn'); return; }
   const st = seatStates[id];
   if (st === ST.SOLD){ toast(t('msg.seatSold'), 'warn'); return; }
-  if (st === ST.BLOCKED){ toast(t('msg.seatBlocked'), 'warn'); return; }
+  if (st === ST.BLOCKED){ return; }
   if (st === ST.HELD_BY_OTHER){ toast(t('msg.seatHeldOther'), 'warn'); return; }
   if (st !== ST.AVAILABLE) return;
   if (selectedSeats.length >= MAX_SEATS){ toast(t('msg.maxSeats', { n: MAX_SEATS }), 'warn'); return; }
@@ -2208,7 +2208,7 @@ function handleSeatTap(node){
   const id = node.dataset.id;
   const st = seatStates[id];
   if (st === ST.SOLD){ toast(t('msg.seatSold'), 'warn'); closeSeatCard(); return; }
-  if (st === ST.BLOCKED){ toast(t('msg.seatBlocked'), 'warn'); closeSeatCard(); return; }
+  if (st === ST.BLOCKED){ closeSeatCard(); return; }
   if (st === ST.HELD_BY_OTHER){ toast(t('msg.seatHeldOther'), 'warn'); closeSeatCard(); return; }
   if (st === ST.SELECTED_BY_ME){ removeSeat(id); closeSeatCard(); toast(t('msg.seatRemoved', { id })); return; }
   focusSeat(id, 2.4);
