@@ -2893,16 +2893,19 @@ let runIndex = Math.max(0, runs.findIndex(r => r[2] >= today));
 let dayIndex = 0, timeIndex = 0;
 const pad = n => String(n).padStart(2,'0');
 
-// TẠM MỞ LOCAL ĐỂ TEST (2026-09-26) — KHÔNG commit/push/deploy. Xem CLAUDE.md
-// mục "Mở 4 suất tháng 10..." để biết cơ chế đầy đủ khi cần deploy thật lại.
+// Suất diễn đang mở thật (2026-09-27) — PHẢI khớp tay với status OPEN thật
+// trong Firestore + OPEN_PAIRS ở frontend/index.html mỗi khi mở/khoá thêm
+// suất khác. 4/10 có 2 suất cùng ngày (10h00 + 16h30) nên mỗi entry đều ghi
+// rõ giờ (t) để hiển thị trên thẻ ngày, tránh nhầm lẫn khi 2 thẻ trùng ngày.
 const OPEN_SHOWTIME_GROUPS = [
   [
-    { id: '2026-10-03_16:30', y: 2026, m: 10, d: 3, dow: 1 },
-    { id: '2026-10-04_16:30', y: 2026, m: 10, d: 4, dow: 2 }
+    { id: '2026-10-03_16:30', y: 2026, m: 10, d: 3, dow: 1, t: '16:30' },
+    { id: '2026-10-04_10:00', y: 2026, m: 10, d: 4, dow: 2, t: '10:00' },
+    { id: '2026-10-04_16:30', y: 2026, m: 10, d: 4, dow: 2, t: '16:30' }
   ],
   [
-    { id: '2026-10-10_16:30', y: 2026, m: 10, d: 10, dow: 1 },
-    { id: '2026-10-11_16:30', y: 2026, m: 10, d: 11, dow: 2 }
+    { id: '2026-10-10_16:30', y: 2026, m: 10, d: 10, dow: 1, t: '16:30' },
+    { id: '2026-10-11_16:30', y: 2026, m: 10, d: 11, dow: 2, t: '16:30' }
   ]
 ];
 let openRunIndex = 0;
@@ -2969,7 +2972,7 @@ function renderSchedule(){
     node.className = 'day-node' + (i === openDayIndex ? ' active' : '');
     node.innerHTML = '<span class="d-dow">' + DOWS[s.dow] + '</span>' +
                      '<span class="d-dom">' + pad(s.d) + '</span>' +
-                     '<span class="d-moy">' + MONTHS[s.m - 1] + '</span>';
+                     '<span class="d-moy">' + MONTHS[s.m - 1] + ' · ' + fmtShowTime(s.t) + '</span>';
     node.addEventListener('click', () => switchShow(() => { openDayIndex = i; }));
     track.appendChild(node);
   });
