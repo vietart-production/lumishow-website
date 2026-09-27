@@ -964,7 +964,9 @@
   // Mặc định chọn cặp gần nhất, và trong cặp đó chọn suất gần thứ 2 (index 1)
   // thay vì suất gần nhất — chốt 2026-09-26.
   let runIndex = 0;
-  let selectedDay = Math.min(1, runs[0].length - 1);
+  // Mặc định: 3 lịch -> chọn giữa, 2 lịch -> chọn đầu tiên, 1 lịch -> chọn duy nhất
+  // (chốt 2026-09-27, thay cho luật cũ luôn ưu tiên phần tử thứ 2 "Thứ 7").
+  let selectedDay = Math.floor((runs[0].length - 1) / 2);
 
   const weekendTrack = document.getElementById('weekendTrack');
   const weekPrevBtn = document.getElementById('weekPrev');
@@ -1004,10 +1006,10 @@
   }
 
   weekPrevBtn?.addEventListener('click', () => {
-    if (runIndex > 0) { runIndex--; selectedDay = Math.min(1, runs[runIndex].length - 1); renderWeekend(); }
+    if (runIndex > 0) { runIndex--; selectedDay = Math.floor((runs[runIndex].length - 1) / 2); renderWeekend(); }
   });
   weekNextBtn?.addEventListener('click', () => {
-    if (runIndex < runs.length - 1) { runIndex++; selectedDay = Math.min(1, runs[runIndex].length - 1); renderWeekend(); }
+    if (runIndex < runs.length - 1) { runIndex++; selectedDay = Math.floor((runs[runIndex].length - 1) / 2); renderWeekend(); }
   });
 
   renderWeekend();

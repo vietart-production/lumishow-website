@@ -2909,7 +2909,9 @@ const OPEN_SHOWTIME_GROUPS = [
   ]
 ];
 let openRunIndex = 0;
-let openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[0].length - 1);
+// Mặc định: 3 lịch -> chọn giữa, 2 lịch -> chọn đầu tiên, 1 lịch -> chọn duy nhất
+// (chốt 2026-09-27, thay cho luật cũ luôn ưu tiên phần tử thứ 2).
+let openDayIndex = Math.floor((OPEN_SHOWTIME_GROUPS[0].length - 1) / 2);
 let openTimeIndex = 0;
 
 function buildShowKey(info, time){
@@ -3031,11 +3033,11 @@ function switchShow(mutate){
 
 document.getElementById('weekPrev').addEventListener('click',
   () => { if (openRunIndex > 0) switchShow(() => {
-    openRunIndex--; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1); openTimeIndex = 0;
+    openRunIndex--; openDayIndex = Math.floor((OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1) / 2); openTimeIndex = 0;
   }); });
 document.getElementById('weekNext').addEventListener('click',
   () => { if (openRunIndex < OPEN_SHOWTIME_GROUPS.length - 1) switchShow(() => {
-    openRunIndex++; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1); openTimeIndex = 0;
+    openRunIndex++; openDayIndex = Math.floor((OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1) / 2); openTimeIndex = 0;
   }); });
 
 async function loadShow() {
