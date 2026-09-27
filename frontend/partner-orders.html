@@ -359,6 +359,8 @@ function renderShowtimePicker(showtimes){
   // Nhóm theo tháng rồi theo ngày — mỗi ngày 1 hàng, mỗi suất giờ trong
   // ngày đó là 1 pill. Suất OPEN nổi bật, CLOSED lùi vào nền mờ nhưng vẫn
   // bấm được (đối tác vẫn cần tra dữ liệu quá khứ).
+  // Thứ tự ngày GIẢM DẦN (ngày xa nhất lên trên cùng, ngày gần nhất xuống
+  // dưới cùng) — chốt theo yêu cầu 2026-09-27, ngược lại thứ tự tăng dần cũ.
   const byMonth = new Map();
   showtimes.forEach(st => {
     const [datePart] = st.showtimeId.split("_");
@@ -370,7 +372,7 @@ function renderShowtimePicker(showtimes){
     byDate.get(datePart).push(st);
   });
 
-  const monthKeys = [...byMonth.keys()].sort();
+  const monthKeys = [...byMonth.keys()].sort().reverse();
   let html = "";
 
   if (monthKeys.length === 0) {
@@ -382,7 +384,7 @@ function renderShowtimePicker(showtimes){
     html += `<div class="st-month">Tháng ${m}, ${y}</div>`;
 
     const byDate = byMonth.get(monthKey);
-    const dateKeys = [...byDate.keys()].sort();
+    const dateKeys = [...byDate.keys()].sort().reverse();
     dateKeys.forEach(datePart => {
       const [dy, dm, dd] = datePart.split("-").map(Number);
       const dow = DOW_SHORT[new Date(dy, dm - 1, dd).getDay()];
@@ -572,10 +574,11 @@ async function fetchAllGrouped(){
       byShowtime.get(key).push(o);
     });
 
-    // Sắp theo showtimeId tăng dần (định dạng YYYY-MM-DD_HH:MM nên so chuỗi
-    // = so thời gian thật) — luôn 25/9 rồi 26/9 rồi 27/9..., không phụ thuộc
+    // Sắp theo showtimeId GIẢM DẦN (định dạng YYYY-MM-DD_HH:MM nên so chuỗi
+    // = so thời gian thật) — ngày xa nhất lên trên cùng, gần nhất xuống dưới
+    // cùng (chốt 2026-09-27, ngược lại thứ tự tăng dần cũ). Không phụ thuộc
     // sortDir (sortDir chỉ áp trong nội bộ mỗi nhóm).
-    const keys = [...byShowtime.keys()].sort((a, b) => a.localeCompare(b));
+    const keys = [...byShowtime.keys()].sort((a, b) => b.localeCompare(a));
 
     keys.forEach(key => {
       const orders = byShowtime.get(key);
