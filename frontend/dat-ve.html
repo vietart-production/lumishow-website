@@ -2233,7 +2233,6 @@ function hoverTipContent(id){
   const st = seatStates[id];
   let statusHtml;
   if (st === ST.SOLD) statusHtml = `<span class="ht-status">${t('seat.sold')}</span>`;
-  else if (st === ST.BLOCKED) statusHtml = `<span class="ht-status">${t('seat.blocked')}</span>`;
   else if (st === ST.HELD_BY_OTHER) statusHtml = `<span class="ht-status">${t('seat.heldOther')}</span>`;
   else if (st === ST.SELECTED_BY_ME || st === ST.HELD_BY_ME) statusHtml = `<span class="ht-price">${t('seat.selected')}</span>`;
   else statusHtml = `<span class="ht-price">${fmtVND(s.price)}</span>`;
@@ -2242,6 +2241,7 @@ function hoverTipContent(id){
 
 function showHoverTip(id){
   if (activeSeat === id) return; // thẻ chi tiết đã mở đúng ghế này, khỏi chồng tooltip
+  if (seatStates[id] === ST.BLOCKED) { hideHoverTip(); return; } // ghế khoá — không hiện tooltip
   const s = SEAT_BY_ID.get(id);
   const p = svgToScreen(s.x, s.y);
   hoverTip.innerHTML = hoverTipContent(id);
