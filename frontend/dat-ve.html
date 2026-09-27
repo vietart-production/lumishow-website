@@ -2895,32 +2895,46 @@ const pad = n => String(n).padStart(2,'0');
 
 // Suất diễn đang mở thật (2026-09-27) — PHẢI khớp tay với status OPEN thật
 // trong Firestore + OPEN_PAIRS ở frontend/index.html mỗi khi mở/khoá thêm
-// suất khác. 4/10 có 2 suất cùng ngày (10h00 + 16h30) nên mỗi entry đều ghi
-// rõ giờ (t) để hiển thị trên thẻ ngày, tránh nhầm lẫn khi 2 thẻ trùng ngày.
+// suất khác. Cấu trúc lồng nhóm(tuần) -> ngày -> giờ (times[]) — dayTrack
+// chỉ chọn NGÀY, timeRow chọn GIỜ trong ngày đó (đưa lại UI 2 tầng như bản
+// lịch tuần liên tục cũ), vì 4/10 giờ có 2 suất cùng ngày (10h00 + 16h30).
 const OPEN_SHOWTIME_GROUPS = [
   [
-    { id: '2026-10-03_16:30', y: 2026, m: 10, d: 3, dow: 1, t: '16:30' },
-    { id: '2026-10-04_10:00', y: 2026, m: 10, d: 4, dow: 2, t: '10:00' },
-    { id: '2026-10-04_16:30', y: 2026, m: 10, d: 4, dow: 2, t: '16:30' }
+    { y: 2026, m: 10, d: 3, dow: 1, times: ['16:30'] },
+    { y: 2026, m: 10, d: 4, dow: 2, times: ['10:00', '16:30'] }
   ],
   [
-    { id: '2026-10-10_16:30', y: 2026, m: 10, d: 10, dow: 1, t: '16:30' },
-    { id: '2026-10-11_16:30', y: 2026, m: 10, d: 11, dow: 2, t: '16:30' }
+    { y: 2026, m: 10, d: 10, dow: 1, times: ['16:30'] },
+    { y: 2026, m: 10, d: 11, dow: 2, times: ['16:30'] }
   ]
 ];
 let openRunIndex = 0;
 let openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[0].length - 1);
+let openTimeIndex = 0;
+
+function buildShowKey(info, time){
+  return info.y + '-' + pad(info.m) + '-' + pad(info.d) + '_' + time;
+}
 (function applyOpenShowtimeFromUrl(){
   const suat = new URLSearchParams(location.search).get('suat');
   if (!suat) return;
+  const [datePart, timePart] = String(suat).split('_');
   for (let g = 0; g < OPEN_SHOWTIME_GROUPS.length; g++){
-    const idx = OPEN_SHOWTIME_GROUPS[g].findIndex(s => s.id === suat);
-    if (idx !== -1){ openRunIndex = g; openDayIndex = idx; return; }
+    for (let d = 0; d < OPEN_SHOWTIME_GROUPS[g].length; d++){
+      const info = OPEN_SHOWTIME_GROUPS[g][d];
+      const dateKey = info.y + '-' + pad(info.m) + '-' + pad(info.d);
+      if (dateKey !== datePart) continue;
+      const t = info.times.indexOf(timePart);
+      if (t === -1) continue;
+      openRunIndex = g; openDayIndex = d; openTimeIndex = t;
+      return;
+    }
   }
 })();
 
 function currentShowKey(){
-  return OPEN_SHOWTIME_GROUPS[openRunIndex][openDayIndex].id;
+  const info = OPEN_SHOWTIME_GROUPS[openRunIndex][openDayIndex];
+  return buildShowKey(info, info.times[openTimeIndex]);
 }
 
 /* Tìm vị trí lịch diễn (tuần + ngày) khớp với một mốc ngày YYYY-MM-DD,
@@ -2972,16 +2986,27 @@ function renderSchedule(){
     node.className = 'day-node' + (i === openDayIndex ? ' active' : '');
     node.innerHTML = '<span class="d-dow">' + DOWS[s.dow] + '</span>' +
                      '<span class="d-dom">' + pad(s.d) + '</span>' +
-                     '<span class="d-moy">' + MONTHS[s.m - 1] + ' · ' + fmtShowTime(s.t) + '</span>';
-    node.addEventListener('click', () => switchShow(() => { openDayIndex = i; }));
+                     '<span class="d-moy">' + MONTHS[s.m - 1] + '</span>';
+    // Đổi ngày thì giờ đang chọn có thể không tồn tại ở ngày mới — luôn về
+    // suất giờ đầu tiên của ngày vừa chọn.
+    node.addEventListener('click', () => switchShow(() => { openDayIndex = i; openTimeIndex = 0; }));
     track.appendChild(node);
   });
 
-  document.getElementById('timeRow').textContent = '';
+  const timeRow = document.getElementById('timeRow');
+  timeRow.textContent = '';
+  info.times.forEach((t, i) => {
+    const b = document.createElement('button');
+    b.className = 'time-btn' + (i === openTimeIndex ? ' active' : '');
+    b.textContent = fmtShowTime(t);
+    b.addEventListener('click', () => switchShow(() => { openTimeIndex = i; }));
+    timeRow.appendChild(b);
+  });
+
   document.getElementById('weekPrev').disabled = openRunIndex === 0;
   document.getElementById('weekNext').disabled = openRunIndex === OPEN_SHOWTIME_GROUPS.length - 1;
   document.getElementById('showWhen').textContent =
-    DOWS[info.dow] + ', ' + pad(info.d) + '.' + pad(info.m) + '.' + info.y + ' · ' + fmtShowTime(info.id.split('_')[1]);
+    DOWS[info.dow] + ', ' + pad(info.d) + '.' + pad(info.m) + '.' + info.y + ' · ' + fmtShowTime(info.times[openTimeIndex]);
 }
 
 /* Đổi suất: nếu đang có ghế chọn thì hỏi trước, tránh mất công chọn lại */
@@ -3006,11 +3031,11 @@ function switchShow(mutate){
 
 document.getElementById('weekPrev').addEventListener('click',
   () => { if (openRunIndex > 0) switchShow(() => {
-    openRunIndex--; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1);
+    openRunIndex--; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1); openTimeIndex = 0;
   }); });
 document.getElementById('weekNext').addEventListener('click',
   () => { if (openRunIndex < OPEN_SHOWTIME_GROUPS.length - 1) switchShow(() => {
-    openRunIndex++; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1);
+    openRunIndex++; openDayIndex = Math.min(1, OPEN_SHOWTIME_GROUPS[openRunIndex].length - 1); openTimeIndex = 0;
   }); });
 
 async function loadShow() {
@@ -3092,14 +3117,23 @@ async function tryResumeHold(){
     return false;
   }
 
-  let matchedOpenGroup = -1, matchedOpenDay = -1;
-  for (let g = 0; g < OPEN_SHOWTIME_GROUPS.length; g++){
-    const idx = OPEN_SHOWTIME_GROUPS[g].findIndex(s => s.id === saved.showKey);
-    if (idx !== -1){ matchedOpenGroup = g; matchedOpenDay = idx; break; }
+  const [savedDatePart, savedTimePart] = String(saved.showKey).split('_');
+  let matchedOpenGroup = -1, matchedOpenDay = -1, matchedOpenTime = -1;
+  for (let g = 0; g < OPEN_SHOWTIME_GROUPS.length && matchedOpenGroup === -1; g++){
+    for (let d = 0; d < OPEN_SHOWTIME_GROUPS[g].length; d++){
+      const info = OPEN_SHOWTIME_GROUPS[g][d];
+      const dateKey = info.y + '-' + pad(info.m) + '-' + pad(info.d);
+      if (dateKey !== savedDatePart) continue;
+      const t = info.times.indexOf(savedTimePart);
+      if (t === -1) continue;
+      matchedOpenGroup = g; matchedOpenDay = d; matchedOpenTime = t;
+      break;
+    }
   }
   if (matchedOpenGroup !== -1){
     openRunIndex = matchedOpenGroup;
     openDayIndex = matchedOpenDay;
+    openTimeIndex = matchedOpenTime;
   } else {
     clearSavedOrder();
     return false;
