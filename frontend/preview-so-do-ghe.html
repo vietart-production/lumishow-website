@@ -187,6 +187,20 @@
   .seat.st-held-other{fill:#e3e5e9;stroke:#9aa0aa;stroke-width:1.4;}
   .seat.st-selected{fill:var(--seat-mine);stroke:#1a1d22;stroke-width:2.2;}
   .seat.st-held-me{fill:var(--seat-mine);stroke:var(--green);stroke-width:2.6;}
+  /* Glow theo màu hạng ghế khi hover/đang chọn — chỉ áp cho 1 ghế hover + tối
+     đa MAX_SEATS ghế đang chọn cùng lúc (không phải toàn bộ ~1218 ghế), nên
+     không tái phạm lỗi giật máy đã ghi ở #allSeats phía trên. Đọc màu qua
+     data-tier (gắn sẵn ở drawSeats()) nên vẫn đúng màu hạng dù ghế đã chọn
+     đổi fill sang đỏ — glow là cách duy nhất còn "lộ" hạng ghế lúc đó. Loại
+     trừ ghế đã bán/đang bị giữ khỏi hover-glow để không gợi ý nhầm là chọn được. */
+  .seat[data-tier="vua-hung"]:hover:not(.st-sold):not(.st-held-other){stroke:var(--tier-vua-hung);filter:drop-shadow(0 0 0.5px var(--tier-vua-hung)) drop-shadow(0 0 3px var(--tier-vua-hung));}
+  .seat[data-tier="son-than"]:hover:not(.st-sold):not(.st-held-other){stroke:var(--tier-son-than);filter:drop-shadow(0 0 0.5px var(--tier-son-than)) drop-shadow(0 0 3px var(--tier-son-than));}
+  .seat[data-tier="thuy-quai"]:hover:not(.st-sold):not(.st-held-other){stroke:var(--tier-thuy-quai);filter:drop-shadow(0 0 0.5px var(--tier-thuy-quai)) drop-shadow(0 0 3px var(--tier-thuy-quai));}
+  .seat[data-tier="mi-nuong"]:hover:not(.st-sold):not(.st-held-other){stroke:var(--tier-mi-nuong);filter:drop-shadow(0 0 0.5px var(--tier-mi-nuong)) drop-shadow(0 0 3px var(--tier-mi-nuong));}
+  .seat[data-tier="vua-hung"].st-selected,.seat[data-tier="vua-hung"].st-held-me{stroke:var(--tier-vua-hung);filter:drop-shadow(0 0 0.5px var(--tier-vua-hung)) drop-shadow(0 0 4px var(--tier-vua-hung));}
+  .seat[data-tier="son-than"].st-selected,.seat[data-tier="son-than"].st-held-me{stroke:var(--tier-son-than);filter:drop-shadow(0 0 0.5px var(--tier-son-than)) drop-shadow(0 0 4px var(--tier-son-than));}
+  .seat[data-tier="thuy-quai"].st-selected,.seat[data-tier="thuy-quai"].st-held-me{stroke:var(--tier-thuy-quai);filter:drop-shadow(0 0 0.5px var(--tier-thuy-quai)) drop-shadow(0 0 4px var(--tier-thuy-quai));}
+  .seat[data-tier="mi-nuong"].st-selected,.seat[data-tier="mi-nuong"].st-held-me{stroke:var(--tier-mi-nuong);filter:drop-shadow(0 0 0.5px var(--tier-mi-nuong)) drop-shadow(0 0 4px var(--tier-mi-nuong));}
   .seat.muted{pointer-events:none;opacity:.1;}
   .seat-label{font-family:var(--font-body);font-size:7px;font-weight:600;fill:#06120a;}
   .seat-label.vip-label{font-size:5.8px;font-weight:700;letter-spacing:-.3px;}
