@@ -58,12 +58,12 @@
 
     <label>Loại nội dung</label>
     <div class="radio-row">
-      <label><input type="radio" name="kind" value="img" checked> Ảnh</label>
+      <label><input type="radio" name="kind" value="img"> Ảnh</label>
       <label><input type="radio" name="kind" value="youtube"> Video YouTube</label>
-      <label><input type="radio" name="kind" value="press"> Báo chí</label>
+      <label><input type="radio" name="kind" value="press" checked> Báo chí</label>
     </div>
 
-    <div id="imgFields">
+    <div id="imgFields" hidden>
       <label>Tên file ảnh trong frontend/image/News/</label>
       <input type="text" id="imgFile" placeholder="news3.jpg">
       <p class="hint">File phải đã tồn tại trên server (đặt vào thư mục rồi deploy hosting) trước khi lưu.</p>
@@ -74,7 +74,7 @@
       <label>Mã video YouTube (phần sau youtube.com/watch?v=)</label>
       <input type="text" id="youtubeId" placeholder="Xo8B3rfir-k">
     </div>
-    <div id="pressFields" hidden>
+    <div id="pressFields">
       <label>Link ảnh (dán địa chỉ ảnh sao chép từ báo/Facebook...)</label>
       <input type="url" id="pressImgUrl" placeholder="https://...">
       <p class="hint">Dán thẳng link ảnh từ nguồn ngoài, không cần tải ảnh lên server. Lưu ý: link ảnh từ Facebook (scontent...fbcdn.net) thường có hạn sử dụng, có thể hết hạn và vỡ ảnh sau một thời gian — ưu tiên link từ trang báo nếu có.</p>
@@ -96,14 +96,14 @@
 
     <label>Tiêu đề (tiếng Việt)</label>
     <input type="text" id="titleVi" placeholder="Tiêu đề bài viết...">
-    <div id="titleEnField">
+    <div id="titleEnField" hidden>
       <label>Tiêu đề (tiếng Anh, tuỳ chọn — để trống sẽ dùng lại tiếng Việt)</label>
       <input type="text" id="titleEn" placeholder="">
     </div>
 
     <label>Nội dung tóm tắt (tiếng Việt)</label>
     <textarea id="descVi" placeholder="Tóm tắt nội dung..."></textarea>
-    <div id="descEnField">
+    <div id="descEnField" hidden>
       <label>Nội dung tóm tắt (tiếng Anh, tuỳ chọn)</label>
       <textarea id="descEn" placeholder=""></textarea>
     </div>
@@ -156,10 +156,6 @@ document.querySelectorAll('input[name="kind"]').forEach(r => {
     document.getElementById("imgFields").hidden = kind !== "img";
     document.getElementById("ytFields").hidden = kind !== "youtube";
     document.getElementById("pressFields").hidden = kind !== "press";
-    // Tin báo chí giữ nguyên nội dung gốc, không cần dịch tiếng Anh.
-    const isPress = kind === "press";
-    document.getElementById("titleEnField").hidden = isPress;
-    document.getElementById("descEnField").hidden = isPress;
   });
 });
 
