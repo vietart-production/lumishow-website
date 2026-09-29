@@ -51,33 +51,25 @@
 
 <div class="wrap">
   <h1>Quản lý tin tức</h1>
-  <p class="sub">Tạo/xoá tin cho mục "TIN TỨC" ở trang chủ. Ảnh minh hoạ phải được đặt sẵn vào <code>frontend/image/News/</code> (deploy frontend) trước khi nhập tên file ở đây — trang này không tải ảnh lên.</p>
+  <p class="sub">Tạo/xoá tin cho mục "TIN TỨC" ở trang chủ.</p>
 
   <div class="card">
     <h2>Thêm tin mới</h2>
 
     <label>Loại nội dung</label>
     <div class="radio-row">
-      <label><input type="radio" name="kind" value="img"> Ảnh</label>
-      <label><input type="radio" name="kind" value="youtube"> Video YouTube</label>
       <label><input type="radio" name="kind" value="press" checked> Báo chí</label>
+      <label><input type="radio" name="kind" value="youtube"> Video YouTube</label>
     </div>
 
-    <div id="imgFields" hidden>
-      <label>Tên file ảnh trong frontend/image/News/</label>
-      <input type="text" id="imgFile" placeholder="news3.jpg">
-      <p class="hint">File phải đã tồn tại trên server (đặt vào thư mục rồi deploy hosting) trước khi lưu.</p>
-      <label>Vị trí crop ảnh (tuỳ chọn, CSS object-position)</label>
-      <input type="text" id="imgPosition" placeholder="center 67% (để trống nếu không cần)">
-    </div>
-    <div id="ytFields" hidden>
-      <label>Mã video YouTube (phần sau youtube.com/watch?v=)</label>
-      <input type="text" id="youtubeId" placeholder="Xo8B3rfir-k">
-    </div>
     <div id="pressFields">
       <label>Link ảnh (dán địa chỉ ảnh sao chép từ báo/Facebook...)</label>
       <input type="url" id="pressImgUrl" placeholder="https://...">
       <p class="hint">Dán thẳng link ảnh từ nguồn ngoài, không cần tải ảnh lên server. Lưu ý: link ảnh từ Facebook (scontent...fbcdn.net) thường có hạn sử dụng, có thể hết hạn và vỡ ảnh sau một thời gian — ưu tiên link từ trang báo nếu có.</p>
+    </div>
+    <div id="ytFields" hidden>
+      <label>Mã video YouTube (phần sau youtube.com/watch?v=)</label>
+      <input type="text" id="youtubeId" placeholder="Xo8B3rfir-k">
     </div>
 
     <label>Link bài viết / video gốc</label>
@@ -153,7 +145,6 @@ async function ensurePin(){
 document.querySelectorAll('input[name="kind"]').forEach(r => {
   r.addEventListener("change", () => {
     const kind = document.querySelector('input[name="kind"]:checked').value;
-    document.getElementById("imgFields").hidden = kind !== "img";
     document.getElementById("ytFields").hidden = kind !== "youtube";
     document.getElementById("pressFields").hidden = kind !== "press";
   });
@@ -204,8 +195,6 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   formOk.textContent = "";
 
   const kind = document.querySelector('input[name="kind"]:checked').value;
-  const imgFile = document.getElementById("imgFile").value.trim();
-  const imgPosition = document.getElementById("imgPosition").value.trim();
   const youtubeId = document.getElementById("youtubeId").value.trim();
   const pressImgUrl = document.getElementById("pressImgUrl").value.trim();
   const href = document.getElementById("href").value.trim();
@@ -221,10 +210,7 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
     title: { vi: titleVi, en: titleEn || undefined },
     desc: { vi: descVi, en: descEn || undefined }
   };
-  if (kind === "img") {
-    body.img = imgFile ? `image/News/${imgFile}` : undefined;
-    body.imgPosition = imgPosition || undefined;
-  } else if (kind === "press") {
+  if (kind === "press") {
     body.img = pressImgUrl || undefined;
   } else {
     body.youtubeId = youtubeId || undefined;
@@ -233,7 +219,7 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   try {
     await callAdmin("/admin/news/create", body);
     formOk.textContent = "Đã tạo tin tức mới.";
-    ["imgFile","imgPosition","youtubeId","pressImgUrl","href","org","titleVi","titleEn","descVi","descEn"].forEach(id => {
+    ["youtubeId","pressImgUrl","href","org","titleVi","titleEn","descVi","descEn"].forEach(id => {
       document.getElementById(id).value = "";
     });
     document.getElementById("publishedAt").valueAsDate = new Date();
