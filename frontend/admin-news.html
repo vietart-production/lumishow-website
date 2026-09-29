@@ -31,18 +31,26 @@
   button{font-family:inherit;cursor:pointer;}
   #submitBtn{margin-top:18px;padding:10px 20px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:13.5px;}
   #submitBtn:hover{opacity:.9;}
+  #cancelEditBtn{margin-top:18px;margin-left:8px;padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--dim);font-size:13.5px;}
+  #cancelEditBtn:hover{color:var(--text);}
   #formErr{color:var(--red);font-size:12.5px;min-height:18px;margin-top:10px;}
   #formOk{color:var(--green);font-size:12.5px;min-height:18px;margin-top:10px;}
 
-  .news-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .news-item{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start;background:var(--panel);}
   .news-item:last-child{border-bottom:none;}
+  .news-item.dragging{opacity:.4;}
+  .drag-handle{cursor:grab;touch-action:none;user-select:none;color:var(--dim);font-size:16px;line-height:64px;padding:0 2px;flex-shrink:0;}
+  .drag-handle:active{cursor:grabbing;}
   .news-item img{width:96px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#000;}
   .news-item .ni-body{flex:1;min-width:0;}
   .news-item .ni-title{font-size:13.5px;font-weight:700;margin-bottom:3px;}
   .news-item .ni-meta{font-size:11.5px;color:var(--dim);}
   .news-item .ni-meta a{color:var(--dim);}
+  .news-item .ni-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
   .news-item button{padding:6px 12px;border-radius:7px;border:1px solid rgba(239,107,104,.4);background:none;color:var(--red);font-size:11.5px;flex-shrink:0;}
   .news-item button:hover{background:rgba(239,107,104,.1);}
+  .news-item .edit-btn{border-color:var(--border);color:var(--dim);}
+  .news-item .edit-btn:hover{background:rgba(255,255,255,.06);color:var(--text);}
   .empty-hint{color:var(--dim);font-size:13px;}
   [hidden]{display:none!important;}
 </style>
@@ -86,14 +94,14 @@
       </div>
     </div>
 
-    <label>Tiêu đề (tiếng Việt)</label>
+    <label>Tiêu đề</label>
     <input type="text" id="titleVi" placeholder="Tiêu đề bài viết...">
     <div id="titleEnField" hidden>
       <label>Tiêu đề (tiếng Anh, tuỳ chọn — để trống sẽ dùng lại tiếng Việt)</label>
       <input type="text" id="titleEn" placeholder="">
     </div>
 
-    <label>Nội dung tóm tắt (tiếng Việt)</label>
+    <label>Nội dung tóm tắt</label>
     <textarea id="descVi" placeholder="Tóm tắt nội dung..."></textarea>
     <div id="descEnField" hidden>
       <label>Nội dung tóm tắt (tiếng Anh, tuỳ chọn)</label>
@@ -101,6 +109,7 @@
     </div>
 
     <button type="button" id="submitBtn">Tạo tin tức</button>
+    <button type="button" id="cancelEditBtn" hidden>Huỷ</button>
     <div id="formErr"></div>
     <div id="formOk"></div>
   </div>
@@ -154,23 +163,33 @@ document.getElementById("publishedAt").valueAsDate = new Date();
 
 function escapeHtml(s){ return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
+// Cache nguyên dữ liệu tin (title/desc đủ vi+en) từ lần load gần nhất, dùng để
+// đổ lại vào form khi bấm "Sửa" — khỏi cần thêm endpoint lấy 1 tin riêng lẻ.
+let newsCache = [];
+let editingId = null;
+
 async function loadNewsList(){
   const listEl = document.getElementById("newsList");
   try {
     const res = await fetch(`${API}/news`);
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.message || "Không tải được danh sách tin");
+    newsCache = data.news;
     if (data.news.length === 0) { listEl.innerHTML = '<div class="empty-hint">Chưa có tin nào.</div>'; return; }
     listEl.innerHTML = data.news.map(n => {
       const thumb = n.img ? n.img : (n.youtubeId ? `https://img.youtube.com/vi/${n.youtubeId}/hqdefault.jpg` : "");
       const dateLabel = n.publishedAt ? new Date(n.publishedAt).toLocaleDateString("vi-VN") : "";
       return `<div class="news-item" data-id="${n.id}">
+        <span class="drag-handle" title="Kéo để đổi thứ tự hiển thị">⠿</span>
         ${thumb ? `<img src="${thumb}" alt="">` : ""}
         <div class="ni-body">
           <div class="ni-title">${escapeHtml(n.title?.vi || "")}</div>
-          <div class="ni-meta">${escapeHtml(n.org || "")} · ${dateLabel} · <a href="${n.href}" target="_blank" rel="noopener">link gốc</a></div>
+          <div class="ni-meta">${escapeHtml(n.org || "")} · ${dateLabel} · <a href="${n.href}" target="_blank" rel="noopener">Liên kết</a></div>
         </div>
-        <button type="button" class="del-btn" data-id="${n.id}">Xoá</button>
+        <div class="ni-actions">
+          <button type="button" class="edit-btn" data-id="${n.id}">Sửa</button>
+          <button type="button" class="del-btn" data-id="${n.id}">Xoá</button>
+        </div>
       </div>`;
     }).join("");
   } catch (e) {
@@ -178,14 +197,125 @@ async function loadNewsList(){
   }
 }
 
+function resetForm(){
+  editingId = null;
+  ["youtubeId","pressImgUrl","href","org","titleVi","titleEn","descVi","descEn"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("publishedAt").valueAsDate = new Date();
+  document.querySelector('input[name="kind"][value="press"]').checked = true;
+  document.getElementById("ytFields").hidden = true;
+  document.getElementById("pressFields").hidden = false;
+  document.getElementById("submitBtn").textContent = "Tạo tin tức";
+  document.getElementById("cancelEditBtn").hidden = true;
+}
+
+function fillFormForEdit(n){
+  editingId = n.id;
+  const isPress = !!n.img;
+  document.querySelector(`input[name="kind"][value="${isPress ? "press" : "youtube"}"]`).checked = true;
+  document.getElementById("ytFields").hidden = isPress;
+  document.getElementById("pressFields").hidden = !isPress;
+  document.getElementById("pressImgUrl").value = n.img || "";
+  document.getElementById("youtubeId").value = n.youtubeId || "";
+  document.getElementById("href").value = n.href || "";
+  document.getElementById("org").value = n.org || "";
+  document.getElementById("publishedAt").value = n.publishedAt ? n.publishedAt.slice(0, 10) : "";
+  document.getElementById("titleVi").value = n.title?.vi || "";
+  document.getElementById("titleEn").value = n.title?.en || "";
+  document.getElementById("descVi").value = n.desc?.vi || "";
+  document.getElementById("descEn").value = n.desc?.en || "";
+  document.getElementById("submitBtn").textContent = "Lưu thay đổi";
+  document.getElementById("cancelEditBtn").hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.getElementById("cancelEditBtn").addEventListener("click", resetForm);
+
 document.getElementById("newsList").addEventListener("click", async (e) => {
-  const btn = e.target.closest(".del-btn");
-  if (!btn) return;
-  if (!confirm("Xoá hẳn tin này khỏi trang chủ? Không hoàn tác được.")) return;
+  const editBtn = e.target.closest(".edit-btn");
+  if (editBtn) {
+    const n = newsCache.find(x => x.id === editBtn.dataset.id);
+    if (n) fillFormForEdit(n);
+    return;
+  }
+
+  const delBtn = e.target.closest(".del-btn");
+  if (delBtn) {
+    if (!confirm("Xoá hẳn tin này khỏi trang chủ? Không hoàn tác được.")) return;
+    try {
+      await callAdmin("/admin/news/delete", { newsId: delBtn.dataset.id });
+      if (editingId === delBtn.dataset.id) resetForm();
+      await loadNewsList();
+    } catch (err) { alert(err.message); }
+  }
+});
+
+/* =========================================================
+   KÉO-THẢ ĐỔI THỨ TỰ HIỂN THỊ
+   -----------------------------------------------------------
+   Dùng Pointer Events (không phải HTML5 drag-and-drop gốc) để kéo được
+   cả trên điện thoại/tablet, không chỉ chuột — trang admin PIN-gated này
+   có thể mở từ thiết bị di động. Kéo xong gửi nguyên mảng id theo thứ tự
+   DOM mới lên /admin/news/reorder, backend ghi lại field `order`.
+   ========================================================= */
+let dragEl = null;
+
+function onDragPointerMove(e){
+  if (!dragEl) return;
+  const items = [...document.querySelectorAll(".news-item")];
+  const dragIndex = items.indexOf(dragEl);
+  for (let i = 0; i < items.length; i++){
+    if (i === dragIndex) continue;
+    const rect = items[i].getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    if (i < dragIndex && e.clientY < mid){
+      items[i].parentNode.insertBefore(dragEl, items[i]);
+      break;
+    }
+    if (i > dragIndex && e.clientY > mid){
+      items[i].parentNode.insertBefore(dragEl, items[i].nextSibling);
+      break;
+    }
+  }
+}
+
+function finishDrag(){
+  if (!dragEl) return;
+  dragEl.removeEventListener("pointermove", onDragPointerMove);
+  dragEl.classList.remove("dragging");
+  dragEl = null;
+}
+
+async function onDragPointerUp(){
+  const el = dragEl;
+  finishDrag();
+  if (!el) return;
+  const ids = [...document.querySelectorAll(".news-item")].map(n => n.dataset.id);
   try {
-    await callAdmin("/admin/news/delete", { newsId: btn.dataset.id });
+    await callAdmin("/admin/news/reorder", { ids });
+  } catch (err) {
+    alert("Không lưu được thứ tự mới: " + err.message);
     await loadNewsList();
-  } catch (err) { alert(err.message); }
+  }
+}
+
+function onDragPointerCancel(){
+  finishDrag();
+  loadNewsList();
+}
+
+document.getElementById("newsList").addEventListener("pointerdown", (e) => {
+  const handle = e.target.closest(".drag-handle");
+  if (!handle) return;
+  const item = handle.closest(".news-item");
+  if (!item) return;
+  dragEl = item;
+  item.setPointerCapture(e.pointerId);
+  item.classList.add("dragging");
+  item.addEventListener("pointermove", onDragPointerMove);
+  item.addEventListener("pointerup", onDragPointerUp, { once: true });
+  item.addEventListener("pointercancel", onDragPointerCancel, { once: true });
 });
 
 document.getElementById("submitBtn").addEventListener("click", async () => {
@@ -217,12 +347,14 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   }
 
   try {
-    await callAdmin("/admin/news/create", body);
-    formOk.textContent = "Đã tạo tin tức mới.";
-    ["youtubeId","pressImgUrl","href","org","titleVi","titleEn","descVi","descEn"].forEach(id => {
-      document.getElementById(id).value = "";
-    });
-    document.getElementById("publishedAt").valueAsDate = new Date();
+    if (editingId) {
+      await callAdmin("/admin/news/update", { newsId: editingId, ...body });
+      formOk.textContent = "Đã lưu thay đổi.";
+    } else {
+      await callAdmin("/admin/news/create", body);
+      formOk.textContent = "Đã tạo tin tức mới.";
+    }
+    resetForm();
     await loadNewsList();
   } catch (e) {
     formErr.textContent = e.message;

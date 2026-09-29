@@ -28,11 +28,13 @@ function serializeNews(doc) {
 }
 
 async function listNews() {
-    const snap = await db.collection("news").orderBy("publishedAt", "desc").get();
+    const snap = await db.collection("news").orderBy("order", "asc").get();
     return snap.docs.map(serializeNews);
 }
 
-async function createNews({ img, youtubeId, imgPosition, href, org, title, desc, publishedAt }) {
+// Chung cho createNews/updateNews — tách riêng để 2 hàm không lệch luật kiểm
+// tra khi 1 bên sửa mà quên bên kia.
+function validateNewsFields({ img, youtubeId, href, org, title, desc }) {
 
     if (!href || !String(href).trim()) {
         throw new Error("Thiếu link bài viết (href)");
@@ -53,11 +55,27 @@ async function createNews({ img, youtubeId, imgPosition, href, org, title, desc,
     if (!desc || !String(desc.vi || "").trim()) {
         throw new Error("Thiếu nội dung tiếng Việt");
     }
+}
+
+// Thứ tự hiển thị (order) thấp hơn hiện trước. Tin mới luôn thêm vào CUỐI
+// danh sách (order lớn nhất + 1) — admin tự kéo lên nếu muốn nổi bật ngay,
+// xem reorderNews().
+async function nextOrderValue() {
+    const snap = await db.collection("news").orderBy("order", "desc").limit(1).get();
+    if (snap.empty) return 0;
+    return (snap.docs[0].data().order || 0) + 1;
+}
+
+async function createNews({ img, youtubeId, imgPosition, href, org, title, desc, publishedAt }) {
+
+    validateNewsFields({ img, youtubeId, href, org, title, desc });
 
     const publishedDate = publishedAt ? new Date(publishedAt) : new Date();
     if (isNaN(publishedDate.getTime())) {
         throw new Error("Ngày đăng (publishedAt) không hợp lệ");
     }
+
+    const order = await nextOrderValue();
 
     const docRef = await db.collection("news").add({
         img: img || null,
@@ -71,10 +89,65 @@ async function createNews({ img, youtubeId, imgPosition, href, org, title, desc,
         title: { vi: String(title.vi).trim(), en: String(title.en || title.vi).trim() },
         desc: { vi: String(desc.vi).trim(), en: String(desc.en || desc.vi).trim() },
         publishedAt: publishedDate,
+        order,
         createdAt: FieldValue.serverTimestamp()
     });
 
     return { newsId: docRef.id };
+}
+
+async function updateNews({ newsId, img, youtubeId, href, org, title, desc, publishedAt }) {
+
+    if (!newsId) {
+        throw new Error("Thiếu newsId");
+    }
+
+    validateNewsFields({ img, youtubeId, href, org, title, desc });
+
+    const publishedDate = publishedAt ? new Date(publishedAt) : new Date();
+    if (isNaN(publishedDate.getTime())) {
+        throw new Error("Ngày đăng (publishedAt) không hợp lệ");
+    }
+
+    const ref = db.collection("news").doc(newsId);
+    const snap = await ref.get();
+
+    if (!snap.exists) {
+        throw new Error("Không tìm thấy tin tức này");
+    }
+
+    // Không đụng imgPosition/order ở đây — form sửa không có 2 field này,
+    // .update() chỉ ghi đúng field được liệt kê, giữ nguyên phần còn lại.
+    await ref.update({
+        img: img || null,
+        youtubeId: youtubeId || null,
+        href: String(href).trim(),
+        org: String(org).trim(),
+        title: { vi: String(title.vi).trim(), en: String(title.en || title.vi).trim() },
+        desc: { vi: String(desc.vi).trim(), en: String(desc.en || desc.vi).trim() },
+        publishedAt: publishedDate,
+        updatedAt: FieldValue.serverTimestamp()
+    });
+
+    return { newsId };
+}
+
+// Kéo-thả ở admin-news.html gửi lại NGUYÊN mảng id theo thứ tự hiển thị mới
+// mỗi lần kéo — đơn giản hơn nhiều so với chèn/dời order phân đoạn, và danh
+// sách tin tức luôn đủ nhỏ để ghi lại toàn bộ không tốn kém.
+async function reorderNews({ ids }) {
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        throw new Error("Thiếu danh sách thứ tự (ids)");
+    }
+
+    const batch = db.batch();
+    ids.forEach((id, index) => {
+        batch.update(db.collection("news").doc(String(id)), { order: index });
+    });
+    await batch.commit();
+
+    return { count: ids.length };
 }
 
 async function deleteNews({ newsId }) {
@@ -98,5 +171,7 @@ async function deleteNews({ newsId }) {
 module.exports = {
     listNews,
     createNews,
+    updateNews,
+    reorderNews,
     deleteNews
 };

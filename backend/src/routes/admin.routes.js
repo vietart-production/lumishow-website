@@ -21,7 +21,7 @@ const {
     renameSeat
 } = require("../services/admin.service");
 const { sendTicketEmail } = require("../services/email.service");
-const { createNews, deleteNews } = require("../services/news.service");
+const { createNews, updateNews, reorderNews, deleteNews } = require("../services/news.service");
 
 const SHOW_ID = "son-than-thuy-quai";
 
@@ -389,6 +389,28 @@ router.post("/admin/news/create", requirePin, async (req, res) => {
     } catch (error) {
         console.error("ADMIN CREATE NEWS ERROR:", error);
         return res.status(400).json({ success: false, message: error.message || "Không thể tạo tin tức" });
+    }
+});
+
+router.post("/admin/news/update", requirePin, async (req, res) => {
+    try {
+        const { newsId, img, youtubeId, href, org, title, desc, publishedAt } = req.body;
+        const result = await updateNews({ newsId, img, youtubeId, href, org, title, desc, publishedAt });
+        return res.status(200).json({ success: true, message: "Đã cập nhật tin tức", ...result });
+    } catch (error) {
+        console.error("ADMIN UPDATE NEWS ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật tin tức" });
+    }
+});
+
+router.post("/admin/news/reorder", requirePin, async (req, res) => {
+    try {
+        const { ids } = req.body;
+        const result = await reorderNews({ ids });
+        return res.status(200).json({ success: true, message: "Đã cập nhật thứ tự", ...result });
+    } catch (error) {
+        console.error("ADMIN REORDER NEWS ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật thứ tự" });
     }
 });
 
