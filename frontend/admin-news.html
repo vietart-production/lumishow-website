@@ -60,6 +60,7 @@
     <div class="radio-row">
       <label><input type="radio" name="kind" value="img" checked> Ảnh</label>
       <label><input type="radio" name="kind" value="youtube"> Video YouTube</label>
+      <label><input type="radio" name="kind" value="press"> Báo chí</label>
     </div>
 
     <div id="imgFields">
@@ -72,6 +73,11 @@
     <div id="ytFields" hidden>
       <label>Mã video YouTube (phần sau youtube.com/watch?v=)</label>
       <input type="text" id="youtubeId" placeholder="Xo8B3rfir-k">
+    </div>
+    <div id="pressFields" hidden>
+      <label>Link ảnh (dán địa chỉ ảnh sao chép từ báo/Facebook...)</label>
+      <input type="url" id="pressImgUrl" placeholder="https://...">
+      <p class="hint">Dán thẳng link ảnh từ nguồn ngoài, không cần tải ảnh lên server. Lưu ý: link ảnh từ Facebook (scontent...fbcdn.net) thường có hạn sử dụng, có thể hết hạn và vỡ ảnh sau một thời gian — ưu tiên link từ trang báo nếu có.</p>
     </div>
 
     <label>Link bài viết / video gốc</label>
@@ -90,13 +96,17 @@
 
     <label>Tiêu đề (tiếng Việt)</label>
     <input type="text" id="titleVi" placeholder="Tiêu đề bài viết...">
-    <label>Tiêu đề (tiếng Anh, tuỳ chọn — để trống sẽ dùng lại tiếng Việt)</label>
-    <input type="text" id="titleEn" placeholder="">
+    <div id="titleEnField">
+      <label>Tiêu đề (tiếng Anh, tuỳ chọn — để trống sẽ dùng lại tiếng Việt)</label>
+      <input type="text" id="titleEn" placeholder="">
+    </div>
 
     <label>Nội dung tóm tắt (tiếng Việt)</label>
     <textarea id="descVi" placeholder="Tóm tắt nội dung..."></textarea>
-    <label>Nội dung tóm tắt (tiếng Anh, tuỳ chọn)</label>
-    <textarea id="descEn" placeholder=""></textarea>
+    <div id="descEnField">
+      <label>Nội dung tóm tắt (tiếng Anh, tuỳ chọn)</label>
+      <textarea id="descEn" placeholder=""></textarea>
+    </div>
 
     <button type="button" id="submitBtn">Tạo tin tức</button>
     <div id="formErr"></div>
@@ -142,9 +152,14 @@ async function ensurePin(){
 
 document.querySelectorAll('input[name="kind"]').forEach(r => {
   r.addEventListener("change", () => {
-    const isImg = document.querySelector('input[name="kind"]:checked').value === "img";
-    document.getElementById("imgFields").hidden = !isImg;
-    document.getElementById("ytFields").hidden = isImg;
+    const kind = document.querySelector('input[name="kind"]:checked').value;
+    document.getElementById("imgFields").hidden = kind !== "img";
+    document.getElementById("ytFields").hidden = kind !== "youtube";
+    document.getElementById("pressFields").hidden = kind !== "press";
+    // Tin báo chí giữ nguyên nội dung gốc, không cần dịch tiếng Anh.
+    const isPress = kind === "press";
+    document.getElementById("titleEnField").hidden = isPress;
+    document.getElementById("descEnField").hidden = isPress;
   });
 });
 
@@ -192,10 +207,11 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   formErr.textContent = "";
   formOk.textContent = "";
 
-  const isImg = document.querySelector('input[name="kind"]:checked').value === "img";
+  const kind = document.querySelector('input[name="kind"]:checked').value;
   const imgFile = document.getElementById("imgFile").value.trim();
   const imgPosition = document.getElementById("imgPosition").value.trim();
   const youtubeId = document.getElementById("youtubeId").value.trim();
+  const pressImgUrl = document.getElementById("pressImgUrl").value.trim();
   const href = document.getElementById("href").value.trim();
   const org = document.getElementById("org").value.trim();
   const publishedAt = document.getElementById("publishedAt").value;
@@ -209,9 +225,11 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
     title: { vi: titleVi, en: titleEn || undefined },
     desc: { vi: descVi, en: descEn || undefined }
   };
-  if (isImg) {
+  if (kind === "img") {
     body.img = imgFile ? `image/News/${imgFile}` : undefined;
     body.imgPosition = imgPosition || undefined;
+  } else if (kind === "press") {
+    body.img = pressImgUrl || undefined;
   } else {
     body.youtubeId = youtubeId || undefined;
   }
@@ -219,7 +237,7 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   try {
     await callAdmin("/admin/news/create", body);
     formOk.textContent = "Đã tạo tin tức mới.";
-    ["imgFile","imgPosition","youtubeId","href","org","titleVi","titleEn","descVi","descEn"].forEach(id => {
+    ["imgFile","imgPosition","youtubeId","pressImgUrl","href","org","titleVi","titleEn","descVi","descEn"].forEach(id => {
       document.getElementById(id).value = "";
     });
     document.getElementById("publishedAt").valueAsDate = new Date();
