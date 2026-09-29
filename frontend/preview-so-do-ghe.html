@@ -1211,6 +1211,100 @@ function vipSeatLabel(num){
 const SEATS = buildSeats();
 const SEAT_BY_ID = new Map(SEATS.map(s => [s.id, s]));
 
+/* =========================================================
+   3b. NGĂN GHẾ LẺ MỒ CÔI ("orphan seat")
+   -----------------------------------------------------------
+   Thông lệ phổ biến ở rạp/nhà hát trên thế giới: không cho chọn ghế
+   theo cách để lại đúng 1 ghế trống bị kẹp giữa 2 ghế đã có người —
+   ghế đó gần như không ai muốn ngồi tách biệt 1 mình, rất khó bán sau
+   này (xem "orphan seat rule" / "single seat gap prevention" ở các nền
+   tảng vé như TicketSource, Ticketsolve, Ludus...).
+
+   Ghế "kề nhau" xác định bằng khoảng cách PIXEL THẬT (SEAT_XY), không
+   theo số ghế — vì số ghế nhảy qua các khoảng trống kiến trúc thật
+   (lối thoát hiểm/WC). Đo thực tế: ghế kề thật luôn cách nhau ~18-20px,
+   khoảng trống kiến trúc cách nhau hàng trăm px, nên ngưỡng dưới đây
+   tách bạch hoàn toàn 2 loại, không có vùng mập mờ cần đoán thêm.
+   Khu VIP nhóm riêng theo TỪNG HÀNG NGANG (VIP1-12/13-26/27-43) vì đây
+   là dãy thẳng đánh số liên tục, khác hẳn 2 cung tròn lẻ/chẵn của hàng
+   B-P — nếu nhóm chung theo `row` như hàng thường, khoảng cách giữa 2
+   hàng VIP kề nhau (~28px) quá sát ngưỡng, dễ nhận nhầm thành ghế kề. */
+const ORPHAN_NEIGHBOR_DIST = 26;
+
+function orphanGroupKey(s){
+  if (s.row !== 'VIP') return s.row;
+  if (s.num <= 12) return 'VIP-1';
+  if (s.num <= 26) return 'VIP-2';
+  return 'VIP-3';
+}
+
+const SEAT_NEIGHBORS = new Map(SEATS.map(s => [s.id, []]));
+{
+  const byGroup = new Map();
+  SEATS.forEach(s => {
+    const key = orphanGroupKey(s);
+    if (!byGroup.has(key)) byGroup.set(key, []);
+    byGroup.get(key).push(s);
+  });
+  byGroup.forEach(group => {
+    for (let i = 0; i < group.length; i++){
+      for (let j = i + 1; j < group.length; j++){
+        const a = group[i], b = group[j];
+        if (Math.hypot(a.x - b.x, a.y - b.y) <= ORPHAN_NEIGHBOR_DIST){
+          SEAT_NEIGHBORS.get(a.id).push(b.id);
+          SEAT_NEIGHBORS.get(b.id).push(a.id);
+        }
+      }
+    }
+  });
+}
+
+/* Đoạn ghế liền mạch (bị khoảng trống kiến trúc chia cắt thành nhiều
+   đoạn riêng) — dùng để biết "đoạn này còn ghế trống nào khác để chọn
+   thay không", áp dụng ngoại lệ khi hàng gần hết ghế (không có cách
+   nào tránh được ghế lẻ thì vẫn cho đặt, không chặn oan khách cuối). */
+const SEAT_RUN = new Map();
+const RUN_SEATS = new Map();
+{
+  let nextRunId = 0;
+  SEATS.forEach(s => {
+    if (SEAT_RUN.has(s.id)) return;
+    const runId = nextRunId++;
+    const stack = [s.id], members = [];
+    SEAT_RUN.set(s.id, runId);
+    while (stack.length){
+      const cur = stack.pop();
+      members.push(cur);
+      SEAT_NEIGHBORS.get(cur).forEach(n => {
+        if (!SEAT_RUN.has(n)){ SEAT_RUN.set(n, runId); stack.push(n); }
+      });
+    }
+    RUN_SEATS.set(runId, members);
+  });
+}
+
+/* true nếu CHỌN THÊM candidateId sẽ để lại 1 ghế trống bị kẹp giữa 2 ghế
+   đã có người (kể cả ghế mình vừa/đang chọn) — trừ ghế đầu/cuối cạnh lối
+   đi (chỉ có <2 ghế kề, tự nhiên được miễn) và trừ khi đoạn ghế đó không
+   còn ghế trống nào khác để chọn thay (không thể tránh được). */
+function wouldOrphanSeat(candidateId){
+  const occupiedAfterPick = (seatId) =>
+    seatId === candidateId || seatStates[seatId] !== ST.AVAILABLE;
+
+  for (const n of SEAT_NEIGHBORS.get(candidateId) || []){
+    if (seatStates[n] !== ST.AVAILABLE) continue;
+    const nNeighbors = SEAT_NEIGHBORS.get(n) || [];
+    if (nNeighbors.length < 2) continue;
+    if (!nNeighbors.every(occupiedAfterPick)) continue;
+
+    const run = RUN_SEATS.get(SEAT_RUN.get(n)) || [];
+    const hasAlternative = run.some(id =>
+      id !== n && id !== candidateId && seatStates[id] === ST.AVAILABLE);
+    if (hasAlternative) return true;
+  }
+  return false;
+}
+
 /* Nguồn sự thật duy nhất về trạng thái ghế */
 let seatStates = {};      // { 'B12': 'AVAILABLE', ... }
 let selectedSeats = [];   // ['B12','B13'] — theo thứ tự chọn
@@ -1796,6 +1890,7 @@ function addSeat(id){
   if (st === ST.HELD_BY_OTHER){ toast(t('msg.seatHeldOther'), 'warn'); return; }
   if (st !== ST.AVAILABLE) return;
   if (selectedSeats.length >= MAX_SEATS){ toast(t('msg.maxSeats', { n: MAX_SEATS }), 'warn'); return; }
+  if (wouldOrphanSeat(id)){ toast(t('msg.seatOrphan'), 'warn'); return; }
 
   seatStates[id] = ST.SELECTED_BY_ME;
   selectedSeats.push(id);
@@ -3310,6 +3405,7 @@ const I18N = {
     'msg.seatBlocked':'Ghế này tạm khóa, chưa mở bán cho suất diễn này.',
     'msg.seatHeldOther':'Ghế này đang được người khác thanh toán.',
     'msg.maxSeats':'Mỗi lần đặt tối đa {n} ghế.',
+    'msg.seatOrphan':'Không thể chọn ghế này vì sẽ để trống 1 ghế lẻ ở giữa. Vui lòng chọn ghế liền kề hoặc vị trí khác.',
     'msg.seatSoldChooseAnother':'Ghế này đã được bán rồi! Vui lòng chọn ghế khác.',
     'msg.seatRemoved':'Đã bỏ ghế {id}.',
     'tier.prefix':'Hạng ',
@@ -3433,6 +3529,7 @@ const I18N = {
     'msg.seatBlocked':'This seat is temporarily closed for this showtime.',
     'msg.seatHeldOther':'This seat is currently being paid for by someone else.',
     'msg.maxSeats':'Maximum {n} seats per booking.',
+    'msg.seatOrphan':'Can\'t select this seat — it would leave a single empty seat stranded in between. Please pick an adjacent seat or a different spot.',
     'msg.seatSoldChooseAnother':'This seat has already been sold! Please choose another seat.',
     'msg.seatRemoved':'Seat {id} removed.',
     'tier.prefix':'Tier ',
