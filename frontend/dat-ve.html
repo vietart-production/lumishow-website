@@ -604,7 +604,7 @@
 <section class="show-bar">
   <div class="show-inner">
     <div class="show-id">
-      <img class="show-poster" src="image/News/news0_rxtw_12_8.jpg" alt="Sơn Thần Thủy Quái">
+      <img class="show-poster" src="image/SonThanThuyQuai.jpg" alt="Sơn Thần Thủy Quái">
       <div>
         <h1 class="show-name" data-i18n="show.name">Sơn Thần Thủy Quái</h1>
         <div class="show-when"><svg class="icon"><use href="#ic-calendar"/></svg><span id="showWhen">—</span></div>
@@ -1265,34 +1265,35 @@ const SEAT_NEIGHBORS = new Map(SEATS.map(s => [s.id, []]));
   });
 }
 
-/* Đoạn ghế liền mạch (bị khoảng trống kiến trúc chia cắt thành nhiều
-   đoạn riêng) — dùng để biết "đoạn này còn ghế trống nào khác để chọn
-   thay không", áp dụng ngoại lệ khi hàng gần hết ghế (không có cách
-   nào tránh được ghế lẻ thì vẫn cho đặt, không chặn oan khách cuối). */
-const SEAT_RUN = new Map();
-const RUN_SEATS = new Map();
-{
-  let nextRunId = 0;
-  SEATS.forEach(s => {
-    if (SEAT_RUN.has(s.id)) return;
-    const runId = nextRunId++;
-    const stack = [s.id], members = [];
-    SEAT_RUN.set(s.id, runId);
-    while (stack.length){
-      const cur = stack.pop();
-      members.push(cur);
-      SEAT_NEIGHBORS.get(cur).forEach(n => {
-        if (!SEAT_RUN.has(n)){ SEAT_RUN.set(n, runId); stack.push(n); }
-      });
-    }
-    RUN_SEATS.set(runId, members);
-  });
+/* "Túi ghế trống" quanh 1 ghế — đi theo SEAT_NEIGHBORS nhưng chỉ bước tiếp
+   qua ghế đang AVAILABLE, dừng lại ở ghế đã có người thật (SOLD/HELD/
+   BLOCKED/đã chọn). Tính LẠI mỗi lần gọi theo seatStates hiện tại — KHÔNG
+   dùng đoạn liền mạch tĩnh tính 1 lần lúc tải trang (kiểu cũ), vì 1 hàng có
+   thể liền mạch kiến trúc tới 40-50 ghế, hầu như lúc nào cũng "còn ghế khác"
+   ở đâu đó rất xa, khiến ngoại lệ gần hết chỗ không bao giờ kích hoạt đúng
+   chỗ cần — gây lỗi khoá chéo thật: đúng 2 ghế trống kẹp giữa 2 khối đã bán
+   (VD ...SOLD, A, B, SOLD...) thì chọn A bị chặn vì "sợ" bỏ trống B, chọn B
+   lại bị chặn vì "sợ" bỏ trống A — không ai chọn được ghế nào trong cặp này
+   nữa dù chọn cả 2 cùng lúc là khớp khít, không hề để trống ghế nào. */
+function availablePocket(startId){
+  const visited = new Set([startId]);
+  const stack = [startId];
+  while (stack.length){
+    const cur = stack.pop();
+    (SEAT_NEIGHBORS.get(cur) || []).forEach(n => {
+      if (visited.has(n) || seatStates[n] !== ST.AVAILABLE) return;
+      visited.add(n);
+      stack.push(n);
+    });
+  }
+  return visited;
 }
 
 /* true nếu CHỌN THÊM candidateId sẽ để lại 1 ghế trống bị kẹp giữa 2 ghế
    đã có người (kể cả ghế mình vừa/đang chọn) — trừ ghế đầu/cuối cạnh lối
-   đi (chỉ có <2 ghế kề, tự nhiên được miễn) và trừ khi đoạn ghế đó không
-   còn ghế trống nào khác để chọn thay (không thể tránh được). */
+   đi (chỉ có <2 ghế kề, tự nhiên được miễn) và trừ khi túi ghế trống quanh
+   đó không còn ghế nào khác để chọn thay (không thể tránh được, VD chỉ còn
+   đúng 1 ghế lẻ cuối cùng của cả đoạn). */
 function wouldOrphanSeat(candidateId){
   const occupiedAfterPick = (seatId) =>
     seatId === candidateId || seatStates[seatId] !== ST.AVAILABLE;
@@ -1303,9 +1304,8 @@ function wouldOrphanSeat(candidateId){
     if (nNeighbors.length < 2) continue;
     if (!nNeighbors.every(occupiedAfterPick)) continue;
 
-    const run = RUN_SEATS.get(SEAT_RUN.get(n)) || [];
-    const hasAlternative = run.some(id =>
-      id !== n && id !== candidateId && seatStates[id] === ST.AVAILABLE);
+    const pocket = availablePocket(n); // tính trên trạng thái HIỆN TẠI (candidateId vẫn coi là AVAILABLE ở bước này)
+    const hasAlternative = [...pocket].some(id => id !== n && id !== candidateId);
     if (hasAlternative) return true;
   }
   return false;
