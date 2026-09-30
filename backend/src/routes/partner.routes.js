@@ -7,12 +7,16 @@ const { checkPartnerKey, listOrdersForPartner, listShowtimesForPartner } = requi
 
 // Endpoint nhạy cảm (đọc PII khách: tên/SĐT/email) nhưng chỉ đọc, không
 // huỷ/tạo được gì — giới hạn nhẹ hơn adminLimiter (huỷ/tạo vé) một chút,
-// vẫn đủ chặn dò key.
+// vẫn đủ chặn dò key. skipSuccessfulRequests: chỉ đếm request LỖI (sai
+// apiKey = 401) vào giới hạn — trang partner-orders.html là trang nội bộ,
+// dùng key ĐÚNG gọi API liên tục (lọc, phân trang, kéo-thả...) trong 1
+// phiên không nên tự dưng bị chặn, vẫn giữ nguyên chặn dò key sai.
 const partnerLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 30,
     standardHeaders: true,
     legacyHeaders: false,
+    skipSuccessfulRequests: true,
     message: {
         success: false,
         message: "Quá nhiều yêu cầu, vui lòng thử lại sau."

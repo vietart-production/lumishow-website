@@ -27,11 +27,18 @@ const SHOW_ID = "son-than-thuy-quai";
 
 // Giới hạn chặt — đây là endpoint nhạy cảm nhất hệ thống (huỷ/tạo vé bằng
 // tay), PIN chỉ 7 số nên cần chặn dò mật khẩu tích cực hơn rate-limit chung.
+// skipSuccessfulRequests: chỉ đếm request LỖI (sai PIN = 401, hoặc lỗi
+// nghiệp vụ 400) vào giới hạn — request thành công (200/201) không tính.
+// Các trang nội bộ (admin-news.html kéo-thả, admin-showtimes.html sửa hàng
+// loạt...) gọi API liên tục với PIN ĐÚNG trong 1 phiên làm việc, tự dưng
+// dính "Quá nhiều yêu cầu" dù không hề dò mật khẩu — giữ nguyên chặn brute-
+// force (vẫn đếm 401 sai PIN) mà không làm phiền người dùng nội bộ hợp lệ.
 const adminLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 phút
     limit: 20,
     standardHeaders: true,
     legacyHeaders: false,
+    skipSuccessfulRequests: true,
     message: {
         success: false,
         message: "Quá nhiều yêu cầu, vui lòng thử lại sau."
