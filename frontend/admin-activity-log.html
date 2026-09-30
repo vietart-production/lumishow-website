@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiShow — Lịch sử thao tác admin</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#08100c; --panel:#111a14; --panel2:#0d1310; --border:rgba(255,255,255,.1);
+    --text:#e8eee9; --dim:#8fa196; --green:#3ddc84; --red:#ef6b68; --gold:#fbbb21;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 24px 60px;}
+  h1{font-size:20px;font-weight:700;margin:0 0 4px;color:var(--gold);}
+  .sub{color:var(--dim);font-size:13px;margin:0 0 22px;}
+
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .filters select,.filters input[type=date]{
+    padding:9px 11px;border-radius:8px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);font-size:13.5px;color-scheme:dark;
+  }
+  .filters button{padding:9px 16px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:13.5px;cursor:pointer;}
+  [hidden]{display:none!important;}
+
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{color:var(--dim);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0;background:var(--panel);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(255,255,255,.03);}
+  .cat{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .cat[data-cat="Vé"]{background:rgba(239,107,104,.15);color:var(--red);}
+  .cat[data-cat="Đơn hàng"]{background:rgba(61,220,132,.15);color:var(--green);}
+  .cat[data-cat="Suất diễn"]{background:rgba(251,187,33,.15);color:var(--gold);}
+  .cat[data-cat="Ghế"]{background:rgba(124,255,90,.15);color:#9cff7a;}
+  .cat[data-cat="Tin tức"]{background:rgba(167,139,250,.16);color:#a78bfa;}
+  .cat[data-cat="Khác"]{background:rgba(255,255,255,.08);color:var(--dim);}
+  .when{white-space:nowrap;color:var(--dim);font-variant-numeric:tabular-nums;}
+  details summary{cursor:pointer;color:var(--dim);font-size:11.5px;margin-top:4px;}
+  details pre{margin:6px 0 0;padding:8px 10px;background:var(--panel2);border-radius:7px;font-size:11.5px;color:var(--text);white-space:pre-wrap;word-break:break-all;max-width:520px;}
+  .empty,.loading,.err{padding:40px;text-align:center;color:var(--dim);}
+  .err{color:var(--red);}
+  .footer-row{display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
+  #loadMore{padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px;}
+  #loadMore:disabled{opacity:.4;cursor:default;}
+  #summary{color:var(--dim);font-size:12.5px;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div style="max-width:360px;margin:80px auto;padding:28px;background:var(--panel);border:1px solid var(--border);border-radius:14px;">
+    <h2 style="font-size:16px;margin:0 0 16px;">Nhập PIN admin</h2>
+    <input type="password" id="pinInput" placeholder="PIN admin" autocomplete="off"
+      style="width:100%;padding:11px 12px;border-radius:8px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:14px;margin-bottom:10px;box-sizing:border-box;">
+    <button id="gateBtn" style="width:100%;padding:11px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:14px;cursor:pointer;">Vào xem lịch sử</button>
+    <div id="gateError" style="color:var(--red);font-size:12.5px;min-height:16px;margin-top:4px;"></div>
+  </div>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <h1>Lịch sử thao tác admin</h1>
+  <p class="sub">Ghi lại mọi thao tác admin thành công (huỷ/tạo vé, sửa/xoá đơn, suất diễn, ghế, tin tức...) — chỉ tính từ khi tính năng này triển khai (2026-09-30) trở đi, không có dữ liệu trước đó.</p>
+
+  <div class="filters">
+    <select id="fCategory">
+      <option value="">Mọi loại</option>
+      <option value="Vé">Vé</option>
+      <option value="Đơn hàng">Đơn hàng</option>
+      <option value="Suất diễn">Suất diễn</option>
+      <option value="Ghế">Ghế</option>
+      <option value="Tin tức">Tin tức</option>
+      <option value="Khác">Khác</option>
+    </select>
+    <select id="fDatePreset">
+      <option value="">Mọi thời gian</option>
+      <option value="today">Hôm nay</option>
+      <option value="yesterday">Hôm qua</option>
+      <option value="7days">7 ngày qua</option>
+      <option value="thisMonth">Tháng này</option>
+      <option value="thisYear">Năm này</option>
+      <option value="custom">Tùy chỉnh...</option>
+    </select>
+    <input type="date" id="fDateFrom" hidden>
+    <input type="date" id="fDateTo" hidden>
+    <button id="fApply">Lọc</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Thời gian</th><th>Loại</th><th>Nội dung</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty" hidden>Không có thao tác nào khớp bộ lọc.</div>
+    <div id="err" class="err" hidden></div>
+  </div>
+
+  <div id="loading" class="loading">Đang tải...</div>
+
+  <div class="footer-row">
+    <span id="summary"></span>
+    <button id="loadMore" hidden>Tải thêm</button>
+  </div>
+</div>
+
+<script>
+const API = "https://lumishow-website.onrender.com/api";
+
+let pin = sessionStorage.getItem("lumishow-admin-pin") || prompt("Nhập PIN admin");
+let cursor = null;
+let totalLoaded = 0;
+
+const gate = document.getElementById("gate");
+const app = document.getElementById("app");
+const rowsEl = document.getElementById("rows");
+const emptyEl = document.getElementById("empty");
+const errEl = document.getElementById("err");
+const loadingEl = document.getElementById("loading");
+const loadMoreBtn = document.getElementById("loadMore");
+const summaryEl = document.getElementById("summary");
+
+function escapeHtml(s){ return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmtDate(iso){
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("vi-VN", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+}
+
+async function callAdmin(path, body){
+  const res = await fetch(`${API}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...(body || {}), password: pin })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Thao tác thất bại");
+  return data;
+}
+
+async function ensurePin(){
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await callAdmin("/admin/verify-pin", {});
+      sessionStorage.setItem("lumishow-admin-pin", pin);
+      return;
+    } catch (e) {
+      pin = prompt("Sai PIN admin, nhập lại:");
+      if (!pin) break;
+    }
+  }
+  document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#e8eee9;font-family:sans-serif">Cần đúng PIN admin để dùng trang này.</div>';
+  throw new Error("Không có PIN hợp lệ");
+}
+
+// ---- Khoảng thời gian nhanh — y hệt logic đã dùng ở partner-orders.html ----
+function parseDateInputLocal(str){
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function addDays(d, n){ const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+
+function computeDateRange(){
+  const preset = document.getElementById("fDatePreset").value;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  switch (preset) {
+    case "today":
+      return { dateFrom: today.toISOString(), dateTo: addDays(today, 1).toISOString() };
+    case "yesterday":
+      return { dateFrom: addDays(today, -1).toISOString(), dateTo: today.toISOString() };
+    case "7days":
+      return { dateFrom: addDays(today, -6).toISOString(), dateTo: addDays(today, 1).toISOString() };
+    case "thisMonth": {
+      const from = new Date(today.getFullYear(), today.getMonth(), 1);
+      const to = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      return { dateFrom: from.toISOString(), dateTo: to.toISOString() };
+    }
+    case "thisYear": {
+      const from = new Date(today.getFullYear(), 0, 1);
+      const to = new Date(today.getFullYear() + 1, 0, 1);
+      return { dateFrom: from.toISOString(), dateTo: to.toISOString() };
+    }
+    case "custom": {
+      const fromStr = document.getElementById("fDateFrom").value;
+      const toStr = document.getElementById("fDateTo").value;
+      return {
+        dateFrom: fromStr ? parseDateInputLocal(fromStr).toISOString() : undefined,
+        dateTo: toStr ? addDays(parseDateInputLocal(toStr), 1).toISOString() : undefined
+      };
+    }
+    default:
+      return {};
+  }
+}
+
+document.getElementById("fDatePreset").addEventListener("change", () => {
+  const isCustom = document.getElementById("fDatePreset").value === "custom";
+  document.getElementById("fDateFrom").hidden = !isCustom;
+  document.getElementById("fDateTo").hidden = !isCustom;
+});
+
+function renderRow(e){
+  return `<tr>
+    <td class="when">${fmtDate(e.createdAt)}</td>
+    <td><span class="cat" data-cat="${escapeHtml(e.category)}">${escapeHtml(e.category)}</span></td>
+    <td>
+      ${escapeHtml(e.summary)}
+      <details><summary>Xem chi tiết</summary><pre>${escapeHtml(e.action)}\n${escapeHtml(JSON.stringify(e.requestBody, null, 2))}</pre></details>
+    </td>
+  </tr>`;
+}
+
+async function fetchActivity({ reset }){
+  if (reset) { cursor = null; rowsEl.innerHTML = ""; totalLoaded = 0; }
+
+  loadingEl.hidden = false;
+  errEl.hidden = true;
+  loadMoreBtn.hidden = true;
+
+  const body = {
+    category: document.getElementById("fCategory").value || undefined,
+    ...computeDateRange(),
+    limit: 50,
+    cursor: cursor || undefined
+  };
+
+  try {
+    const data = await callAdmin("/admin/activity/list", body);
+    data.entries.forEach(e => rowsEl.insertAdjacentHTML("beforeend", renderRow(e)));
+    totalLoaded += data.entries.length;
+    cursor = data.nextCursor;
+
+    emptyEl.hidden = totalLoaded > 0;
+    loadMoreBtn.hidden = !cursor;
+    summaryEl.textContent = `Đã tải ${totalLoaded} thao tác`;
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.hidden = false;
+  } finally {
+    loadingEl.hidden = true;
+  }
+}
+
+document.getElementById("fApply").addEventListener("click", () => fetchActivity({ reset: true }));
+loadMoreBtn.addEventListener("click", () => fetchActivity({ reset: false }));
+
+(async function init(){
+  await ensurePin();
+  gate.hidden = true;
+  app.hidden = false;
+  fetchActivity({ reset: true });
+})();
+</script>
+
+</body>
+</html>

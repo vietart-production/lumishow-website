@@ -182,6 +182,7 @@
       <button type="button" class="admin-toggle" id="orderToolBtn" hidden>Quản lý đơn</button>
       <button type="button" class="admin-toggle" id="showtimeToolBtn" hidden>📅 Quản lý suất diễn</button>
       <button type="button" class="admin-toggle" id="newsToolBtn" hidden>📰 Quản lý tin tức</button>
+      <button type="button" class="admin-toggle" id="activityLogToolBtn" hidden>🕒 Lịch sử thao tác</button>
       <div class="admin-gate-row" id="adminGateRow" hidden>
         <input type="password" id="adminPinInput" placeholder="PIN admin" autocomplete="off">
         <button type="button" id="adminGateBtn">Mở khoá</button>
@@ -832,6 +833,7 @@ async function tryUnlockAdmin(){
     document.getElementById("orderToolBtn").hidden = false;
     document.getElementById("showtimeToolBtn").hidden = false;
     document.getElementById("newsToolBtn").hidden = false;
+    document.getElementById("activityLogToolBtn").hidden = false;
     fetchOrders({ reset: true }); // vẽ lại để thêm cột Thao tác
   } catch (e) {
     adminGateErr.textContent = "Không kết nối được máy chủ";
@@ -850,6 +852,10 @@ document.getElementById("showtimeToolBtn").addEventListener("click", () => {
 document.getElementById("newsToolBtn").addEventListener("click", () => {
   sessionStorage.setItem("lumishow-admin-pin", adminPin);
   window.open("admin-news.html", "_blank", "noopener");
+});
+document.getElementById("activityLogToolBtn").addEventListener("click", () => {
+  sessionStorage.setItem("lumishow-admin-pin", adminPin);
+  window.open("admin-activity-log.html", "_blank", "noopener");
 });
 
 // ---- Sửa / Xoá đơn — event delegation trên toàn #app vì nút nằm trong cả

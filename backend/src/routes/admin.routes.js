@@ -22,6 +22,7 @@ const {
 } = require("../services/admin.service");
 const { sendTicketEmail } = require("../services/email.service");
 const { createNews, updateNews, reorderNews, deleteNews } = require("../services/news.service");
+const { logAdminActivity, listAdminActivity } = require("../services/activityLog.service");
 
 const SHOW_ID = "son-than-thuy-quai";
 
@@ -46,6 +47,28 @@ const adminLimiter = rateLimit({
 });
 
 router.use("/admin", adminLimiter);
+
+// Ghi lịch sử thao tác admin — bọc res.json() 1 lần cho TOÀN BỘ /admin/*
+// thay vì từng hàm trong admin.service.js tự gọi, để endpoint thêm sau này
+// tự động được ghi log mà không ai phải nhớ thêm gì (xem giải thích đầy đủ ở
+// đầu activityLog.service.js). Trả response cho client TRƯỚC (originalJson),
+// rồi mới ghi log không đợi (không được để lỗi ghi log làm hỏng response
+// thật hoặc làm chậm request).
+router.use("/admin", (req, res, next) => {
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+        const result = originalJson(body);
+        logAdminActivity({
+            path: req.path,
+            method: req.method,
+            statusCode: res.statusCode,
+            body: req.body,
+            responseMessage: body && body.message
+        }).catch((err) => console.error("LOG ADMIN ACTIVITY ERROR:", err));
+        return result;
+    };
+    next();
+});
 
 function requirePin(req, res, next) {
     if (!checkPin(req.body.password)) {
@@ -429,6 +452,24 @@ router.post("/admin/news/delete", requirePin, async (req, res) => {
     } catch (error) {
         console.error("ADMIN DELETE NEWS ERROR:", error);
         return res.status(400).json({ success: false, message: error.message || "Không thể xoá tin tức" });
+    }
+});
+
+// ==========================================
+// POST /api/admin/activity/list
+// body: { password, category?, dateFrom?, dateTo?, limit?, cursor? }
+// Chỉ đọc — trang admin-activity-log.html. Bản thân endpoint này KHÔNG bị
+// ghi vào chính lịch sử (nằm trong SKIP_LOG_PATHS ở activityLog.service.js).
+// ==========================================
+
+router.post("/admin/activity/list", requirePin, async (req, res) => {
+    try {
+        const { category, dateFrom, dateTo, limit, cursor } = req.body;
+        const result = await listAdminActivity({ category, dateFrom, dateTo, limit, cursor });
+        return res.status(200).json({ success: true, ...result });
+    } catch (error) {
+        console.error("ADMIN LIST ACTIVITY ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể lấy lịch sử thao tác" });
     }
 });
 
