@@ -28,6 +28,7 @@
   /* ---- Bộ lọc ---- */
   .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;position:relative;z-index:5;}
   .filters select{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13.5px;}
+  .filters input[type=date]{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;color-scheme:dark;}
   .filters button{padding:9px 16px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:13.5px;cursor:pointer;}
 
   /* ---- Bộ chọn suất diễn — 72 suất phẳng trong <select> gốc rất khó dò
@@ -216,6 +217,24 @@
       <option value="direct">Khách đặt trực tiếp</option>
       <option value="partner">Bán bởi đối tác</option>
     </select>
+    <select id="fTier">
+      <option value="">Mọi hạng ghế</option>
+      <option value="Sơn Thần">Sơn Thần</option>
+      <option value="Thủy Quái">Thủy Quái</option>
+      <option value="Mị Nương">Mị Nương</option>
+      <option value="Vua Hùng">Vua Hùng</option>
+    </select>
+    <select id="fDatePreset">
+      <option value="">Mọi thời gian</option>
+      <option value="today">Hôm nay</option>
+      <option value="yesterday">Hôm qua</option>
+      <option value="7days">7 ngày qua</option>
+      <option value="thisMonth">Tháng này</option>
+      <option value="thisYear">Năm này</option>
+      <option value="custom">Tùy chỉnh...</option>
+    </select>
+    <input type="date" id="fDateFrom" hidden>
+    <input type="date" id="fDateTo" hidden>
     <button id="fApply">Lọc</button>
   </div>
 
@@ -226,7 +245,7 @@
           <th>Mã đơn</th>
           <th class="sortable active desc" id="thCreatedAt">Tạo lúc <span class="arrow">▼</span></th>
           <th>Trạng thái</th><th>Khách</th>
-          <th>SĐT</th><th>Email</th><th>Ghế</th><th>Tiền</th>
+          <th>SĐT</th><th>Email</th><th>Ghế</th><th>Hạng ghế</th><th>Tiền</th>
           <th id="thActions" hidden>Thao tác</th>
         </tr>
       </thead>
@@ -319,6 +338,74 @@ function applySourceFilter(orders){
   return orders.filter(o => f === "partner" ? isPartnerSale(o) : !isPartnerSale(o));
 }
 function fmtStatusDisplay(o){ return isPartnerSale(o) ? "Bán bởi đối tác" : fmtStatus(o.orderStatus); }
+
+// Lọc "Hạng ghế" — cũng là field không có trong Firestore query (backend tự
+// tra và đính seatTiers[] vào mỗi đơn, xem partner.service.js) nên lọc phía
+// client sau khi tải, giống hệt cách fSource ở trên đã làm.
+function currentTierFilter(){ return document.getElementById("fTier").value; }
+function applyTierFilter(orders){
+  const f = currentTierFilter();
+  if (!f) return orders;
+  return orders.filter(o => (o.seatTiers || []).includes(f));
+}
+
+// Áp mọi bộ lọc chỉ-có-ở-client (không gửi lên backend) cùng lúc.
+function applyClientFilters(orders){
+  return applyTierFilter(applySourceFilter(orders));
+}
+
+// ---- Bộ lọc khoảng thời gian (tạo đơn) — quy đổi lựa chọn nhanh thành
+// dateFrom/dateTo cụ thể gửi lên backend (lọc thật ở tầng Firestore query,
+// khác lọc client ở trên, vì createdAt đã sẵn orderBy/index nên lọc range
+// tại đây vẫn phân trang đúng). Dựng mốc theo GIỜ ĐỊA PHƯƠNG (new Date(y,m,d),
+// không phải new Date("YYYY-MM-DD") vốn bị hiểu là UTC và lệch múi giờ VN). ----
+function parseDateInputLocal(str){
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function addDays(d, n){ const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+
+function computeDateRange(){
+  const preset = document.getElementById("fDatePreset").value;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  switch (preset) {
+    case "today":
+      return { dateFrom: today.toISOString(), dateTo: addDays(today, 1).toISOString() };
+    case "yesterday":
+      return { dateFrom: addDays(today, -1).toISOString(), dateTo: today.toISOString() };
+    case "7days":
+      // 7 ngày qua TÍNH CẢ hôm nay: từ (hôm nay - 6 ngày) đến hết hôm nay.
+      return { dateFrom: addDays(today, -6).toISOString(), dateTo: addDays(today, 1).toISOString() };
+    case "thisMonth": {
+      const from = new Date(today.getFullYear(), today.getMonth(), 1);
+      const to = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      return { dateFrom: from.toISOString(), dateTo: to.toISOString() };
+    }
+    case "thisYear": {
+      const from = new Date(today.getFullYear(), 0, 1);
+      const to = new Date(today.getFullYear() + 1, 0, 1);
+      return { dateFrom: from.toISOString(), dateTo: to.toISOString() };
+    }
+    case "custom": {
+      const fromStr = document.getElementById("fDateFrom").value;
+      const toStr = document.getElementById("fDateTo").value;
+      return {
+        dateFrom: fromStr ? parseDateInputLocal(fromStr).toISOString() : undefined,
+        // đến HẾT ngày toStr (đầu ngày kế tiếp), không phải đầu ngày toStr.
+        dateTo: toStr ? addDays(parseDateInputLocal(toStr), 1).toISOString() : undefined
+      };
+    }
+    default:
+      return {};
+  }
+}
+
+document.getElementById("fDatePreset").addEventListener("change", () => {
+  const isCustom = document.getElementById("fDatePreset").value === "custom";
+  document.getElementById("fDateFrom").hidden = !isCustom;
+  document.getElementById("fDateTo").hidden = !isCustom;
+});
 
 const DOW_NAMES = ["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
 const DOW_SHORT = ["CN","T2","T3","T4","T5","T6","T7"];
@@ -503,6 +590,7 @@ async function fetchSingleShowtime({ reset }){
     apiKey,
     showtimeId: currentShowtimeFilter(),
     status: document.getElementById("fStatus").value || undefined,
+    ...computeDateRange(),
     limit: 50,
     cursor: cursor || undefined,
     sortDir
@@ -510,7 +598,7 @@ async function fetchSingleShowtime({ reset }){
 
   try {
     const data = await callOrdersApi(body);
-    const orders = applySourceFilter(data.orders);
+    const orders = applyClientFilters(data.orders);
 
     orders.forEach(o => rowsEl.insertAdjacentHTML("beforeend", renderRow(o)));
     lastLoadedOrders.push(...orders);
@@ -546,12 +634,13 @@ async function fetchAllGrouped(){
   groupedViewEl.innerHTML = "";
 
   const status = document.getElementById("fStatus").value || undefined;
+  const dateRange = computeDateRange();
   const all = [];
 
   try {
     let pageCursor = undefined;
     for (let page = 0; page < MAX_AUTO_PAGES; page++) {
-      const data = await callOrdersApi({ apiKey, status, limit: 50, cursor: pageCursor, sortDir });
+      const data = await callOrdersApi({ apiKey, status, ...dateRange, limit: 50, cursor: pageCursor, sortDir });
       all.push(...data.orders);
       if (!data.nextCursor) break;
       pageCursor = data.nextCursor;
@@ -559,7 +648,7 @@ async function fetchAllGrouped(){
 
     emptyEl.hidden = true; // empty message chỉ dùng cho bảng đơn — chế độ nhóm tự báo rỗng riêng
 
-    const filtered = applySourceFilter(all);
+    const filtered = applyClientFilters(all);
     lastLoadedOrders = filtered;
 
     if (filtered.length === 0) {
@@ -592,7 +681,7 @@ async function fetchAllGrouped(){
           <table>
             <thead><tr>
               <th>Mã đơn</th><th>Tạo lúc</th><th>Trạng thái</th><th>Khách</th>
-              <th>SĐT</th><th>Email</th><th>Ghế</th><th>Tiền</th>
+              <th>SĐT</th><th>Email</th><th>Ghế</th><th>Hạng ghế</th><th>Tiền</th>
               ${adminUnlocked ? "<th>Thao tác</th>" : ""}
             </tr></thead>
             <tbody>${orders.map(renderRow).join("")}</tbody>
@@ -653,6 +742,7 @@ function renderRow(o){
     <td>${escapeHtml(o.customerPhone)}</td>
     <td>${escapeHtml(o.customerEmail)}</td>
     <td>${escapeHtml((o.seatIds || []).join(", "))}</td>
+    <td>${escapeHtml((o.seatTiers && o.seatTiers.length) ? o.seatTiers.join(", ") : "—")}</td>
     <td class="amount">${fmtVND(o.amount)}</td>
     ${adminUnlocked ? `<td><div class="row-actions">
       <button type="button" class="edit-btn" data-order-id="${escapeHtml(o.orderId)}">Sửa</button>
@@ -843,10 +933,11 @@ async function handleDeleteOrder(orderId){
 document.getElementById("downloadBtn").addEventListener("click", () => {
   if (lastLoadedOrders.length === 0) { alert("Chưa có dữ liệu để tải."); return; }
 
-  const headers = ["Mã đơn","Suất diễn","Tạo lúc","Trạng thái","Khách hàng","SĐT","Email","Ghế","Tiền"];
+  const headers = ["Mã đơn","Suất diễn","Tạo lúc","Trạng thái","Khách hàng","SĐT","Email","Ghế","Hạng ghế","Tiền"];
   const rows = lastLoadedOrders.map(o => [
     o.orderCode, o.showtimeId, fmtDate(o.createdAt), fmtStatusDisplay(o),
-    o.customerName, o.customerPhone, o.customerEmail, (o.seatIds||[]).join(", "), o.amount
+    o.customerName, o.customerPhone, o.customerEmail, (o.seatIds||[]).join(", "),
+    (o.seatTiers||[]).join(", "), o.amount
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);

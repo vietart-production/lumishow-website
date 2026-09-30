@@ -31,7 +31,7 @@ const DEFAULT_LIMIT = 50;
 // của bản ghi cuối cùng ở trang trước, dạng ISO string).
 // ==========================================
 
-async function listOrdersForPartner({ showtimeId, status, limit, cursor, sortDir } = {}) {
+async function listOrdersForPartner({ showtimeId, status, dateFrom, dateTo, limit, cursor, sortDir } = {}) {
 
     let q = db.collection("orders").where("showId", "==", SHOW_ID);
 
@@ -44,6 +44,21 @@ async function listOrdersForPartner({ showtimeId, status, limit, cursor, sortDir
             throw new Error(`Trạng thái không hợp lệ: ${status}`);
         }
         q = q.where("orderStatus", "==", status);
+    }
+
+    // Khoảng thời gian lọc theo createdAt — CÙNG field đang orderBy nên không
+    // cần composite index mới ngoài 4 index đã có cho showId/showtimeId/
+    // orderStatus + orderBy(createdAt) (Firestore chỉ đòi index riêng khi
+    // range nằm trên field KHÁC field orderBy đầu tiên).
+    if (dateFrom) {
+        const d = new Date(dateFrom);
+        if (Number.isNaN(d.getTime())) throw new Error("dateFrom không hợp lệ");
+        q = q.where("createdAt", ">=", d);
+    }
+    if (dateTo) {
+        const d = new Date(dateTo);
+        if (Number.isNaN(d.getTime())) throw new Error("dateTo không hợp lệ");
+        q = q.where("createdAt", "<", d);
     }
 
     const safeLimit = Math.min(Math.max(Number(limit) || DEFAULT_LIMIT, 1), MAX_LIMIT);
@@ -79,12 +94,57 @@ async function listOrdersForPartner({ showtimeId, status, limit, cursor, sortDir
         };
     });
 
+    await attachSeatTiers(orders);
+
     const lastDoc = snap.docs[snap.docs.length - 1];
     const nextCursor = (lastDoc && snap.docs.length === safeLimit)
         ? lastDoc.data().createdAt.toDate().toISOString()
         : null;
 
     return { orders, nextCursor };
+}
+
+// Tra hạng ghế thật (field tierName có sẵn trên doc ghế) cho từng đơn, để
+// hiển thị cột "Hạng ghế" + lọc theo hạng ở partner-orders.html — orders
+// không tự lưu hạng ghế (chỉ lưu seatIds), nên phải tra chéo sang
+// shows/{showId}/showtimes/{showtimeId}/seats/{seatId}. 1 đơn có thể có
+// nhiều ghế khác hạng nên trả về MẢNG hạng riêng biệt (seatTiers), không
+// phải 1 giá trị. Khử trùng lặp theo showtimeId+seatId trước khi đọc để
+// không đọc lại cùng 1 ghế nhiều lần trong cùng 1 trang kết quả.
+async function attachSeatTiers(orders) {
+    const refs = new Map(); // "showtimeId/seatId" -> DocumentReference
+
+    orders.forEach((o) => {
+        if (!o.showtimeId) return;
+        (o.seatIds || []).forEach((seatId) => {
+            const key = `${o.showtimeId}/${seatId}`;
+            if (refs.has(key)) return;
+            refs.set(key, db.collection("shows").doc(SHOW_ID)
+                .collection("showtimes").doc(o.showtimeId)
+                .collection("seats").doc(seatId));
+        });
+    });
+
+    const keys = [...refs.keys()];
+    if (keys.length === 0) {
+        orders.forEach((o) => { o.seatTiers = []; });
+        return;
+    }
+
+    const snaps = await Promise.all(keys.map((key) => refs.get(key).get()));
+    const tierNameByKey = new Map();
+    keys.forEach((key, i) => {
+        tierNameByKey.set(key, snaps[i].exists ? (snaps[i].data().tierName || null) : null);
+    });
+
+    orders.forEach((o) => {
+        const tiers = new Set();
+        (o.seatIds || []).forEach((seatId) => {
+            const tierName = tierNameByKey.get(`${o.showtimeId}/${seatId}`);
+            if (tierName) tiers.add(tierName);
+        });
+        o.seatTiers = [...tiers];
+    });
 }
 
 // ==========================================
