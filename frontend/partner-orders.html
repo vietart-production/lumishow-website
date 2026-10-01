@@ -325,9 +325,13 @@ function fmtStatus(s){ return STATUS_LABELS[s] || s; }
 // Đơn bán buôn cho đối tác (VD lô 218 vé Thủy Quái suất 26/9 16:30, xem
 // CLAUDE.md) — vẫn orderStatus:"PAID" thật (không đổi dữ liệu gốc), chỉ hiện
 // nhãn riêng "Bán bởi đối tác" thay vì "Đã thanh toán" (bảng lẫn Excel) để
-// dễ phân biệt với khách tự đặt vé thật khi đối soát.
-const PARTNER_SALE_CUSTOMER_NAME = "Rạp Xiếc Customer";
-function isPartnerSale(o){ return o.customerName === PARTNER_SALE_CUSTOMER_NAME; }
+// dễ phân biệt với khách tự đặt vé thật khi đối soát. Nhận diện qua
+// customerName khớp 1 trong các tên đối tác đã biết — admin-showtimes.html
+// (mode "Bán bởi đối tác") giờ cho gõ tên riêng (VD "Chị Hằng") thay vì luôn
+// ép "Rạp Xiếc Customer", nên danh sách này phải cập nhật tay mỗi khi có
+// tên đối tác mới xuất hiện.
+const PARTNER_SALE_CUSTOMER_NAMES = new Set(["Rạp Xiếc Customer", "Chị Hằng"]);
+function isPartnerSale(o){ return PARTNER_SALE_CUSTOMER_NAMES.has(o.customerName); }
 
 // Lọc "Nguồn bán" — tách hẳn khỏi #fStatus (không phải orderStatus thật trên
 // Firestore/API, chỉ suy ra từ customerName) nên lọc ở client sau khi API trả
