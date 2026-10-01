@@ -97,6 +97,12 @@
   .editor-toolbar button{padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:12.5px;}
   .editor-toolbar #seOpenBtn{color:var(--green);border-color:rgba(61,220,132,.4);}
   .editor-toolbar #seBlockBtn{color:var(--gold);border-color:rgba(251,187,33,.4);}
+  .editor-toolbar #seSoldBtn{color:var(--blue);border-color:rgba(79,176,255,.4);}
+  #seUndoBtn{padding:7px 14px;border-radius:7px;border:1px solid rgba(251,187,33,.4);background:var(--panel2);color:var(--gold);font-size:12.5px;flex-shrink:0;}
+  .modal label{display:block;font-size:12px;color:var(--dim);margin:12px 0 5px;}
+  .modal input[type=text]{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:13.5px;box-sizing:border-box;font-family:inherit;}
+  .modal .radio-row{display:flex;gap:14px;font-size:13px;margin-top:6px;}
+  .modal .radio-row label{display:inline-flex;align-items:center;gap:6px;margin:0;color:var(--text);}
   .editor-canvas-wrap{flex:1;position:relative;overflow:hidden;background:#050a07;}
   #seatSvg{width:100%;height:100%;display:block;}
   .seat{cursor:pointer;stroke:#000;stroke-width:1;}
@@ -168,17 +174,41 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="soldModal" hidden>
+  <div class="modal">
+    <h3>Đánh dấu đã bán</h3>
+    <p class="modal-sub" id="soldSeatCount">0 ghế</p>
+    <label for="soldName">Tên khách (tuỳ chọn)</label>
+    <input type="text" id="soldName" placeholder="Để trống dùng tên mặc định">
+    <label for="soldPhone">SĐT (tuỳ chọn)</label>
+    <input type="text" id="soldPhone">
+    <label for="soldEmail">Email (tuỳ chọn)</label>
+    <input type="text" id="soldEmail">
+    <label>Trạng thái</label>
+    <div class="radio-row">
+      <label><input type="radio" name="soldMode" value="paid" checked> Đã thanh toán</label>
+      <label><input type="radio" name="soldMode" value="partner"> Bán bởi đối tác</label>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="modal-cancel" id="soldCancel">Huỷ</button>
+      <button type="button" class="modal-save" id="soldConfirm">Xác nhận bán</button>
+    </div>
+  </div>
+</div>
+
 <div class="editor-overlay" id="seatEditor" hidden>
   <div class="editor-head">
     <h2 id="seTitle">Sơ đồ ghế</h2>
     <span class="editor-hint">Click: chọn ghế · Kéo trên nền: chọn nhiều · Click nền trống: bỏ chọn · Double-click ghế: đổi mã · Cuộn: zoom · Giữ phím cách + kéo: di chuyển</span>
     <div class="editor-counts" id="seCounts"></div>
+    <button id="seUndoBtn" hidden></button>
     <button id="seClose">Đóng</button>
   </div>
   <div class="editor-toolbar" id="seToolbar">
     <span id="seSelCount">0 ghế đã chọn</span>
     <button id="seOpenBtn">Mở (Available)</button>
     <button id="seBlockBtn">Khoá (Blocked)</button>
+    <button id="seSoldBtn">Đã bán (Sold)</button>
     <button id="seClearSel">Bỏ chọn</button>
   </div>
   <div class="editor-canvas-wrap">
@@ -573,6 +603,7 @@ async function openSeatEditor(showtimeId){
 
   renderSeatSvg();
   updateCounts();
+  updateUndoButton();
 }
 
 document.getElementById("seClose").addEventListener("click", () => {
@@ -645,6 +676,11 @@ function repaintSeat(id){
   const seat = SEATS.find(s => s.id === id);
   rect.setAttribute("fill", seatFill(seat));
   rect.setAttribute("class", seatClass(seat));
+  // Bug đã gặp: title (tooltip hover) chỉ set 1 lần lúc vẽ sơ đồ ban đầu,
+  // quên cập nhật lại ở đây — nên khoá/mở ghế xong màu đổi đúng nhưng hover
+  // vẫn hiện trạng thái CŨ cho tới khi reload trang.
+  const title = rect.querySelector("title");
+  if (title) title.textContent = `${id} — ${seatStatuses[id] || "?"}`;
 }
 
 function updateToolbar(){
@@ -756,6 +792,78 @@ window.addEventListener("mouseup", () => {
   dragStart = null;
 });
 
+// ==========================================
+// HOÀN TÁC LỆNH GẦN NHẤT — chỉ 1 cấp (không phải stack nhiều lệnh), lưu
+// localStorage để tắt trình duyệt/mở lại trang vẫn còn (đúng yêu cầu "dễ
+// back"). Nút chỉ bật khi đang mở ĐÚNG suất diễn của lệnh đã lưu, tránh
+// hoàn tác nhầm sang suất khác đang sửa dở.
+// ==========================================
+
+const UNDO_STORAGE_KEY = "lumishow-admin-showtimes-lastCommand";
+const seUndoBtn = document.getElementById("seUndoBtn");
+
+function saveLastCommand(cmd){
+  try { localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(cmd)); } catch (e) {}
+  updateUndoButton();
+}
+function loadLastCommand(){
+  try {
+    const raw = localStorage.getItem(UNDO_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function clearLastCommand(){
+  try { localStorage.removeItem(UNDO_STORAGE_KEY); } catch (e) {}
+  updateUndoButton();
+}
+function updateUndoButton(){
+  const cmd = loadLastCommand();
+  if (cmd && cmd.showtimeId === currentEditingShowtimeId) {
+    seUndoBtn.hidden = false;
+    seUndoBtn.textContent = `↩ Hoàn tác: ${cmd.label}`;
+  } else {
+    seUndoBtn.hidden = true;
+  }
+}
+
+seUndoBtn.addEventListener("click", async () => {
+  const cmd = loadLastCommand();
+  if (!cmd || cmd.showtimeId !== currentEditingShowtimeId) return;
+  if (!confirm(`Hoàn tác: ${cmd.label}?`)) return;
+
+  try {
+    if (cmd.type === "SOLD") {
+      const failed = [];
+      for (const seatId of cmd.seatIds) {
+        try {
+          await callAdmin("/admin/tickets/cancel", { showtimeId: cmd.showtimeId, seatId });
+          seatStatuses[seatId] = cmd.previousStatuses[seatId] || "AVAILABLE";
+          repaintSeat(seatId);
+        } catch (err) { failed.push(`${seatId} (${err.message})`); }
+      }
+      if (failed.length > 0) throw new Error(`Hoàn tác lỗi ${failed.length} ghế: ${failed.join(", ")}`);
+    } else {
+      // STATUS (mở/khoá): nhóm theo trạng thái CŨ để khôi phục đúng — mỗi
+      // ghế trong lệnh có thể đã khác trạng thái nhau trước khi đổi.
+      const byPrevStatus = new Map();
+      cmd.seatIds.forEach(id => {
+        const prev = cmd.previousStatuses[id] || "AVAILABLE";
+        if (!byPrevStatus.has(prev)) byPrevStatus.set(prev, []);
+        byPrevStatus.get(prev).push(id);
+      });
+      for (const [prevStatus, ids] of byPrevStatus) {
+        const res = await callAdmin("/admin/seats/bulk-update", { showtimeId: cmd.showtimeId, seatIds: ids, status: prevStatus });
+        res.updated.forEach(id => { seatStatuses[id] = prevStatus; repaintSeat(id); });
+      }
+    }
+    updateCounts();
+    clearLastCommand();
+    toast("Đã hoàn tác");
+  } catch (err) {
+    alert("Hoàn tác thất bại: " + err.message);
+  }
+});
+
 // ---- Thanh công cụ mở/khoá hàng loạt ----
 document.getElementById("seClearSel").addEventListener("click", () => {
   selectedIds.forEach(id => repaintSeat(id));
@@ -772,6 +880,11 @@ document.getElementById("seBlockBtn").addEventListener("click", () => {
 async function bulkApply(status, blockNote){
   const seatIds = [...selectedIds];
   if (seatIds.length === 0) return;
+  // Chụp trạng thái CŨ trước khi gọi API — cần để hoàn tác khôi phục đúng,
+  // không phải đoán/mặc định về AVAILABLE.
+  const previousStatuses = {};
+  seatIds.forEach(id => { previousStatuses[id] = seatStatuses[id]; });
+
   try {
     const res = await callAdmin("/admin/seats/bulk-update", { showtimeId: currentEditingShowtimeId, seatIds, status, blockNote });
     res.updated.forEach(id => { seatStatuses[id] = status; });
@@ -781,8 +894,84 @@ async function bulkApply(status, blockNote){
     else toast(`Đã cập nhật ${res.updated.length} ghế`);
     updateToolbar();
     updateCounts();
+
+    if (res.updated.length > 0) {
+      const updatedPrev = {};
+      res.updated.forEach(id => { updatedPrev[id] = previousStatuses[id]; });
+      saveLastCommand({
+        type: "STATUS",
+        showtimeId: currentEditingShowtimeId,
+        seatIds: res.updated,
+        previousStatuses: updatedPrev,
+        label: `${status === "AVAILABLE" ? "Mở" : "Khoá"} ${res.updated.length} ghế`
+      });
+    }
   } catch (err) { alert(err.message); }
 }
+
+// ---- Đánh dấu đã bán (Sold) — createManualTicket() yêu cầu customerName
+// khác rỗng ở tầng backend (dùng chung với app Unity, không nới lỏng được);
+// form không bắt buộc gõ gì nên tự điền ngầm thay vì chặn submit. "Bán bởi
+// đối tác" LUÔN gán đúng chuỗi "Rạp Xiếc Customer" — đây là cách duy nhất
+// partner-orders.html (isPartnerSale()) nhận diện đúng loại đơn này, gõ tên
+// khác sẽ không hiện đúng nhãn ở trang đó. ----
+const soldModal = document.getElementById("soldModal");
+
+document.getElementById("seSoldBtn").addEventListener("click", () => {
+  if (selectedIds.size === 0) return;
+  document.getElementById("soldSeatCount").textContent = `${selectedIds.size} ghế: ${[...selectedIds].join(", ")}`;
+  document.getElementById("soldName").value = "";
+  document.getElementById("soldPhone").value = "";
+  document.getElementById("soldEmail").value = "";
+  document.querySelector('input[name="soldMode"][value="paid"]').checked = true;
+  soldModal.hidden = false;
+});
+document.getElementById("soldCancel").addEventListener("click", () => { soldModal.hidden = true; });
+soldModal.addEventListener("click", (e) => { if (e.target === soldModal) soldModal.hidden = true; });
+
+document.getElementById("soldConfirm").addEventListener("click", async () => {
+  const seatIds = [...selectedIds];
+  soldModal.hidden = true;
+  if (seatIds.length === 0) return;
+
+  const mode = document.querySelector('input[name="soldMode"]:checked').value;
+  const typedName = document.getElementById("soldName").value.trim();
+  const customerName = mode === "partner" ? "Rạp Xiếc Customer" : (typedName || "Khách lẻ");
+  const customerPhone = document.getElementById("soldPhone").value.trim();
+  const customerEmail = document.getElementById("soldEmail").value.trim();
+
+  const previousStatuses = {};
+  seatIds.forEach(id => { previousStatuses[id] = seatStatuses[id]; });
+
+  const succeeded = [], failed = [];
+  for (const seatId of seatIds) {
+    try {
+      await callAdmin("/admin/tickets/create", { showtimeId: currentEditingShowtimeId, seatId, customerName, customerPhone, customerEmail });
+      seatStatuses[seatId] = "SOLD";
+      repaintSeat(seatId);
+      succeeded.push(seatId);
+    } catch (err) {
+      failed.push(`${seatId} (${err.message})`);
+    }
+  }
+  selectedIds.clear();
+  updateToolbar();
+  updateCounts();
+
+  if (succeeded.length > 0) {
+    saveLastCommand({
+      type: "SOLD",
+      showtimeId: currentEditingShowtimeId,
+      seatIds: succeeded,
+      previousStatuses,
+      label: `Đánh dấu đã bán ${succeeded.length} ghế (${customerName})`
+    });
+  }
+
+  toast(failed.length > 0
+    ? `Đã bán ${succeeded.length} ghế, lỗi ${failed.length}: ${failed.join(", ")}`
+    : `Đã bán ${succeeded.length} ghế`);
+});
 
 // ---- Zoom (wheel + nút) ----
 let vb = { x: 0, y: 0, w: 1360, h: 1360 };
