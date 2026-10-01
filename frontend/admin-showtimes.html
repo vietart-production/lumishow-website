@@ -963,7 +963,11 @@ document.getElementById("soldConfirm").addEventListener("click", async () => {
 
   const mode = document.querySelector('input[name="soldMode"]:checked').value;
   const typedName = document.getElementById("soldName").value.trim();
-  const customerName = mode === "partner" ? "Rạp Xiếc Customer" : (typedName || "Khách lẻ");
+  // Có điền tên thì ưu tiên dùng đúng tên đó (VD đối tác cụ thể như "Chị Hằng")
+  // — chỉ mặc định "Rạp Xiếc Customer"/"Khách lẻ" khi bỏ trống. Lưu ý: gõ tên
+  // khác "Rạp Xiếc Customer" ở mode đối tác thì partner-orders.html (isPartnerSale())
+  // sẽ KHÔNG nhận đúng loại "Bán bởi đối tác" nữa (chỉ so khớp đúng chuỗi đó).
+  const customerName = typedName || (mode === "partner" ? "Rạp Xiếc Customer" : "Khách lẻ");
   const customerPhone = document.getElementById("soldPhone").value.trim();
   const customerEmail = document.getElementById("soldEmail").value.trim();
 
