@@ -13,7 +13,7 @@ const { checkPartnerKey, listOrdersForPartner, listShowtimesForPartner } = requi
 // phiên không nên tự dưng bị chặn, vẫn giữ nguyên chặn dò key sai.
 const partnerLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 30,
+    limit: 150, // từng là 30 — nới cùng lý do/mức độ an toàn như adminLimiter
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true,

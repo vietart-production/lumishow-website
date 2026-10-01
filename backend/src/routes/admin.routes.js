@@ -26,17 +26,20 @@ const { logAdminActivity, listAdminActivity } = require("../services/activityLog
 
 const SHOW_ID = "son-than-thuy-quai";
 
-// Giới hạn chặt — đây là endpoint nhạy cảm nhất hệ thống (huỷ/tạo vé bằng
-// tay), PIN chỉ 7 số nên cần chặn dò mật khẩu tích cực hơn rate-limit chung.
-// skipSuccessfulRequests: chỉ đếm request LỖI (sai PIN = 401, hoặc lỗi
-// nghiệp vụ 400) vào giới hạn — request thành công (200/201) không tính.
-// Các trang nội bộ (admin-news.html kéo-thả, admin-showtimes.html sửa hàng
-// loạt...) gọi API liên tục với PIN ĐÚNG trong 1 phiên làm việc, tự dưng
-// dính "Quá nhiều yêu cầu" dù không hề dò mật khẩu — giữ nguyên chặn brute-
-// force (vẫn đếm 401 sai PIN) mà không làm phiền người dùng nội bộ hợp lệ.
+// Giới hạn — đây là endpoint nhạy cảm nhất hệ thống (huỷ/tạo vé bằng tay),
+// PIN chỉ 7 số nên vẫn cần 1 lớp chặn dò mật khẩu. skipSuccessfulRequests:
+// chỉ đếm request LỖI (sai PIN = 401, hoặc lỗi nghiệp vụ 400) vào giới hạn
+// — request thành công (200/201) không tính.
+// limit=300 (từng là 20): nhiều thao tác hàng loạt mới thêm (admin-news.html
+// kéo-thả, admin-showtimes.html sửa hàng loạt/mode "Đã bán"/Hoàn tác) gọi
+// API RIÊNG LẺ cho từng ghế/mục trong 1 lượt — nếu vài mục trong lô lỗi
+// (VD vài ghế không còn trống) thì mỗi lỗi đó vẫn tính vào giới hạn dù PIN
+// luôn đúng, dễ dính "Quá nhiều yêu cầu" khi thao tác lô lớn dù không hề dò
+// mật khẩu. 300 lần/15 phút vẫn vô nghĩa với ai thật sự dò PIN 7 số (10
+// triệu tổ hợp) nên không giảm khả năng chặn brute-force thật sự.
 const adminLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 phút
-    limit: 20,
+    limit: 300,
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true,
