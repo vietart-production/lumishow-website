@@ -202,7 +202,7 @@
 <div class="editor-overlay" id="seatEditor" hidden>
   <div class="editor-head">
     <h2 id="seTitle">Sơ đồ ghế</h2>
-    <span class="editor-hint">Click: chọn ghế · Kéo trên nền: chọn nhiều · Click nền trống: bỏ chọn · Double-click ghế: đổi mã · Cuộn: zoom · Giữ phím cách + kéo: di chuyển</span>
+    <span class="editor-hint">Click: chọn ghế · Kéo trên nền: chọn nhiều · Giữ Ctrl + kéo: quét chọn nhanh ghế đi qua · Click nền trống: bỏ chọn · Double-click ghế: đổi mã · Cuộn: zoom · Giữ phím cách + kéo: di chuyển</span>
     <div class="editor-counts" id="seCounts"></div>
     <button id="seUndoBtn" hidden></button>
     <button id="seClose">Đóng</button>
@@ -740,7 +740,29 @@ function clientToSvg(clientX, clientY){
   return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 
+// ---- Giữ Ctrl + kéo chuột: "quét chọn" — chọn thêm mọi ghế con trỏ đi qua.
+// Nhanh hơn bấm từng ghế hoặc kéo khung chữ nhật khi cần chọn 1 dải ghế
+// không thẳng hàng/không gọn trong 1 hình chữ nhật. Chỉ CHỌN THÊM (như kéo
+// khung hiện có), không bỏ chọn ghế đã chọn khi quét lại qua nó. Chỉ thật
+// sự chọn khi con trỏ DI CHUYỂN qua ghế (ở mousemove) — Ctrl+click đứng yên
+// không kích hoạt gì, rơi về đúng hành vi click-toggle bình thường sẵn có.
+let isPaintSelecting = false;
+
+function paintSelectAt(target){
+  const rectEl = target.closest(".seat");
+  if (!rectEl) return;
+  const id = rectEl.dataset.id;
+  if (!canEditSeat(id) || selectedIds.has(id)) return;
+  selectedIds.add(id);
+  repaintSeat(id);
+  updateToolbar();
+}
+
 svg.addEventListener("mousedown", (e) => {
+  if (e.ctrlKey && !spacePressed && e.button !== 1) {
+    isPaintSelecting = true;
+    return;
+  }
   if (e.target.closest(".seat")) return;
   if (spacePressed || e.button === 1) {
     isPanning = true;
@@ -756,6 +778,7 @@ svg.addEventListener("mousedown", (e) => {
 });
 
 window.addEventListener("mousemove", (e) => {
+  if (isPaintSelecting) { paintSelectAt(e.target); return; }
   if (isPanning && panLast) {
     const scale = vb.w / svg.clientWidth;
     vb.x -= (e.clientX - panLast.x) * scale;
@@ -774,6 +797,7 @@ window.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("mouseup", () => {
+  if (isPaintSelecting) { isPaintSelecting = false; return; }
   if (isPanning) { isPanning = false; panLast = null; return; }
   if (!dragStart) return;
 
