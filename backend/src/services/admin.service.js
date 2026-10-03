@@ -486,6 +486,72 @@ async function checkInOrderByTicketCode({ ticketCode, dryRun }) {
 }
 
 // ==========================================
+// LỊCH SỬ QUÉT VÉ TẠI CỔNG (gate-scanner.html) — ghi lại MỌI lượt quét (kể
+// cả không ready/lỗi, và cả lượt TestScan dryRun, đánh dấu testMode riêng)
+// để xem lại khi cần đối chiếu/troubleshoot, KHÔNG phải audit log thao tác
+// admin (khác mục đích với adminActivityLog — path /admin/tickets/* vẫn
+// nằm trong SKIP_LOG_PATHS của log đó vì tần suất quá cao). Ghi
+// fire-and-forget (route gọi không await) để không làm chậm response check-in.
+//
+// Giữ tối đa 100 bản ghi gần nhất — xoá phần dư ngay sau mỗi lần ghi thay vì
+// để phình vô hạn suốt mùa diễn (quét liên tục mỗi suất).
+// ==========================================
+
+const GATE_SCAN_HISTORY_LIMIT = 100;
+
+async function logGateScan({ ticketCode, customerName, seats, showtimeId, outcome, checkedInCount, totalCount, message, testMode }) {
+
+    await db.collection("gateScanHistory").add({
+        ticketCode: ticketCode || null,
+        customerName: customerName || "",
+        seats: seats || [],
+        showtimeId: showtimeId || null,
+        outcome: outcome || null,
+        checkedInCount: checkedInCount || 0,
+        totalCount: totalCount || 0,
+        message: message || "",
+        testMode: !!testMode,
+        scannedAt: new Date()
+    });
+
+    const overflow = await db.collection("gateScanHistory")
+        .orderBy("scannedAt", "desc")
+        .offset(GATE_SCAN_HISTORY_LIMIT)
+        .get();
+
+    if (!overflow.empty) {
+        const batch = db.batch();
+        overflow.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+    }
+}
+
+async function listGateScanHistory() {
+
+    const snap = await db.collection("gateScanHistory")
+        .orderBy("scannedAt", "desc")
+        .limit(GATE_SCAN_HISTORY_LIMIT)
+        .get();
+
+    return snap.docs.map((doc) => {
+        const d = doc.data();
+        return {
+            id: doc.id,
+            ticketCode: d.ticketCode || null,
+            customerName: d.customerName || "",
+            seats: d.seats || [],
+            showtimeId: d.showtimeId || null,
+            outcome: d.outcome || null,
+            checkedInCount: d.checkedInCount || 0,
+            totalCount: d.totalCount || 0,
+            message: d.message || "",
+            testMode: !!d.testMode,
+            scannedAt: d.scannedAt ? d.scannedAt.toDate().toISOString() : null
+        };
+    });
+}
+
+// ==========================================
 // LIỆT KÊ SUẤT DIỄN SẮP TỚI — cho app Unity chọn thay vì nhân viên phải tự
 // tính lịch/gõ tay showtimeId. Mùa diễn kéo dài nhiều tháng, mỗi ngày trong
 // tuần có giờ diễn riêng (xem seedSeats.js), không thể hardcode 1 suất cố
@@ -1242,6 +1308,8 @@ module.exports = {
     lookupTicketByCode,
     checkInTicketByCode,
     checkInOrderByTicketCode,
+    logGateScan,
+    listGateScanHistory,
     cancelTicketBySeat,
     createManualTicket,
     exchangePaidOrderTickets,

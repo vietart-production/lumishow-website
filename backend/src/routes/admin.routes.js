@@ -9,6 +9,8 @@ const {
     lookupTicketByCode,
     checkInTicketByCode,
     checkInOrderByTicketCode,
+    logGateScan,
+    listGateScanHistory,
     cancelTicketBySeat,
     createManualTicket,
     listUpcomingShowtimes,
@@ -251,6 +253,24 @@ router.post("/admin/tickets/lookup", gateLimiter, requireGateKey, async (req, re
 
         const result = await lookupTicketByCode({ ticketCode });
 
+        // Chỉ log khi KHÔNG ready — vé ready sẽ có /checkin hoặc /checkin-order
+        // gọi ngay sau đó, log ở đó mới là kết quả CUỐI của lượt quét (tránh ghi
+        // trùng 2 dòng lịch sử cho đúng 1 lượt quét). Bỏ qua mã dò khoá gate
+        // ("GATE-KEY-VERIFY", dùng khi mở trang) để không rác lịch sử thật.
+        if (!result.ready && ticketCode !== "GATE-KEY-VERIFY") {
+            logGateScan({
+                ticketCode: result.ticketCode,
+                customerName: result.customerName,
+                seats: result.seatId ? [result.seatId] : [],
+                showtimeId: result.showtimeId,
+                outcome: result.outcome,
+                checkedInCount: 0,
+                totalCount: 1,
+                message: result.message,
+                testMode: false
+            }).catch((err) => console.error("LOG GATE SCAN ERROR:", err));
+        }
+
         return res.status(200).json({
             success: true,
             ready: result.ready,
@@ -298,6 +318,18 @@ router.post("/admin/tickets/checkin", gateLimiter, requireGateKey, async (req, r
 
         const result = await checkInTicketByCode({ ticketCode, dryRun: !!dryRun });
 
+        logGateScan({
+            ticketCode: result.ticketCode,
+            customerName: result.customerName,
+            seats: result.seatId ? [result.seatId] : [],
+            showtimeId: result.showtimeId,
+            outcome: result.outcome,
+            checkedInCount: result.success ? 1 : 0,
+            totalCount: 1,
+            message: result.message,
+            testMode: !!dryRun
+        }).catch((err) => console.error("LOG GATE SCAN ERROR:", err));
+
         return res.status(200).json({
             success: result.success,
             alreadyCheckedIn: result.alreadyCheckedIn,
@@ -339,6 +371,18 @@ router.post("/admin/tickets/checkin-order", gateLimiter, requireGateKey, async (
 
         const result = await checkInOrderByTicketCode({ ticketCode, dryRun: !!dryRun });
 
+        logGateScan({
+            ticketCode,
+            customerName: result.customerName,
+            seats: (result.tickets || []).filter((t) => t.success).map((t) => t.seatId).filter(Boolean),
+            showtimeId: result.showtimeId,
+            outcome: result.outcome,
+            checkedInCount: result.checkedInCount,
+            totalCount: result.totalInOrder,
+            message: result.checkedInCount === result.totalInOrder ? "Đã check-in cả đơn" : "Check-in cả đơn (một phần)",
+            testMode: !!dryRun
+        }).catch((err) => console.error("LOG GATE SCAN ERROR:", err));
+
         return res.status(200).json({
             success: result.outcome !== "NOT_FOUND",
             outcome: result.outcome,
@@ -357,6 +401,36 @@ router.post("/admin/tickets/checkin-order", gateLimiter, requireGateKey, async (
         return res.status(400).json({
             success: false,
             message: error.message || "Không thể check-in đơn"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/admin/tickets/scan-history
+// body: { gateKey }
+// Trả tối đa 100 lượt quét gần nhất (xem logGateScan()/listGateScanHistory()
+// trong admin.service.js) cho trang frontend/gate-scan-history.html. Khoá
+// bằng gateKey (không phải PIN) vì đây vẫn là màn hình của nhân viên soát
+// vé, không phải admin tool. Tần suất xem thấp nên không cần gateLimiter
+// riêng — dùng chung adminLimiter mặc định của router (route này không nằm
+// trong danh sách skip phía trên).
+// ==========================================
+
+router.post("/admin/tickets/scan-history", requireGateKey, async (req, res) => {
+
+    try {
+
+        const history = await listGateScanHistory();
+
+        return res.status(200).json({ success: true, history });
+
+    } catch (error) {
+
+        console.error("GATE SCAN HISTORY ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể tải lịch sử quét vé"
         });
     }
 });
