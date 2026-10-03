@@ -84,25 +84,32 @@
   /* ---- Vé giấy in ra — ẨN khi xem trên màn hình, CHỈ hiện khi in ---- */
   .print-only{display:none;}
   @media print{
-    /* margin ở @page phụ thuộc driver máy in có tôn trọng hay không (máy in
-       A4 thường như Canon LBP2900 ép khổ giấy 80mm về A4, có thể bỏ qua
-       margin này) — padding thật trong #printArea bên dưới mới là lớp đệm
-       chắc chắn, không phụ thuộc driver, chống cắt lem nội dung sát mép. */
-    @page{ size: 80mm auto; margin: 5mm; }
+    /* Khổ 58mm — chốt theo máy Xprinter XP-58IIH (vùng in thực tế chỉ 48mm,
+       ~5mm mỗi bên không in được phần cứng). margin ở @page phụ thuộc driver
+       có tôn trọng hay không nên để nhỏ, padding thật trong .ticket-page mới
+       là lớp đệm chắc chắn (58mm - 2*5mm padding = đúng 48mm vùng in). */
+    @page{ size: 58mm auto; margin: 2mm; }
     body *{ visibility: hidden; }
     #printArea, #printArea *{ visibility: visible; }
     #printArea{
       display:block; position:absolute; top:0; left:0; width:100%;
-      box-sizing:border-box; padding:6mm 5mm;
       font-family: Arial, sans-serif; color:#000; text-align:center;
     }
+    /* Mỗi ghế = 1 vé nhỏ riêng, QR riêng — ngắt trang giữa các vé để máy in
+       nhiệt tự cắt rời từng vé trong CÙNG 1 lượt in (1 lần quét cả đơn ra
+       luôn 1-10 vé rời, không phải 1 vé liệt kê nhiều ghế). */
+    .ticket-page{
+      box-sizing:border-box; width:100%; padding:4mm 5mm;
+      break-after:page; page-break-after:always;
+    }
+    .ticket-page:last-child{ break-after:auto; page-break-after:auto; }
     .pt-brand{font-size:16px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
     .pt-show{font-size:12px;margin:0 0 8px;}
     .pt-divider{border-top:1px dashed #000;margin:8px 0;}
     .pt-row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0;text-align:left;}
     .pt-row span{color:#333;}
     .pt-row b{font-weight:700;}
-    .pt-qr img{width:120px;height:120px;margin:10px 0;}
+    .pt-qr img{width:28mm;height:28mm;margin:10px 0;}
     .pt-code{font-size:10px;color:#333;word-break:break-all;margin-top:4px;}
     .pt-time{font-size:9.5px;color:#555;margin-top:4px;}
   }
@@ -118,18 +125,7 @@
   <div id="gateError"></div>
 </div>
 
-<div id="printArea" class="print-only">
-  <div class="pt-brand">LUMISHOW</div>
-  <div class="pt-show">Sơn Thần Thủy Quái</div>
-  <div class="pt-divider"></div>
-  <div class="pt-row"><span>Khách</span><b id="ptName"></b></div>
-  <div class="pt-row"><span>Ghế</span><b id="ptSeats"></b></div>
-  <div class="pt-row"><span>Suất diễn</span><b id="ptShow"></b></div>
-  <div class="pt-divider"></div>
-  <div class="pt-qr"><img id="ptQr" src="" alt="QR"></div>
-  <div class="pt-code" id="ptCode"></div>
-  <div class="pt-time" id="ptTime"></div>
-</div>
+<div id="printArea" class="print-only"></div>
 
 <div id="app" hidden>
   <div class="test-scan-toggle" id="testScanToggleWrap">
@@ -418,12 +414,15 @@ async function processQueue(){
 }
 
 // result chuẩn hoá chung cho cả 3 nguồn (cache/checkin 1 vé/checkin cả đơn):
-// { ok, partial, ticketCode, customerName, showtimeId, seats:[...], checkedInCount, totalCount, message }
+// { ok, partial, ticketCode, customerName, showtimeId, seats:[...], checkedInCount,
+//   totalCount, message, ticketsDetail:[{ticketCode,seatId},...] }
+// ticketsDetail giữ ĐÚNG ticketCode thật của từng ghế (không gộp mất như seats)
+// — cần để in riêng từng vé nhỏ với QR đúng của ghế đó, xem printTicket().
 async function handleScan(code){
   let result;
 
   if (checkedCache.has(code)) {
-    result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: "Vé đã được check-in trước đó" };
+    result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: "Vé đã được check-in trước đó", ticketsDetail: [] };
   } else {
     try {
       const lookup = await callGateApi("/admin/tickets/lookup", { ticketCode: code });
@@ -435,14 +434,16 @@ async function handleScan(code){
           showtimeId: lookup.ticket?.showtimeId || null,
           seats: lookup.ticket?.seatId ? [lookup.ticket.seatId] : [],
           checkedInCount: 0, totalCount: 1,
-          message: lookup.message
+          message: lookup.message,
+          ticketsDetail: []
         };
       } else if (wholeOrderMode) {
         const order = await callGateApi("/admin/tickets/checkin-order", { ticketCode: code, dryRun: testScanMode });
         if (!testScanMode) {
           (order.tickets || []).forEach((t) => { if (t.success || t.alreadyCheckedIn) checkedCache.add(t.ticketCode); });
         }
-        const seats = (order.tickets || []).filter((t) => t.success).map((t) => t.seatId).filter(Boolean);
+        const successTickets = (order.tickets || []).filter((t) => t.success);
+        const seats = successTickets.map((t) => t.seatId).filter(Boolean);
         const total = order.totalInOrder || 1;
         const checkedIn = order.checkedInCount || 0;
         result = {
@@ -454,7 +455,8 @@ async function handleScan(code){
           seats,
           checkedInCount: checkedIn,
           totalCount: total,
-          message: checkedIn === 0 ? "Không vé nào check-in được (có thể đã check-in trước)" : "Đã check-in cả đơn"
+          message: checkedIn === 0 ? "Không vé nào check-in được (có thể đã check-in trước)" : "Đã check-in cả đơn",
+          ticketsDetail: successTickets.map((t) => ({ ticketCode: t.ticketCode, seatId: t.seatId || null }))
         };
       } else {
         const checkin = await callGateApi("/admin/tickets/checkin", { ticketCode: code, dryRun: testScanMode });
@@ -465,11 +467,12 @@ async function handleScan(code){
           showtimeId: checkin.ticket?.showtimeId || null,
           seats: checkin.ticket?.seatId ? [checkin.ticket.seatId] : [],
           checkedInCount: checkin.success ? 1 : 0, totalCount: 1,
-          message: checkin.message
+          message: checkin.message,
+          ticketsDetail: checkin.success ? [{ ticketCode: code, seatId: checkin.ticket?.seatId || null }] : []
         };
       }
     } catch (err) {
-      result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: err.message || "Lỗi hệ thống" };
+      result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: err.message || "Lỗi hệ thống", ticketsDetail: [] };
     }
   }
 
@@ -500,14 +503,24 @@ function fmtTime(d){
 // thẳng endpoint /tickets/:code/qr.png có sẵn, không cần vẽ QR ở client.
 function printTicket(id){
   const r = results.find((x) => x.id === id);
-  if (!r) return;
+  if (!r || !r.ticketsDetail || !r.ticketsDetail.length) return;
 
-  $("ptName").textContent = r.customerName || "—";
-  $("ptSeats").textContent = r.seats.length ? r.seats.join(", ") : "—";
-  $("ptShow").textContent = r.showtimeId || "—";
-  $("ptCode").textContent = r.ticketCode;
-  $("ptTime").textContent = r.time.toLocaleDateString("vi-VN") + " " + fmtTime(r.time);
-  $("ptQr").src = API + "/tickets/" + encodeURIComponent(r.ticketCode) + "/qr.png";
+  const timeStr = r.time.toLocaleDateString("vi-VN") + " " + fmtTime(r.time);
+
+  $("printArea").innerHTML = r.ticketsDetail.map((t) => `
+    <div class="ticket-page">
+      <div class="pt-brand">LUMISHOW</div>
+      <div class="pt-show">Sơn Thần Thủy Quái</div>
+      <div class="pt-divider"></div>
+      <div class="pt-row"><span>Khách</span><b>${escapeHtml(r.customerName || "—")}</b></div>
+      <div class="pt-row"><span>Ghế</span><b>${escapeHtml(t.seatId || "—")}</b></div>
+      <div class="pt-row"><span>Suất diễn</span><b>${escapeHtml(r.showtimeId || "—")}</b></div>
+      <div class="pt-divider"></div>
+      <div class="pt-qr"><img src="${API}/tickets/${encodeURIComponent(t.ticketCode)}/qr.png" alt="QR"></div>
+      <div class="pt-code">${escapeHtml(t.ticketCode)}</div>
+      <div class="pt-time">${escapeHtml(timeStr)}</div>
+    </div>
+  `).join("");
 
   window.print();
 }

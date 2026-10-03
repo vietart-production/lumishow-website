@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview — Vé giấy (local, không gọi API thật)</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  /* ===========================================================
+     Bản phác thảo LOCAL thuần — KHÔNG gọi API/Firestore thật (giống quy tắc
+     của preview-so-do-ghe.html). QR chỉ là placeholder xám, dữ liệu mẫu
+     hardcode. Mục đích DUY NHẤT: xem/chỉnh trực quan layout vé giấy trước
+     khi copy ngược CSS .ticket-page/.pt-* vào @media print trong
+     gate-scanner.html. Đơn vị mm dùng trực tiếp để tỉ lệ trên màn hình gần
+     đúng khổ giấy thật (xấp xỉ, tuỳ DPI màn hình, không tuyệt đối chính xác).
+     =========================================================== */
+  :root{ --bg:#1b1f1d; --panel:#262b28; --dim:#8fa196; --text:#e6f1ea; }
+  *{box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;margin:0;padding:30px;}
+  h1{font-size:18px;margin:0 0 6px;}
+  .sub{color:var(--dim);font-size:12.5px;margin:0 0 24px;max-width:640px;}
+  .sizes{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+  .sizes button{padding:8px 14px;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--text);font-size:12.5px;cursor:pointer;}
+  .sizes button.active{background:#3ddc84;color:#04140b;border-color:#3ddc84;font-weight:700;}
+
+  .stage{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start;}
+  .paper-wrap{background:var(--panel);padding:14px;border-radius:10px;}
+  .paper-wrap .cap{color:var(--dim);font-size:11px;text-align:center;margin:0 0 8px;}
+
+  /* ---- Khung giấy mô phỏng (viền đứt = mép giấy thật) ---- */
+  .paper{ background:#fff; color:#000; border:1px dashed #666; }
+
+  /* ===== Nội dung vé — ĐÚNG class dùng trong gate-scanner.html @media print,
+     copy nguyên văn khi áp dụng thật ===== */
+  .ticket-page{
+    box-sizing:border-box; width:100%; padding:4mm 5mm;
+    font-family: Arial, sans-serif; color:#000; text-align:center;
+  }
+  .pt-brand{font-size:16px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
+  .pt-show{font-size:12px;margin:0 0 8px;}
+  .pt-divider{border-top:1px dashed #000;margin:8px 0;}
+  .pt-row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0;text-align:left;}
+  .pt-row span{color:#333;}
+  .pt-row b{font-weight:700;}
+  .pt-qr{margin:10px 0;}
+  .pt-qr .qr-placeholder{
+    width:28mm;height:28mm;margin:0 auto;background:#eee;border:1px dashed #999;
+    display:flex;align-items:center;justify-content:center;color:#999;font-size:10px;
+  }
+  .pt-code{font-size:10px;color:#333;word-break:break-all;margin-top:4px;}
+  .pt-time{font-size:9.5px;color:#555;margin-top:4px;}
+
+  .print-btn{margin-top:10px;width:100%;padding:9px;border-radius:7px;border:none;background:#3ddc84;color:#04140b;font-weight:700;font-size:12.5px;cursor:pointer;}
+  .print-btn:hover{opacity:.9;}
+
+  /* ---- In thử — chỉ hiện ĐÚNG 1 vé đang chọn, giống kỹ thuật thật trong
+     gate-scanner.html (visibility hidden/visible), không in kèm khung mô
+     phỏng giấy/chú thích trên màn hình. ---- */
+  @media print{
+    @page{ size: 58mm auto; margin: 2mm; }
+    body *{ visibility:hidden; }
+    body[data-print="1"] #ticket1, body[data-print="1"] #ticket1 *{ visibility:visible; }
+    body[data-print="2"] #ticket2, body[data-print="2"] #ticket2 *{ visibility:visible; }
+    #ticket1, #ticket2{ position:absolute; top:0; left:0; width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🎟️ Preview vé giấy (local)</h1>
+<p class="sub">Trang phác thảo riêng — KHÔNG gọi API/Firestore thật, chỉ dữ liệu mẫu + QR placeholder. Chỉnh CSS <code>.ticket-page</code>/<code>.pt-*</code> ở đây, xong copy nguyên văn sang khối <code>@media print</code> trong <code>gate-scanner.html</code>.</p>
+
+<div class="sizes">
+  <button class="active" data-w="58">Khổ 58mm (Xprinter XP-58IIH)</button>
+  <button data-w="80">Khổ 80mm (để so sánh)</button>
+</div>
+
+<div class="stage">
+  <div class="paper-wrap">
+    <p class="cap">Vé 1 — tên ngắn</p>
+    <div class="paper" id="paper1" style="width:58mm;">
+      <div class="ticket-page" id="ticket1">
+        <div class="pt-brand">LUMISHOW</div>
+        <div class="pt-show">Sơn Thần Thủy Quái</div>
+        <div class="pt-divider"></div>
+        <div class="pt-row"><span>Khách</span><b>Anh Nam</b></div>
+        <div class="pt-row"><span>Ghế</span><b>B12</b></div>
+        <div class="pt-row"><span>Suất diễn</span><b>2026-10-11_16:30</b></div>
+        <div class="pt-divider"></div>
+        <div class="pt-qr"><div class="qr-placeholder">QR</div></div>
+        <div class="pt-code">LS-1791058882608-B12</div>
+        <div class="pt-time">11/10/2026 16:28:03</div>
+      </div>
+    </div>
+    <button class="print-btn" onclick="printSample(1)">🖨 In thử vé 1</button>
+  </div>
+
+  <div class="paper-wrap">
+    <p class="cap">Vé 2 — tên dài (test tràn chữ)</p>
+    <div class="paper" id="paper2" style="width:58mm;">
+      <div class="ticket-page" id="ticket2">
+        <div class="pt-brand">LUMISHOW</div>
+        <div class="pt-show">Sơn Thần Thủy Quái</div>
+        <div class="pt-divider"></div>
+        <div class="pt-row"><span>Khách</span><b>Nguyễn Thị Minh Nguyệt Hương</b></div>
+        <div class="pt-row"><span>Ghế</span><b>K116</b></div>
+        <div class="pt-row"><span>Suất diễn</span><b>2026-12-27_10:00</b></div>
+        <div class="pt-divider"></div>
+        <div class="pt-qr"><div class="qr-placeholder">QR</div></div>
+        <div class="pt-code">LS-1791058882608-K116</div>
+        <div class="pt-time">27/12/2026 09:55:11</div>
+      </div>
+    </div>
+    <button class="print-btn" onclick="printSample(2)">🖨 In thử vé 2</button>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll(".sizes button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".sizes button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    const w = btn.dataset.w + "mm";
+    document.getElementById("paper1").style.width = w;
+    document.getElementById("paper2").style.width = w;
+  });
+});
+
+function printSample(n){
+  document.body.setAttribute("data-print", n);
+  window.print();
+}
+</script>
+</body>
+</html>
