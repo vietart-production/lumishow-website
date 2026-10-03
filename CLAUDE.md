@@ -276,3 +276,17 @@ Thay thế hoàn toàn cơ chế mảng hardcode `OPEN_SHOWTIMES` (dat-ve.html)/
 - **`frontend/index.html`:** tương tự — `OPEN_PAIRS`/`OPEN_TIMES_BY_DATE` giờ được `applyOpenShowtimes(showtimeIds)` dựng động từ cùng endpoint, gọi trong IIFE async trước `renderWeekend()`.
 - Đã verify: thuật toán gom nhóm chạy với dữ liệu thật hiện tại (5 showtimeId) cho kết quả **giống hệt byte-for-byte** mảng hardcode cũ.
 - TEST_MODE (dat-ve.html) vẫn giữ nguyên tinh thần cũ — khi bật, `fetchOpenShowtimeGroups()` trả dữ liệu giả lập cố định thay vì gọi mạng thật.
+
+### Sự cố ngay sau khi deploy — 2 cơ chế "khoá" bị lẫn, ĐÃ SỬA ĐÚNG (2026-10-03, cùng ngày)
+
+Ngay sau khi deploy cơ chế trên, phát hiện suất `2026-10-03_16:30` vẫn hiện trên lịch khách dù "đã khoá" theo ý admin — vào xem thì "Còn trống: 0 ghế" (toàn bộ 1193 ghế đều `BLOCKED`/`SOLD`). Nguyên nhân: `admin-showtimes.html` có **2 nút "Khoá" khác mục đích hoàn toàn, dễ nhầm**:
+1. **Nút "Khoá"/"Mở" theo từng suất** (toggle `status` OPEN↔CLOSED, gọi `/admin/showtimes/set-status`) — đây mới là cơ chế đúng để đóng **nguyên 1 suất diễn**, và là field DUY NHẤT mà `listOpenShowtimes()` dựa vào.
+2. **Nút "Khoá (Blocked)" trong trình sửa sơ đồ ghế** (`/admin/seats/bulk-update`) — chỉ để khoá **từng ghế riêng lẻ** trong 1 suất (vd giữ chỗ VIP/khu không-được-thầu-bán), KHÔNG đổi `status` của suất.
+
+Suất `2026-10-03_16:30` đã bị khoá bằng cách **2** (bulk-block hết toàn bộ ghế) thay vì cách **1**.
+
+**Thử sai 1 lần trước khi sửa đúng:** ban đầu vá bằng cách thêm điều kiện "còn >= 1 ghế AVAILABLE" vào `listOpenShowtimes()` — **ĐÃ REVERT**, vì đây là vá triệu chứng sai gốc: số ghế trống không phản ánh đúng Ý ĐỊNH khoá của admin (vd 1 suất còn vài ghế nhưng admin vẫn muốn coi là đã đóng sớm vì lý do khác). Nguồn sự thật phải là field `status`, không phải suy luận từ số ghế.
+
+**Sửa đúng:** gọi `setShowtimesStatus()` đổi `status` suất `2026-10-03_16:30` → `"CLOSED"` cho khớp đúng ý định admin, giữ `listOpenShowtimes()` CHỈ lọc theo `status` như thiết kế gốc.
+
+**Quy tắc vận hành rút ra — áp dụng cho mọi lần "khoá suất" sau này:** muốn đóng **nguyên 1 suất diễn**, luôn dùng nút "Khoá"/"Mở" theo suất (đổi `status`) — KHÔNG dùng nút "Khoá (Blocked)" trong trình sửa sơ đồ ghế để bulk-block hết toàn bộ ghế như cách thay thế, dù kết quả nhìn bề ngoài giống nhau (không đặt được ghế nào). Nút khoá-từng-ghế chỉ nên dùng cho khoá **một phần** sơ đồ (giữ VIP, khu không-được-thầu-bán...), không phải để đóng cả suất.

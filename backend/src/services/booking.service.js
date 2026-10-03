@@ -549,14 +549,15 @@ async function cleanupExpiredHoldsThrottled() {
 // Chỉ trả suất còn hôm nay/tương lai (bỏ suất đã qua dù status vẫn OPEN —
 // chưa có cơ chế tự đóng suất đã diễn).
 //
-// "Khoá suất" trong thực tế vận hành KHÔNG LUÔN đi qua field status của
-// showtime — nhân viên nhiều khi khoá bằng cách bulk-block/bán hết TOÀN BỘ
-// ghế qua trình sửa sơ đồ (admin-showtimes.html), để nguyên status="OPEN".
-// Phát hiện thực tế (2026-10-03): suất 2026-10-03_16:30 status vẫn "OPEN"
-// nhưng cả 1193 ghế đều BLOCKED/SOLD, 0 ghế trống — nếu chỉ lọc theo status
-// thì suất này vẫn lộ trên lịch, khách bấm vào thấy "Còn trống: 0 ghế" dù
-// tưởng đặt được. Nên lọc thêm: phải còn >= 1 ghế AVAILABLE mới tính là
-// "đang mở bán" thật sự.
+// LƯU Ý: chỉ dựa vào field status — ĐÃ THỬ lọc thêm theo "còn ghế trống"
+// (2026-10-03) nhưng đó là vá triệu chứng sai gốc: số ghế trống không phản
+// ánh đúng Ý ĐỊNH khoá của admin (vd suất còn vài ghế nhưng admin vẫn muốn
+// coi là đã đóng). Nguồn sự thật DUY NHẤT phải là field status — admin
+// dùng đúng nút "Khoá"/"Mở" theo suất (không phải nút "Khoá (Blocked)"
+// trong trình sửa sơ đồ ghế, đó là khoá TỪNG GHẾ riêng lẻ, khác mục đích)
+// để phản ánh đúng ý định. Xem CLAUDE.md mục "Khoá suất diễn..." để biết
+// lịch sử sự cố suất 2026-10-03_16:30 bị khoá nhầm bằng cách bulk-block hết
+// ghế thay vì đổi status, khiến nó vẫn hiện "OPEN" dù không bán được nữa.
 // ==========================================
 
 async function listOpenShowtimes({ showId }) {
@@ -573,23 +574,9 @@ async function listOpenShowtimes({ showId }) {
         .where("status", "==", "OPEN")
         .get();
 
-    const candidateIds = snap.docs
+    return snap.docs
         .map((doc) => doc.id)
-        .filter((showtimeId) => showtimeId.split("_")[0] >= todayKey);
-
-    const availabilityChecks = await Promise.all(
-        candidateIds.map((showtimeId) =>
-            db.collection("shows").doc(showId)
-                .collection("showtimes").doc(showtimeId)
-                .collection("seats")
-                .where("status", "==", "AVAILABLE")
-                .limit(1)
-                .get()
-        )
-    );
-
-    return candidateIds
-        .filter((_, i) => !availabilityChecks[i].empty)
+        .filter((showtimeId) => showtimeId.split("_")[0] >= todayKey)
         .sort();
 }
 
