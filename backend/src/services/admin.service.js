@@ -286,9 +286,12 @@ function checkGateKey(key) {
 // viên bấm nút CHECK-IN) để 2 nơi không bao giờ lệch logic nhận định vé.
 // ==========================================
 
+// Tính theo giờ Việt Nam RÕ RÀNG, không dựa vào timezone mặc định của
+// container chạy server (Render — thường là UTC). Showtime/lịch diễn đều
+// theo giờ VN, lệch timezone sẽ khiến khoảng 00:00-06:59 giờ VN server vẫn
+// tính nhầm là "hôm qua" theo UTC, từ chối nhầm vé của đúng suất hôm nay.
 function todayDateKey() {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
 }
 
 function classifyTicketForGate(ticket, todayKey) {
@@ -505,8 +508,7 @@ async function listUpcomingShowtimes({ showId, limit = 10 }) {
         throw new Error("Thiếu showId");
     }
 
-    const now = new Date();
-    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const todayKey = todayDateKey();
 
     const snap = await db
         .collection("shows").doc(showId)
