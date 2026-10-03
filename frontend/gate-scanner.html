@@ -67,7 +67,31 @@
   .rc-name b{font-weight:700;color:var(--gold);}
   .rc-sub{color:var(--dim);font-size:11.5px;margin:2px 0 0;}
   .rc-code{color:var(--dim);font-size:9.5px;margin-top:4px;word-break:break-all;opacity:.7;}
+  .rc-foot{display:flex;justify-content:flex-end;margin-top:6px;}
+  .print-btn{padding:5px 11px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer;}
+  .print-btn:hover{border-color:var(--green);color:var(--green);}
   .feed-empty{color:var(--dim);font-size:13px;text-align:center;padding:18px 0;}
+
+  /* ---- Vé giấy in ra — ẨN khi xem trên màn hình, CHỈ hiện khi in ---- */
+  .print-only{display:none;}
+  @media print{
+    @page{ size: 80mm auto; margin: 3mm; }
+    body *{ visibility: hidden; }
+    #printArea, #printArea *{ visibility: visible; }
+    #printArea{
+      display:block; position:absolute; top:0; left:0; width:100%;
+      font-family: Arial, sans-serif; color:#000; text-align:center;
+    }
+    .pt-brand{font-size:16px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
+    .pt-show{font-size:12px;margin:0 0 8px;}
+    .pt-divider{border-top:1px dashed #000;margin:8px 0;}
+    .pt-row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0;text-align:left;}
+    .pt-row span{color:#333;}
+    .pt-row b{font-weight:700;}
+    .pt-qr img{width:120px;height:120px;margin:10px 0;}
+    .pt-code{font-size:10px;color:#333;word-break:break-all;margin-top:4px;}
+    .pt-time{font-size:9.5px;color:#555;margin-top:4px;}
+  }
 </style>
 </head>
 <body>
@@ -78,6 +102,19 @@
   <input type="password" id="gateInput" placeholder="Khoá app soát vé" autocomplete="off">
   <button id="gateBtn">Vào màn hình quét vé</button>
   <div id="gateError"></div>
+</div>
+
+<div id="printArea" class="print-only">
+  <div class="pt-brand">LUMISHOW</div>
+  <div class="pt-show">Sơn Thần Thủy Quái</div>
+  <div class="pt-divider"></div>
+  <div class="pt-row"><span>Khách</span><b id="ptName"></b></div>
+  <div class="pt-row"><span>Ghế</span><b id="ptSeats"></b></div>
+  <div class="pt-row"><span>Suất diễn</span><b id="ptShow"></b></div>
+  <div class="pt-divider"></div>
+  <div class="pt-qr"><img id="ptQr" src="" alt="QR"></div>
+  <div class="pt-code" id="ptCode"></div>
+  <div class="pt-time" id="ptTime"></div>
 </div>
 
 <div id="app" hidden>
@@ -135,6 +172,8 @@ let processingQueue = false;
 const checkedCache = new Set();
 
 let results = []; // 3 kết quả gần nhất, mới nhất ở đầu mảng
+let resultIdCounter = 0; // id ổn định cho nút "In vé" — KHÔNG dùng index vì
+// unshift() làm lệch index mỗi khi có kết quả mới, bấm in nhầm vé khác.
 
 function $(id){ return document.getElementById(id); }
 const scanInput = $("scanInput");
@@ -384,6 +423,7 @@ async function handleScan(code){
 }
 
 function pushResult(result){
+  result.id = ++resultIdCounter;
   result.time = new Date();
   results.unshift(result);
   results = results.slice(0, MAX_RESULTS);
@@ -392,6 +432,25 @@ function pushResult(result){
 
 function fmtTime(d){
   return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+// In vé giấy — đổ dữ liệu vào #printArea (ẨN trên màn hình, chỉ hiện khi
+// in, xem CSS @media print) rồi gọi window.print(). Dùng dialog in của hệ
+// điều hành nên chạy được với BẤT KỲ máy in đang kết nối (USB/Bluetooth đã
+// cài driver) — không cần code riêng cho từng loại máy in. QR tái dùng
+// thẳng endpoint /tickets/:code/qr.png có sẵn, không cần vẽ QR ở client.
+function printTicket(id){
+  const r = results.find((x) => x.id === id);
+  if (!r) return;
+
+  $("ptName").textContent = r.customerName || "—";
+  $("ptSeats").textContent = r.seats.length ? r.seats.join(", ") : "—";
+  $("ptShow").textContent = r.showtimeId || "—";
+  $("ptCode").textContent = r.ticketCode;
+  $("ptTime").textContent = r.time.toLocaleDateString("vi-VN") + " " + fmtTime(r.time);
+  $("ptQr").src = API + "/tickets/" + encodeURIComponent(r.ticketCode) + "/qr.png";
+
+  window.print();
 }
 
 function renderResults(){
@@ -423,6 +482,7 @@ function renderResults(){
         ${nameSeatLine ? `<p class="rc-name">${escapeHtml(nameSeatLine)}</p>` : ""}
         ${subLine ? `<p class="rc-sub">${escapeHtml(subLine)}</p>` : ""}
         <p class="rc-code">${escapeHtml(r.ticketCode)}</p>
+        ${r.ok ? `<div class="rc-foot"><button class="print-btn" onclick="printTicket(${r.id})">🖨 In vé</button></div>` : ""}
       </div>
     `;
   }).join("");
