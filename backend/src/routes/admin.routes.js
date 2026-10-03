@@ -5,6 +5,9 @@ const router = express.Router();
 
 const {
     checkPin,
+    checkGateKey,
+    lookupTicketByCode,
+    checkInTicketByCode,
     cancelTicketBySeat,
     createManualTicket,
     listUpcomingShowtimes,
@@ -43,6 +46,10 @@ const adminLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true,
+    // /admin/tickets/checkin và /admin/tickets/lookup có giới hạn RIÊNG
+    // (gateLimiter bên dưới) — tần suất quét vé ở cổng cao hơn hẳn thao tác
+    // admin thường, không nên dùng chung ngưỡng 300/15 phút.
+    skip: (req) => req.path === "/admin/tickets/checkin" || req.path === "/admin/tickets/lookup",
     message: {
         success: false,
         message: "Quá nhiều yêu cầu, vui lòng thử lại sau."
@@ -50,6 +57,23 @@ const adminLimiter = rateLimit({
 });
 
 router.use("/admin", adminLimiter);
+
+// Riêng cho check-in tại cổng: quét liên tục suốt giờ mở cửa, lưu lượng
+// thật cao hơn nhiều so với thao tác admin tay. skipSuccessfulRequests vẫn
+// bật — vé đã check-in/huỷ/xung đột trả về HTTP 200 (chỉ khác success:false
+// trong body), không phải lỗi credential nên không nên tính vào giới hạn;
+// chỉ sai gateKey (401) mới tính, vẫn đủ chặn dò khoá.
+const gateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 3000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: {
+        success: false,
+        message: "Quá nhiều yêu cầu, vui lòng thử lại sau."
+    }
+});
 
 // Ghi lịch sử thao tác admin — bọc res.json() 1 lần cho TOÀN BỘ /admin/*
 // thay vì từng hàm trong admin.service.js tự gọi, để endpoint thêm sau này
@@ -78,6 +102,17 @@ function requirePin(req, res, next) {
         return res.status(401).json({
             success: false,
             message: "Sai mật khẩu admin"
+        });
+    }
+    next();
+}
+
+// Khóa riêng cho app soát vé — xem checkGateKey() trong admin.service.js.
+function requireGateKey(req, res, next) {
+    if (!checkGateKey(req.body.gateKey)) {
+        return res.status(401).json({
+            success: false,
+            message: "Sai khoá app soát vé"
         });
     }
     next();
@@ -194,6 +229,90 @@ router.post("/admin/tickets/create", requirePin, async (req, res) => {
         return res.status(400).json({
             success: false,
             message: error.message || "Không thể tạo vé"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/admin/tickets/lookup
+// body: { gateKey, ticketCode }
+// Tra cứu READ-ONLY (không check-in) — màn hình "hiện thông tin vé" ngay sau
+// khi quét, trước khi nhân viên đối chiếu khách rồi tự bấm nút CHECK-IN (gọi
+// /admin/tickets/checkin riêng, bên dưới). Dùng chung logic phân loại với
+// checkin qua classifyTicketForGate() trong admin.service.js.
+// ==========================================
+
+router.post("/admin/tickets/lookup", gateLimiter, requireGateKey, async (req, res) => {
+
+    try {
+
+        const { ticketCode } = req.body;
+
+        const result = await lookupTicketByCode({ ticketCode });
+
+        return res.status(200).json({
+            success: true,
+            ready: result.ready,
+            message: result.message,
+            ticket: {
+                ticketCode: result.ticketCode,
+                seatId: result.seatId,
+                customerName: result.customerName,
+                showtimeId: result.showtimeId,
+                tierName: result.tierName,
+                price: result.price
+            }
+        });
+
+    } catch (error) {
+
+        console.error("GATE LOOKUP ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể tra cứu vé"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/admin/tickets/checkin
+// body: { gateKey, ticketCode }
+// Dùng bởi app soát vé Unity thay cho đọc/ghi Firestore trực tiếp (xem
+// checkInTicketByCode() trong admin.service.js cho toàn bộ logic transaction
+// + lý do — đây là phần vá cho C1/C7 trong CLAUDE.md). Luôn trả HTTP 200 cho
+// mọi kết quả nghiệp vụ hợp lệ (đã check-in/huỷ/xung đột/sai ngày...), chỉ
+// 401 khi sai gateKey và 400 khi thiếu ticketCode — để gateLimiter không
+// tính nhầm việc quét trùng/quét rác vào giới hạn request.
+// ==========================================
+
+router.post("/admin/tickets/checkin", gateLimiter, requireGateKey, async (req, res) => {
+
+    try {
+
+        const { ticketCode } = req.body;
+
+        const result = await checkInTicketByCode({ ticketCode });
+
+        return res.status(200).json({
+            success: result.success,
+            alreadyCheckedIn: result.alreadyCheckedIn,
+            message: result.message,
+            ticket: {
+                ticketCode: result.ticketCode,
+                seatId: result.seatId,
+                customerName: result.customerName,
+                showtimeId: result.showtimeId
+            }
+        });
+
+    } catch (error) {
+
+        console.error("GATE CHECKIN ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể check-in vé"
         });
     }
 });

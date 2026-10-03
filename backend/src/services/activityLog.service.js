@@ -35,7 +35,13 @@ const SKIP_LOG_PATHS = new Set([
     "/admin/showtimes/list",
     "/admin/orders/lookup",
     "/admin/showtimes/calendar",
-    "/admin/activity/list"
+    "/admin/activity/list",
+    // Tần suất quét vé ở cổng (gate check-in/lookup) cao hơn hẳn thao tác
+    // admin tay — không log để tránh ngập adminActivityLog, chỉ ghi chú
+    // cancel/create vé tay (đã log sẵn qua 2 route riêng) mới là thao tác
+    // cần soát lại.
+    "/admin/tickets/checkin",
+    "/admin/tickets/lookup"
 ]);
 
 function deriveCategory(path) {

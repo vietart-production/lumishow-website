@@ -234,6 +234,156 @@ async function createManualTicket({
 }
 
 // ==========================================
+// KHÓA RIÊNG CHO APP SOÁT VÉ (gate) — tách khỏi ADMIN_PIN vì app quét liên
+// tục ở màn hình chính, không đi qua màn hình nhập PIN như AdminPanelController
+// (huỷ/tạo vé). Không có fallback mặc định như ADMIN_PIN: thiếu env thì
+// fail-closed, giống PARTNER_API_KEY.
+// ==========================================
+
+const GATE_API_KEY = process.env.GATE_API_KEY || "";
+
+function checkGateKey(key) {
+    if (!GATE_API_KEY) return false;
+    if (typeof key !== "string") return false;
+    const a = Buffer.from(key);
+    const b = Buffer.from(GATE_API_KEY);
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+}
+
+// ==========================================
+// CHECK-IN VÉ TẠI CỔNG — thay thế hoàn toàn việc app Unity đọc/ghi Firestore
+// "tickets" trực tiếp qua Firebase Client SDK (lỗ hổng C1/C7 trong CLAUDE.md:
+// client tự do đọc PII mọi vé, và logic cũ chỉ kiểm checkedIn chứ không kiểm
+// ticketStatus/đúng suất đang diễn — vé đã huỷ hoặc đang "conflict_needs_review"
+// vẫn lọt qua được). Transaction này là nguồn sự thật DUY NHẤT quyết định 1 vé
+// có được vào cổng hay không.
+//
+// Dùng chung classifyTicketForGate() với lookupTicketByCode() (tra cứu
+// read-only, không check-in — màn hình "hiện thông tin vé" trước khi nhân
+// viên bấm nút CHECK-IN) để 2 nơi không bao giờ lệch logic nhận định vé.
+// ==========================================
+
+function todayDateKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function classifyTicketForGate(ticket, todayKey) {
+    if (!ticket) return "NOT_FOUND";
+    if (ticket.ticketStatus === "cancelled") return "CANCELLED";
+    if (ticket.ticketStatus === "conflict_needs_review") return "CONFLICT";
+    if (ticket.ticketStatus !== "valid") return "INVALID_STATUS";
+    if ((ticket.showtimeId || "").split("_")[0] !== todayKey) return "WRONG_DATE";
+    if (ticket.checkedIn === true) return "ALREADY_CHECKED_IN";
+    return "READY";
+}
+
+const GATE_MESSAGES = {
+    NOT_FOUND: "Vé không tồn tại",
+    CANCELLED: "Vé đã bị huỷ, không hợp lệ",
+    CONFLICT: "Vé đang chờ xử lý xung đột, liên hệ admin",
+    INVALID_STATUS: "Vé không hợp lệ",
+    WRONG_DATE: "Vé không phải của suất diễn hôm nay",
+    ALREADY_CHECKED_IN: "Vé đã được check-in trước đó",
+    READY: "Sẵn sàng check-in",
+    OK: "Hợp lệ"
+};
+
+// Tra cứu READ-ONLY — màn hình "hiện thông tin vé" sau khi quét, TRƯỚC khi
+// nhân viên đối chiếu khách rồi tự bấm nút CHECK-IN (xem checkInTicketByCode
+// bên dưới cho bước mutate thật). Không transaction vì không ghi gì.
+async function lookupTicketByCode({ ticketCode }) {
+
+    if (!ticketCode || typeof ticketCode !== "string") {
+        throw new Error("Thiếu ticketCode");
+    }
+
+    const snap = await db.collection("tickets")
+        .where("ticketCode", "==", ticketCode)
+        .limit(1)
+        .get();
+
+    const ticket = snap.empty ? null : snap.docs[0].data();
+    const outcomeCode = classifyTicketForGate(ticket, todayDateKey());
+
+    return {
+        outcome: outcomeCode,
+        ready: outcomeCode === "READY",
+        message: GATE_MESSAGES[outcomeCode],
+        ticketCode,
+        seatId: ticket ? (ticket.seatId || null) : null,
+        customerName: ticket ? (ticket.customerName || "") : "",
+        showtimeId: ticket ? (ticket.showtimeId || null) : null,
+        tierName: ticket ? (ticket.tierName || null) : null,
+        price: ticket ? (ticket.price != null ? ticket.price : null) : null
+    };
+}
+
+async function checkInTicketByCode({ ticketCode }) {
+
+    if (!ticketCode || typeof ticketCode !== "string") {
+        throw new Error("Thiếu ticketCode");
+    }
+
+    const snap = await db.collection("tickets")
+        .where("ticketCode", "==", ticketCode)
+        .limit(1)
+        .get();
+
+    if (snap.empty) {
+        return {
+            outcome: "NOT_FOUND",
+            success: false,
+            alreadyCheckedIn: false,
+            message: GATE_MESSAGES.NOT_FOUND
+        };
+    }
+
+    const ticketRef = snap.docs[0].ref;
+    const now = new Date();
+    const todayKey = todayDateKey();
+
+    const outcome = await db.runTransaction(async (transaction) => {
+
+        const ticketSnap = await transaction.get(ticketRef);
+
+        if (!ticketSnap.exists) {
+            return { code: "NOT_FOUND" };
+        }
+
+        const ticket = ticketSnap.data();
+        const code = classifyTicketForGate(ticket, todayKey);
+
+        if (code !== "READY") {
+            return { code, ticket };
+        }
+
+        transaction.update(ticketRef, {
+            checkedIn: true,
+            checkedInAt: now
+        });
+
+        return { code: "OK", ticket };
+    });
+
+    const ticket = outcome.ticket || {};
+
+    return {
+        outcome: outcome.code,
+        success: outcome.code === "OK",
+        alreadyCheckedIn: outcome.code === "ALREADY_CHECKED_IN",
+        message: outcome.code === "OK"
+            ? `Hợp lệ - ${ticket.customerName || ""}`
+            : GATE_MESSAGES[outcome.code],
+        ticketCode,
+        seatId: ticket.seatId || null,
+        customerName: ticket.customerName || "",
+        showtimeId: ticket.showtimeId || null
+    };
+}
+
+// ==========================================
 // LIỆT KÊ SUẤT DIỄN SẮP TỚI — cho app Unity chọn thay vì nhân viên phải tự
 // tính lịch/gõ tay showtimeId. Mùa diễn kéo dài nhiều tháng, mỗi ngày trong
 // tuần có giờ diễn riêng (xem seedSeats.js), không thể hardcode 1 suất cố
@@ -981,6 +1131,9 @@ async function renameSeat({ showId, showtimeId, oldSeatId, newSeatId }) {
 
 module.exports = {
     checkPin,
+    checkGateKey,
+    lookupTicketByCode,
+    checkInTicketByCode,
     cancelTicketBySeat,
     createManualTicket,
     exchangePaidOrderTickets,
