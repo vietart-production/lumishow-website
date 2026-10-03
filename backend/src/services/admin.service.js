@@ -342,31 +342,14 @@ async function lookupTicketByCode({ ticketCode }) {
     };
 }
 
-async function checkInTicketByCode({ ticketCode }) {
+// Transaction check-in CHO 1 DOC vé — tách riêng để checkInTicketByCode()
+// (1 vé) và checkInOrderByTicketCode() (cả đơn, xem bên dưới) dùng chung,
+// không lặp lại logic transaction.
+async function checkInTicketDoc(ticketRef, todayKey) {
 
-    if (!ticketCode || typeof ticketCode !== "string") {
-        throw new Error("Thiếu ticketCode");
-    }
-
-    const snap = await db.collection("tickets")
-        .where("ticketCode", "==", ticketCode)
-        .limit(1)
-        .get();
-
-    if (snap.empty) {
-        return {
-            outcome: "NOT_FOUND",
-            success: false,
-            alreadyCheckedIn: false,
-            message: GATE_MESSAGES.NOT_FOUND
-        };
-    }
-
-    const ticketRef = snap.docs[0].ref;
     const now = new Date();
-    const todayKey = todayDateKey();
 
-    const outcome = await db.runTransaction(async (transaction) => {
+    return db.runTransaction(async (transaction) => {
 
         const ticketSnap = await transaction.get(ticketRef);
 
@@ -388,7 +371,29 @@ async function checkInTicketByCode({ ticketCode }) {
 
         return { code: "OK", ticket };
     });
+}
 
+async function checkInTicketByCode({ ticketCode }) {
+
+    if (!ticketCode || typeof ticketCode !== "string") {
+        throw new Error("Thiếu ticketCode");
+    }
+
+    const snap = await db.collection("tickets")
+        .where("ticketCode", "==", ticketCode)
+        .limit(1)
+        .get();
+
+    if (snap.empty) {
+        return {
+            outcome: "NOT_FOUND",
+            success: false,
+            alreadyCheckedIn: false,
+            message: GATE_MESSAGES.NOT_FOUND
+        };
+    }
+
+    const outcome = await checkInTicketDoc(snap.docs[0].ref, todayDateKey());
     const ticket = outcome.ticket || {};
 
     return {
@@ -402,6 +407,73 @@ async function checkInTicketByCode({ ticketCode }) {
         seatId: ticket.seatId || null,
         customerName: ticket.customerName || "",
         showtimeId: ticket.showtimeId || null
+    };
+}
+
+// ==========================================
+// CHECK-IN CẢ ĐƠN QUA 1 LẦN QUÉT — khách mua nhiều ghế trong 1 đơn thường
+// vào cổng cùng lúc; quét lần lượt từng vé (từng mã QR riêng) rất chậm nếu
+// đơn có nhiều ghế. Quét ĐÚNG 1 mã vé bất kỳ trong đơn, tự tìm toàn bộ vé
+// cùng orderId rồi check-in hết trong 1 lượt (mỗi vé vẫn transaction riêng,
+// giống checkInTicketByCode — 1 vé lỗi/đã check-in không chặn các vé còn
+// lại của đơn). Gate-scanner.html gọi endpoint này khi tick "check-in cả
+// đơn"; bỏ tick thì vẫn gọi checkInTicketByCode (1 vé) như cũ.
+// ==========================================
+async function checkInOrderByTicketCode({ ticketCode }) {
+
+    if (!ticketCode || typeof ticketCode !== "string") {
+        throw new Error("Thiếu ticketCode");
+    }
+
+    const snap = await db.collection("tickets")
+        .where("ticketCode", "==", ticketCode)
+        .limit(1)
+        .get();
+
+    if (snap.empty) {
+        return {
+            outcome: "NOT_FOUND",
+            customerName: "",
+            showtimeId: null,
+            totalInOrder: 0,
+            checkedInCount: 0,
+            tickets: []
+        };
+    }
+
+    const scannedTicket = snap.docs[0].data();
+    const orderId = scannedTicket.orderId || null;
+    const todayKey = todayDateKey();
+
+    // Vé cũ lý thuyết có thể thiếu orderId (không nên xảy ra với dữ liệu hiện
+    // tại) — fail-safe về lại đúng 1 vé vừa quét thay vì quét where("orderId"
+    // ,"==",null) trả nhầm các vé khác cũng thiếu orderId.
+    const orderDocs = orderId
+        ? (await db.collection("tickets").where("orderId", "==", orderId).get()).docs
+        : [snap.docs[0]];
+
+    const tickets = [];
+
+    for (const doc of orderDocs) {
+        const outcome = await checkInTicketDoc(doc.ref, todayKey);
+        const t = outcome.ticket || {};
+        tickets.push({
+            ticketCode: t.ticketCode || doc.id,
+            seatId: t.seatId || null,
+            success: outcome.code === "OK",
+            alreadyCheckedIn: outcome.code === "ALREADY_CHECKED_IN",
+            message: GATE_MESSAGES[outcome.code] || GATE_MESSAGES.OK
+        });
+    }
+
+    return {
+        outcome: "ORDER_PROCESSED",
+        orderId,
+        customerName: scannedTicket.customerName || "",
+        showtimeId: scannedTicket.showtimeId || null,
+        totalInOrder: tickets.length,
+        checkedInCount: tickets.filter((t) => t.success).length,
+        tickets
     };
 }
 
@@ -1162,6 +1234,7 @@ module.exports = {
     checkGateKey,
     lookupTicketByCode,
     checkInTicketByCode,
+    checkInOrderByTicketCode,
     cancelTicketBySeat,
     createManualTicket,
     exchangePaidOrderTickets,

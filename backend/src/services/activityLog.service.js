@@ -41,6 +41,7 @@ const SKIP_LOG_PATHS = new Set([
     // cancel/create vé tay (đã log sẵn qua 2 route riêng) mới là thao tác
     // cần soát lại.
     "/admin/tickets/checkin",
+    "/admin/tickets/checkin-order",
     "/admin/tickets/lookup"
 ]);
 

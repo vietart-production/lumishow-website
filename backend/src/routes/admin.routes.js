@@ -8,6 +8,7 @@ const {
     checkGateKey,
     lookupTicketByCode,
     checkInTicketByCode,
+    checkInOrderByTicketCode,
     cancelTicketBySeat,
     createManualTicket,
     listUpcomingShowtimes,
@@ -313,6 +314,46 @@ router.post("/admin/tickets/checkin", gateLimiter, requireGateKey, async (req, r
         return res.status(400).json({
             success: false,
             message: error.message || "Không thể check-in vé"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/admin/tickets/checkin-order
+// body: { gateKey, ticketCode }
+// Quét ĐÚNG 1 mã vé bất kỳ trong đơn, check-in TOÀN BỘ vé cùng orderId —
+// cho trường hợp khách mua nhiều ghế trong 1 đơn, dùng khi gate-scanner.html
+// tick "check-in cả đơn" (xem checkInOrderByTicketCode() trong admin.service.js).
+// Cùng gateLimiter/requireGateKey với /checkin, luôn trả HTTP 200 cho kết
+// quả nghiệp vụ hợp lệ.
+// ==========================================
+
+router.post("/admin/tickets/checkin-order", gateLimiter, requireGateKey, async (req, res) => {
+
+    try {
+
+        const { ticketCode } = req.body;
+
+        const result = await checkInOrderByTicketCode({ ticketCode });
+
+        return res.status(200).json({
+            success: result.outcome !== "NOT_FOUND",
+            outcome: result.outcome,
+            orderId: result.orderId,
+            customerName: result.customerName,
+            showtimeId: result.showtimeId,
+            totalInOrder: result.totalInOrder,
+            checkedInCount: result.checkedInCount,
+            tickets: result.tickets
+        });
+
+    } catch (error) {
+
+        console.error("GATE CHECKIN ORDER ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể check-in đơn"
         });
     }
 });

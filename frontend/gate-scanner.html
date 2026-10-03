@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiShow — Soát vé cổng (nội bộ)</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#121815; --border:rgba(255,255,255,.1);
+    --text:#e6f1ea; --dim:#8fa196; --green:#3ddc84; --red:#ff6b6b; --gold:#fbbb21;
+  }
+  *{box-sizing:border-box;}
+  html,body{min-height:100%;margin:0;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  [hidden]{display:none!important;}
+
+  /* ---- Gate khoá app soát vé ---- */
+  #gate{max-width:380px;margin:12vh auto;padding:30px;background:var(--panel);border:1px solid var(--border);border-radius:14px;}
+  #gate h2{font-size:17px;margin:0 0 6px;}
+  #gate p{color:var(--dim);font-size:12.5px;margin:0 0 18px;}
+  #gate input{width:100%;padding:12px 13px;border-radius:8px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:15px;margin-bottom:10px;}
+  #gate button{width:100%;padding:12px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:15px;cursor:pointer;}
+  #gate button:hover{opacity:.9;}
+  #gate button:disabled{opacity:.5;cursor:default;}
+  #gateError{color:var(--red);font-size:12.5px;min-height:16px;margin-top:4px;}
+
+  /* ---- Màn hình chính — luôn hiện, quét liên tục không chuyển trang ---- */
+  #app{min-height:100vh;padding:30px 20px 60px;}
+  #app, .wrap{max-width:640px;margin:0 auto;}
+
+  .head{text-align:center;margin-bottom:18px;}
+  .head .icon{font-size:46px;line-height:1;margin-bottom:6px;}
+  .head .title{font-size:21px;font-weight:800;margin:0 0 4px;}
+  .head .subtitle{color:var(--dim);font-size:13px;margin:0 0 10px;}
+  .status-dot{display:inline-flex;align-items:center;gap:7px;color:var(--green);font-size:12.5px;font-weight:600;}
+  .status-dot i{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 1.6s infinite;}
+  .status-dot.busy{color:var(--gold);}
+  .status-dot.busy i{background:var(--gold);animation:none;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  #scanInput{
+    display:block;width:100%;margin:16px 0 28px;padding:16px 18px;border-radius:10px;
+    border:1.5px solid var(--border);background:#0d1310;color:var(--text);font-size:17px;
+    text-align:center;letter-spacing:.4px;font-family:"Courier New",monospace;
+  }
+  #scanInput::placeholder{color:var(--dim);font-family:inherit;}
+  #scanInput:focus{outline:none;border-color:var(--green);}
+
+  .toggle-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 18px;color:var(--text);font-size:13px;}
+  .toggle-row input{width:16px;height:16px;accent-color:var(--green);cursor:pointer;}
+  .toggle-row label{cursor:pointer;}
+
+  .feed-label{color:var(--dim);font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;margin:0 0 10px 2px;}
+  #resultsFeed{display:flex;flex-direction:column;gap:10px;}
+  .result-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 16px;border-left:4px solid var(--border);}
+  .result-card.ok{border-left-color:var(--green);}
+  .result-card.partial{border-left-color:var(--gold);}
+  .result-card.fail{border-left-color:var(--red);}
+  .rc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .rc-title{font-size:14.5px;font-weight:800;}
+  .result-card.ok .rc-title{color:var(--green);}
+  .result-card.partial .rc-title{color:var(--gold);}
+  .result-card.fail .rc-title{color:var(--red);}
+  .rc-time{color:var(--dim);font-size:11px;white-space:nowrap;padding-top:2px;}
+  .rc-name{font-size:13px;font-weight:600;margin:3px 0 0;}
+  .rc-name b{font-weight:700;color:var(--gold);}
+  .rc-sub{color:var(--dim);font-size:11.5px;margin:2px 0 0;}
+  .rc-code{color:var(--dim);font-size:9.5px;margin-top:4px;word-break:break-all;opacity:.7;}
+  .feed-empty{color:var(--dim);font-size:13px;text-align:center;padding:18px 0;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h2>Khoá app soát vé</h2>
+  <p>Nhập khoá riêng của app soát vé (GATE_API_KEY) để vào màn hình quét vé tại cổng.</p>
+  <input type="password" id="gateInput" placeholder="Khoá app soát vé" autocomplete="off">
+  <button id="gateBtn">Vào màn hình quét vé</button>
+  <div id="gateError"></div>
+</div>
+
+<div id="app" hidden>
+  <div class="wrap">
+
+    <div class="head">
+      <div class="icon">🎫</div>
+      <h1 class="title">Soát vé cổng</h1>
+      <p class="subtitle">Đưa mã QR vào máy quét — hệ thống tự nhận, không cần bấm gì</p>
+      <div class="status-dot" id="statusDot"><i></i> <span id="statusText">Sẵn sàng</span></div>
+    </div>
+
+    <input id="scanInput" type="text" lang="en" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" translate="no" placeholder="Mã quét sẽ hiện ở đây...">
+
+    <div class="toggle-row">
+      <input type="checkbox" id="wholeOrderToggle">
+      <label for="wholeOrderToggle">Quét 1 vé tự check-in cả đơn (nhiều ghế)</label>
+    </div>
+
+    <p class="feed-label">3 lượt quét gần nhất</p>
+    <div id="resultsFeed">
+      <p class="feed-empty" id="feedEmpty">Chưa có lượt quét nào</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = "https://lumishow-website.onrender.com/api";
+const KEY_STORAGE = "lumishow-gate-key";
+const WHOLE_ORDER_STORAGE = "lumishow-gate-whole-order";
+
+// Regex định dạng mã vé — CHỈ dùng để quyết định "máy quét gõ xong chưa"
+// trong debounce dưới đây, giống hệt ticketCodePattern trong TicketManager.cs
+// (app Unity). Không dùng để chặn gọi lookup — server tự trả "Vé không tồn
+// tại" an toàn cho mọi mã rác, không cần chặn sớm ở client.
+const TICKET_CODE_PATTERN = /^[A-Za-z0-9_-]{4,64}$/;
+const SCAN_DEBOUNCE_MS = 150;
+const MAX_INVALID_STABLE_WAITS = 12;
+const MAX_RESULTS = 3;
+
+let GATE_KEY = "";
+let lastScanLen = -1;
+let invalidStableWaits = 0;
+let debounceTimer = null;
+
+// Hàng đợi xử lý quét — quét liên tục nhiều vé không cần chờ kết quả vé
+// trước hiện xong, mỗi mã được xử lý tuần tự (tránh race khi gọi lookup +
+// checkin của 2 vé chồng lẫn thứ tự).
+const scanQueue = [];
+let processingQueue = false;
+
+// Vé đã check-in thành công bởi CHÍNH TAB này trong phiên hiện tại — tránh
+// gọi lại mạng nếu lỡ quét trùng mã vừa xong (giống LocalCheckInCache bên Unity).
+const checkedCache = new Set();
+
+let results = []; // 3 kết quả gần nhất, mới nhất ở đầu mảng
+
+function $(id){ return document.getElementById(id); }
+const scanInput = $("scanInput");
+
+function focusScanInput(){
+  scanInput.focus();
+}
+
+function setStatus(busy){
+  $("statusDot").className = "status-dot" + (busy ? " busy" : "");
+  $("statusText").textContent = busy ? "Đang xử lý..." : "Sẵn sàng";
+}
+
+// Tick = quét 1 vé bất kỳ trong đơn tự check-in luôn các vé còn lại cùng
+// đơn (gọi /admin/tickets/checkin-order) — nhanh hơn hẳn khi khách mua
+// nhiều ghế, không phải quét lần lượt từng mã QR. Nhớ theo máy (localStorage,
+// không phải sessionStorage) vì đây là lựa chọn vận hành theo ca, không phải
+// bí mật cần xoá khi đóng tab. Mặc định BẬT.
+let wholeOrderMode = true;
+try {
+  const saved = localStorage.getItem(WHOLE_ORDER_STORAGE);
+  if (saved !== null) wholeOrderMode = saved === "1";
+} catch (e) {}
+$("wholeOrderToggle").checked = wholeOrderMode;
+$("wholeOrderToggle").addEventListener("change", (e) => {
+  wholeOrderMode = e.target.checked;
+  try { localStorage.setItem(WHOLE_ORDER_STORAGE, wholeOrderMode ? "1" : "0"); } catch (err) {}
+});
+
+// ---------------------------------------------------------------
+// GATE (khoá app soát vé) — xác thực bằng cách gọi thẳng /tickets/lookup
+// với 1 mã giả, vì endpoint này không có route /verify-key riêng. 401 = sai
+// khoá, 200 (dù vé không tồn tại) = khoá đúng. Không ghi log admin vì
+// /admin/tickets/lookup bị loại khỏi adminActivityLog từ trước.
+// ---------------------------------------------------------------
+async function verifyGateKey(key){
+  const res = await fetch(API + "/admin/tickets/lookup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ gateKey: key, ticketCode: "GATE-KEY-VERIFY" })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) throw new Error(data.message || "Sai khoá app soát vé");
+  if (!res.ok) throw new Error(data.message || "Lỗi không xác định");
+}
+
+$("gateBtn").addEventListener("click", async () => {
+  const key = $("gateInput").value.trim();
+  $("gateError").textContent = "";
+  if (!key) { $("gateError").textContent = "Nhập khoá app soát vé"; return; }
+  $("gateBtn").disabled = true;
+  try {
+    await verifyGateKey(key);
+    GATE_KEY = key;
+    try { sessionStorage.setItem(KEY_STORAGE, key); } catch (e) {}
+    $("gate").hidden = true;
+    $("app").hidden = false;
+    focusScanInput();
+  } catch (err) {
+    $("gateError").textContent = err.message;
+  } finally {
+    $("gateBtn").disabled = false;
+  }
+});
+$("gateInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("gateBtn").click(); });
+
+(function tryResumeGateKey(){
+  let saved = "";
+  try { saved = sessionStorage.getItem(KEY_STORAGE) || ""; } catch (e) {}
+  if (!saved) return;
+  GATE_KEY = saved;
+  $("gate").hidden = true;
+  $("app").hidden = false;
+  focusScanInput();
+})();
+
+// ---------------------------------------------------------------
+// GỌI API soát vé — key sai giữa phiên (hiếm, vd đổi GATE_API_KEY trên
+// Render) thì refresh lại để quay về màn hình nhập khoá, đơn giản hơn tự
+// quản lý state quay lại gate giữa lúc đang quét.
+// ---------------------------------------------------------------
+async function callGateApi(path, body){
+  const res = await fetch(API + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ gateKey: GATE_KEY, ...body })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    try { sessionStorage.removeItem(KEY_STORAGE); } catch (e) {}
+    location.reload();
+    throw new Error("Sai khoá, đang tải lại trang");
+  }
+  if (!res.ok) throw new Error(data.message || "Lỗi không xác định");
+  return data;
+}
+
+// ---------------------------------------------------------------
+// CHẶN IME TIẾNG VIỆT (Unikey/Telex...) BIẾN KÝ TỰ THÀNH CÓ DẤU — mã vé
+// luôn phải là ASCII thuần (xem TICKET_CODE_PATTERN). 2 lớp phòng:
+// 1) preventDefault khi IME bắt đầu compose (hiệu quả với engine kiểu TSF,
+//    vd bộ gõ Telex dựng sẵn Windows 10/11, EVKey/GoTiengViet chế độ TSF).
+// 2) Lọc bỏ MỌI ký tự ngoài [A-Za-z0-9_-] ngay sau mỗi lần input, phòng các
+//    engine kiểu hook cũ (Unikey classic) không phát sinh composition event
+//    chuẩn nên lớp (1) không chặn được — không phục hồi được ký tự gốc đã
+//    mất, nhưng chắc chắn không để ký tự có dấu lẫn vào mã gửi lên server.
+// ---------------------------------------------------------------
+scanInput.addEventListener("compositionstart", (e) => e.preventDefault());
+
+scanInput.addEventListener("input", () => {
+  const clean = scanInput.value.replace(/[^A-Za-z0-9_-]/g, "");
+  if (clean !== scanInput.value) scanInput.value = clean;
+
+  clearTimeout(debounceTimer);
+  if (scanInput.value) {
+    debounceTimer = setTimeout(tryAutoSubmit, SCAN_DEBOUNCE_MS);
+  }
+});
+
+scanInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    clearTimeout(debounceTimer);
+    submitScan(scanInput.value);
+  }
+});
+
+// ---------------------------------------------------------------
+// DEBOUNCE nhận mã từ máy quét cứng (USB keyboard-wedge, gõ thẳng vào
+// #scanInput như bàn phím thật) — logic PORT 1:1 từ TryAutoSubmitScanField()
+// trong TicketManager.cs: chốt theo độ dài ổn định, không theo định dạng,
+// để không cắt cụt mã khi máy quét khựng giữa lúc gõ.
+// ---------------------------------------------------------------
+function tryAutoSubmit(){
+  const text = scanInput.value;
+  const trimmed = text.trim();
+
+  // 1) Độ dài còn tăng -> máy quét vẫn đang gõ, chờ thêm.
+  if (text && text.length !== lastScanLen) {
+    lastScanLen = text.length;
+    invalidStableWaits = 0;
+    debounceTimer = setTimeout(tryAutoSubmit, SCAN_DEBOUNCE_MS);
+    return;
+  }
+
+  // 2) Độ dài đứng yên nhưng chưa đúng định dạng -> có thể máy quét khựng
+  // giữa mã, chờ thêm tới MAX_INVALID_STABLE_WAITS nhịp trước khi chịu chốt.
+  if (text && !TICKET_CODE_PATTERN.test(trimmed) && invalidStableWaits < MAX_INVALID_STABLE_WAITS) {
+    invalidStableWaits++;
+    debounceTimer = setTimeout(tryAutoSubmit, SCAN_DEBOUNCE_MS);
+    return;
+  }
+
+  lastScanLen = -1;
+  invalidStableWaits = 0;
+  submitScan(text);
+}
+
+function submitScan(value){
+  clearTimeout(debounceTimer);
+  const trimmed = (value || "").trim();
+  scanInput.value = "";
+  lastScanLen = -1;
+  invalidStableWaits = 0;
+
+  if (!trimmed) return;
+
+  scanQueue.push(trimmed);
+  processQueue();
+}
+
+// ---------------------------------------------------------------
+// HÀNG ĐỢI XỬ LÝ — màn hình luôn sẵn sàng nhận lượt quét tiếp theo (field
+// không bị khoá/chuyển trang), nhưng mỗi mã vẫn được tra cứu+check-in TUẦN
+// TỰ (không chạy chồng) để tránh 2 request của 2 vé khác nhau trả về không
+// đúng thứ tự khi render kết quả.
+// ---------------------------------------------------------------
+async function processQueue(){
+  if (processingQueue) return;
+  processingQueue = true;
+  setStatus(true);
+
+  while (scanQueue.length) {
+    const code = scanQueue.shift();
+    await handleScan(code);
+  }
+
+  processingQueue = false;
+  setStatus(false);
+}
+
+// result chuẩn hoá chung cho cả 3 nguồn (cache/checkin 1 vé/checkin cả đơn):
+// { ok, partial, ticketCode, customerName, showtimeId, seats:[...], checkedInCount, totalCount, message }
+async function handleScan(code){
+  let result;
+
+  if (checkedCache.has(code)) {
+    result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: "Vé đã được check-in trước đó" };
+  } else {
+    try {
+      const lookup = await callGateApi("/admin/tickets/lookup", { ticketCode: code });
+
+      if (!lookup.ready) {
+        result = {
+          ok: false, partial: false, ticketCode: code,
+          customerName: lookup.ticket?.customerName || "",
+          showtimeId: lookup.ticket?.showtimeId || null,
+          seats: lookup.ticket?.seatId ? [lookup.ticket.seatId] : [],
+          checkedInCount: 0, totalCount: 1,
+          message: lookup.message
+        };
+      } else if (wholeOrderMode) {
+        const order = await callGateApi("/admin/tickets/checkin-order", { ticketCode: code });
+        (order.tickets || []).forEach((t) => { if (t.success || t.alreadyCheckedIn) checkedCache.add(t.ticketCode); });
+        const seats = (order.tickets || []).filter((t) => t.success).map((t) => t.seatId).filter(Boolean);
+        const total = order.totalInOrder || 1;
+        const checkedIn = order.checkedInCount || 0;
+        result = {
+          ok: checkedIn > 0,
+          partial: checkedIn > 0 && checkedIn < total,
+          ticketCode: code,
+          customerName: order.customerName || "",
+          showtimeId: order.showtimeId || null,
+          seats,
+          checkedInCount: checkedIn,
+          totalCount: total,
+          message: checkedIn === 0 ? "Không vé nào check-in được (có thể đã check-in trước)" : "Đã check-in cả đơn"
+        };
+      } else {
+        const checkin = await callGateApi("/admin/tickets/checkin", { ticketCode: code });
+        if (checkin.success || checkin.alreadyCheckedIn) checkedCache.add(code);
+        result = {
+          ok: checkin.success, partial: false, ticketCode: code,
+          customerName: checkin.ticket?.customerName || "",
+          showtimeId: checkin.ticket?.showtimeId || null,
+          seats: checkin.ticket?.seatId ? [checkin.ticket.seatId] : [],
+          checkedInCount: checkin.success ? 1 : 0, totalCount: 1,
+          message: checkin.message
+        };
+      }
+    } catch (err) {
+      result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: err.message || "Lỗi hệ thống" };
+    }
+  }
+
+  pushResult(result);
+}
+
+function pushResult(result){
+  result.time = new Date();
+  results.unshift(result);
+  results = results.slice(0, MAX_RESULTS);
+  renderResults();
+}
+
+function fmtTime(d){
+  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function renderResults(){
+  const feed = $("resultsFeed");
+  if (!results.length) {
+    feed.innerHTML = '<p class="feed-empty">Chưa có lượt quét nào</p>';
+    return;
+  }
+
+  feed.innerHTML = results.map((r) => {
+    const cls = r.partial ? "partial" : (r.ok ? "ok" : "fail");
+    const icon = r.partial ? "⚠" : (r.ok ? "✓" : "✗");
+    const countSuffix = r.totalCount > 1 ? ` (${r.checkedInCount}/${r.totalCount} vé)` : "";
+    const title = !r.ok
+      ? `${icon} KHÔNG CHECK-IN ĐƯỢC`
+      : (r.partial ? `${icon} CHECK-IN MỘT PHẦN${countSuffix}` : `${icon} ĐÃ CHECK-IN${countSuffix}`);
+
+    const seatLine = r.seats.length ? "Ghế " + r.seats.join(", ") : "";
+    const nameSeatLine = [r.customerName, seatLine].filter(Boolean).join(" · ");
+
+    const subLine = [r.showtimeId, (!r.ok || r.partial) ? r.message : ""].filter(Boolean).join(" · ");
+
+    return `
+      <div class="result-card ${cls}">
+        <div class="rc-top">
+          <span class="rc-title">${title}</span>
+          <span class="rc-time">${fmtTime(r.time)}</span>
+        </div>
+        ${nameSeatLine ? `<p class="rc-name">${escapeHtml(nameSeatLine)}</p>` : ""}
+        ${subLine ? `<p class="rc-sub">${escapeHtml(subLine)}</p>` : ""}
+        <p class="rc-code">${escapeHtml(r.ticketCode)}</p>
+      </div>
+    `;
+  }).join("");
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// Máy quét cứng gõ vào field đang có focus — nếu staff lỡ bấm/chạm ra
+// ngoài làm mất focus, tự lấy lại ngay (field luôn phải sẵn sàng nhận quét).
+document.addEventListener("click", (e) => {
+  if (!$("app").hidden) focusScanInput();
+});
+</script>
+</body>
+</html>
