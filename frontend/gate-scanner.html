@@ -84,11 +84,16 @@
   /* ---- Vé giấy in ra — ẨN khi xem trên màn hình, CHỈ hiện khi in ---- */
   .print-only{display:none;}
   @media print{
-    @page{ size: 80mm auto; margin: 3mm; }
+    /* margin ở @page phụ thuộc driver máy in có tôn trọng hay không (máy in
+       A4 thường như Canon LBP2900 ép khổ giấy 80mm về A4, có thể bỏ qua
+       margin này) — padding thật trong #printArea bên dưới mới là lớp đệm
+       chắc chắn, không phụ thuộc driver, chống cắt lem nội dung sát mép. */
+    @page{ size: 80mm auto; margin: 5mm; }
     body *{ visibility: hidden; }
     #printArea, #printArea *{ visibility: visible; }
     #printArea{
       display:block; position:absolute; top:0; left:0; width:100%;
+      box-sizing:border-box; padding:6mm 5mm;
       font-family: Arial, sans-serif; color:#000; text-align:center;
     }
     .pt-brand{font-size:16px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
