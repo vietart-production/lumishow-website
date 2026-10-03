@@ -548,6 +548,15 @@ async function cleanupExpiredHoldsThrottled() {
 // "Tạm khoá bán vé..."/"Mở lịch diễn..." cho lịch sử quy trình thủ công cũ).
 // Chỉ trả suất còn hôm nay/tương lai (bỏ suất đã qua dù status vẫn OPEN —
 // chưa có cơ chế tự đóng suất đã diễn).
+//
+// "Khoá suất" trong thực tế vận hành KHÔNG LUÔN đi qua field status của
+// showtime — nhân viên nhiều khi khoá bằng cách bulk-block/bán hết TOÀN BỘ
+// ghế qua trình sửa sơ đồ (admin-showtimes.html), để nguyên status="OPEN".
+// Phát hiện thực tế (2026-10-03): suất 2026-10-03_16:30 status vẫn "OPEN"
+// nhưng cả 1193 ghế đều BLOCKED/SOLD, 0 ghế trống — nếu chỉ lọc theo status
+// thì suất này vẫn lộ trên lịch, khách bấm vào thấy "Còn trống: 0 ghế" dù
+// tưởng đặt được. Nên lọc thêm: phải còn >= 1 ghế AVAILABLE mới tính là
+// "đang mở bán" thật sự.
 // ==========================================
 
 async function listOpenShowtimes({ showId }) {
@@ -564,9 +573,23 @@ async function listOpenShowtimes({ showId }) {
         .where("status", "==", "OPEN")
         .get();
 
-    return snap.docs
+    const candidateIds = snap.docs
         .map((doc) => doc.id)
-        .filter((showtimeId) => showtimeId.split("_")[0] >= todayKey)
+        .filter((showtimeId) => showtimeId.split("_")[0] >= todayKey);
+
+    const availabilityChecks = await Promise.all(
+        candidateIds.map((showtimeId) =>
+            db.collection("shows").doc(showId)
+                .collection("showtimes").doc(showtimeId)
+                .collection("seats")
+                .where("status", "==", "AVAILABLE")
+                .limit(1)
+                .get()
+        )
+    );
+
+    return candidateIds
+        .filter((_, i) => !availabilityChecks[i].empty)
         .sort();
 }
 
