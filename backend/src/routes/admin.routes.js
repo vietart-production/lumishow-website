@@ -278,7 +278,10 @@ router.post("/admin/tickets/lookup", gateLimiter, requireGateKey, async (req, re
 
 // ==========================================
 // POST /api/admin/tickets/checkin
-// body: { gateKey, ticketCode }
+// body: { gateKey, ticketCode, dryRun? }
+// dryRun=true (gate-scanner.html tick "TestScan"): vẫn chấm outcome y hệt
+// thật, chỉ bỏ qua bước ghi checkedIn — tester quét lại cùng 1 mã nhiều
+// lần không cần tạo mã mới (xem checkInTicketDoc() trong admin.service.js).
 // Dùng bởi app soát vé Unity thay cho đọc/ghi Firestore trực tiếp (xem
 // checkInTicketByCode() trong admin.service.js cho toàn bộ logic transaction
 // + lý do — đây là phần vá cho C1/C7 trong CLAUDE.md). Luôn trả HTTP 200 cho
@@ -291,9 +294,9 @@ router.post("/admin/tickets/checkin", gateLimiter, requireGateKey, async (req, r
 
     try {
 
-        const { ticketCode } = req.body;
+        const { ticketCode, dryRun } = req.body;
 
-        const result = await checkInTicketByCode({ ticketCode });
+        const result = await checkInTicketByCode({ ticketCode, dryRun: !!dryRun });
 
         return res.status(200).json({
             success: result.success,
@@ -320,7 +323,7 @@ router.post("/admin/tickets/checkin", gateLimiter, requireGateKey, async (req, r
 
 // ==========================================
 // POST /api/admin/tickets/checkin-order
-// body: { gateKey, ticketCode }
+// body: { gateKey, ticketCode, dryRun? } — xem ghi chú dryRun ở /checkin phía trên.
 // Quét ĐÚNG 1 mã vé bất kỳ trong đơn, check-in TOÀN BỘ vé cùng orderId —
 // cho trường hợp khách mua nhiều ghế trong 1 đơn, dùng khi gate-scanner.html
 // tick "check-in cả đơn" (xem checkInOrderByTicketCode() trong admin.service.js).
@@ -332,9 +335,9 @@ router.post("/admin/tickets/checkin-order", gateLimiter, requireGateKey, async (
 
     try {
 
-        const { ticketCode } = req.body;
+        const { ticketCode, dryRun } = req.body;
 
-        const result = await checkInOrderByTicketCode({ ticketCode });
+        const result = await checkInOrderByTicketCode({ ticketCode, dryRun: !!dryRun });
 
         return res.status(200).json({
             success: result.outcome !== "NOT_FOUND",

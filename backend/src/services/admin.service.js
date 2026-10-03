@@ -347,8 +347,11 @@ async function lookupTicketByCode({ ticketCode }) {
 
 // Transaction check-in CHO 1 DOC vé — tách riêng để checkInTicketByCode()
 // (1 vé) và checkInOrderByTicketCode() (cả đơn, xem bên dưới) dùng chung,
-// không lặp lại logic transaction.
-async function checkInTicketDoc(ticketRef, todayKey) {
+// không lặp lại logic transaction. dryRun=true (gate-scanner.html tick
+// "TestScan"): vẫn đọc + chấm outcome y hệt thật, NHƯNG bỏ qua bước ghi
+// checkedIn — để tester quét lại ĐÚNG 1 mã nhiều lần (luôn ra lại "READY")
+// mà không cần tạo mã mới mỗi lần, không đụng dữ liệu Firestore thật.
+async function checkInTicketDoc(ticketRef, todayKey, dryRun) {
 
     const now = new Date();
 
@@ -367,16 +370,18 @@ async function checkInTicketDoc(ticketRef, todayKey) {
             return { code, ticket };
         }
 
-        transaction.update(ticketRef, {
-            checkedIn: true,
-            checkedInAt: now
-        });
+        if (!dryRun) {
+            transaction.update(ticketRef, {
+                checkedIn: true,
+                checkedInAt: now
+            });
+        }
 
         return { code: "OK", ticket };
     });
 }
 
-async function checkInTicketByCode({ ticketCode }) {
+async function checkInTicketByCode({ ticketCode, dryRun }) {
 
     if (!ticketCode || typeof ticketCode !== "string") {
         throw new Error("Thiếu ticketCode");
@@ -396,7 +401,7 @@ async function checkInTicketByCode({ ticketCode }) {
         };
     }
 
-    const outcome = await checkInTicketDoc(snap.docs[0].ref, todayDateKey());
+    const outcome = await checkInTicketDoc(snap.docs[0].ref, todayDateKey(), dryRun);
     const ticket = outcome.ticket || {};
 
     return {
@@ -422,7 +427,7 @@ async function checkInTicketByCode({ ticketCode }) {
 // lại của đơn). Gate-scanner.html gọi endpoint này khi tick "check-in cả
 // đơn"; bỏ tick thì vẫn gọi checkInTicketByCode (1 vé) như cũ.
 // ==========================================
-async function checkInOrderByTicketCode({ ticketCode }) {
+async function checkInOrderByTicketCode({ ticketCode, dryRun }) {
 
     if (!ticketCode || typeof ticketCode !== "string") {
         throw new Error("Thiếu ticketCode");
@@ -458,7 +463,7 @@ async function checkInOrderByTicketCode({ ticketCode }) {
     const tickets = [];
 
     for (const doc of orderDocs) {
-        const outcome = await checkInTicketDoc(doc.ref, todayKey);
+        const outcome = await checkInTicketDoc(doc.ref, todayKey, dryRun);
         const t = outcome.ticket || {};
         tickets.push({
             ticketCode: t.ticketCode || doc.id,

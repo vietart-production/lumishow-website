@@ -29,6 +29,11 @@
   #app{min-height:100vh;padding:30px 20px 60px;}
   #app, .wrap{max-width:640px;margin:0 auto;}
 
+  .test-scan-toggle{position:fixed;top:12px;left:14px;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim);z-index:10;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px;}
+  .test-scan-toggle input{width:14px;height:14px;accent-color:var(--gold);cursor:pointer;}
+  .test-scan-toggle label{cursor:pointer;}
+  .test-scan-toggle.active{color:var(--gold);border-color:rgba(251,187,33,.4);}
+
   .head{text-align:center;margin-bottom:18px;}
   .head .icon{font-size:46px;line-height:1;margin-bottom:6px;}
   .head .title{font-size:21px;font-weight:800;margin:0 0 4px;}
@@ -118,6 +123,10 @@
 </div>
 
 <div id="app" hidden>
+  <div class="test-scan-toggle" id="testScanToggleWrap">
+    <input type="checkbox" id="testScanToggle">
+    <label for="testScanToggle">TestScan</label>
+  </div>
   <div class="wrap">
 
     <div class="head">
@@ -177,6 +186,17 @@ let resultIdCounter = 0; // id ổn định cho nút "In vé" — KHÔNG dùng i
 
 function $(id){ return document.getElementById(id); }
 const scanInput = $("scanInput");
+
+// TestScan — vẫn quét/tra cứu/check-in đúng luồng thật (gọi API thật) nhưng
+// kèm dryRun:true nên server CHỈ chấm outcome, KHÔNG ghi checkedIn (xem
+// checkInTicketDoc() trong admin.service.js) — tester quét lại đúng 1 mã
+// nhiều lần để thử UI mà không cần tạo mã mới mỗi lần. KHÔNG persist (mặc
+// định luôn tắt mỗi lần tải trang) để tránh quên bật/tắt giữa ca làm thật.
+let testScanMode = false;
+$("testScanToggle").addEventListener("change", (e) => {
+  testScanMode = e.target.checked;
+  $("testScanToggleWrap").classList.toggle("active", testScanMode);
+});
 
 function focusScanInput(){
   scanInput.focus();
@@ -386,8 +406,10 @@ async function handleScan(code){
           message: lookup.message
         };
       } else if (wholeOrderMode) {
-        const order = await callGateApi("/admin/tickets/checkin-order", { ticketCode: code });
-        (order.tickets || []).forEach((t) => { if (t.success || t.alreadyCheckedIn) checkedCache.add(t.ticketCode); });
+        const order = await callGateApi("/admin/tickets/checkin-order", { ticketCode: code, dryRun: testScanMode });
+        if (!testScanMode) {
+          (order.tickets || []).forEach((t) => { if (t.success || t.alreadyCheckedIn) checkedCache.add(t.ticketCode); });
+        }
         const seats = (order.tickets || []).filter((t) => t.success).map((t) => t.seatId).filter(Boolean);
         const total = order.totalInOrder || 1;
         const checkedIn = order.checkedInCount || 0;
@@ -403,8 +425,8 @@ async function handleScan(code){
           message: checkedIn === 0 ? "Không vé nào check-in được (có thể đã check-in trước)" : "Đã check-in cả đơn"
         };
       } else {
-        const checkin = await callGateApi("/admin/tickets/checkin", { ticketCode: code });
-        if (checkin.success || checkin.alreadyCheckedIn) checkedCache.add(code);
+        const checkin = await callGateApi("/admin/tickets/checkin", { ticketCode: code, dryRun: testScanMode });
+        if (!testScanMode && (checkin.success || checkin.alreadyCheckedIn)) checkedCache.add(code);
         result = {
           ok: checkin.success, partial: false, ticketCode: code,
           customerName: checkin.ticket?.customerName || "",
@@ -419,6 +441,7 @@ async function handleScan(code){
     }
   }
 
+  result.testMode = testScanMode;
   pushResult(result);
 }
 
@@ -467,6 +490,7 @@ function renderResults(){
     const title = !r.ok
       ? `${icon} KHÔNG CHECK-IN ĐƯỢC`
       : (r.partial ? `${icon} CHECK-IN MỘT PHẦN${countSuffix}` : `${icon} ĐÃ CHECK-IN${countSuffix}`);
+    const testBadge = r.testMode ? ' <span style="color:var(--gold);font-weight:800;">[TEST — chưa ghi]</span>' : "";
 
     const seatLine = r.seats.length ? "Ghế " + r.seats.join(", ") : "";
     const nameSeatLine = [r.customerName, seatLine].filter(Boolean).join(" · ");
@@ -476,7 +500,7 @@ function renderResults(){
     return `
       <div class="result-card ${cls}">
         <div class="rc-top">
-          <span class="rc-title">${title}</span>
+          <span class="rc-title">${title}${testBadge}</span>
           <span class="rc-time">${fmtTime(r.time)}</span>
         </div>
         ${nameSeatLine ? `<p class="rc-name">${escapeHtml(nameSeatLine)}</p>` : ""}
