@@ -55,7 +55,8 @@
   #scanInput::placeholder{color:var(--dim);font-family:inherit;}
   #scanInput:focus{outline:none;border-color:var(--green);}
 
-  .toggle-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 18px;color:var(--text);font-size:13px;}
+  .toggle-row{display:flex;align-items:center;justify-content:center;gap:22px;margin:0 0 18px;color:var(--text);font-size:13px;flex-wrap:wrap;}
+  .toggle-item{display:flex;align-items:center;gap:8px;}
   .toggle-row input{width:16px;height:16px;accent-color:var(--green);cursor:pointer;}
   .toggle-row label{cursor:pointer;}
 
@@ -143,8 +144,14 @@
     <input id="scanInput" type="text" lang="en" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" translate="no" placeholder="Mã quét sẽ hiện ở đây...">
 
     <div class="toggle-row">
-      <input type="checkbox" id="wholeOrderToggle">
-      <label for="wholeOrderToggle">Quét 1 vé tự check-in cả đơn (nhiều ghế)</label>
+      <div class="toggle-item">
+        <input type="checkbox" id="wholeOrderToggle">
+        <label for="wholeOrderToggle">Quét 1 vé tự check-in cả đơn (nhiều ghế)</label>
+      </div>
+      <div class="toggle-item">
+        <input type="checkbox" id="autoPrintToggle">
+        <label for="autoPrintToggle">Tự động in vé sau khi check-in</label>
+      </div>
     </div>
 
     <p class="feed-label">3 lượt quét gần nhất</p>
@@ -159,6 +166,7 @@
 const API = "https://lumishow-website.onrender.com/api";
 const KEY_STORAGE = "lumishow-gate-key";
 const WHOLE_ORDER_STORAGE = "lumishow-gate-whole-order";
+const AUTO_PRINT_STORAGE = "lumishow-gate-auto-print";
 
 // Regex định dạng mã vé — CHỈ dùng để quyết định "máy quét gõ xong chưa"
 // trong debounce dưới đây, giống hệt ticketCodePattern trong TicketManager.cs
@@ -225,6 +233,21 @@ $("wholeOrderToggle").checked = wholeOrderMode;
 $("wholeOrderToggle").addEventListener("change", (e) => {
   wholeOrderMode = e.target.checked;
   try { localStorage.setItem(WHOLE_ORDER_STORAGE, wholeOrderMode ? "1" : "0"); } catch (err) {}
+});
+
+// Tick = sau khi check-in thành công (toàn phần hoặc một phần), tự in vé
+// ngay (gọi printTicket() như bấm nút "In vé" thủ công) — không cần staff
+// bấm tay mỗi lượt. Nhớ theo máy (localStorage) như wholeOrderMode, mặc
+// định TẮT vì tốn giấy nếu lỡ để bật trong lúc chỉ đang thử quét.
+let autoPrintMode = false;
+try {
+  const savedPrint = localStorage.getItem(AUTO_PRINT_STORAGE);
+  if (savedPrint !== null) autoPrintMode = savedPrint === "1";
+} catch (e) {}
+$("autoPrintToggle").checked = autoPrintMode;
+$("autoPrintToggle").addEventListener("change", (e) => {
+  autoPrintMode = e.target.checked;
+  try { localStorage.setItem(AUTO_PRINT_STORAGE, autoPrintMode ? "1" : "0"); } catch (err) {}
 });
 
 // ---------------------------------------------------------------
@@ -455,6 +478,10 @@ function pushResult(result){
   results.unshift(result);
   results = results.slice(0, MAX_RESULTS);
   renderResults();
+
+  if (autoPrintMode && result.ok) {
+    printTicket(result.id);
+  }
 }
 
 function fmtTime(d){
