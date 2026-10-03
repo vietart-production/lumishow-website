@@ -437,6 +437,34 @@ function escapeHtml(s){
 document.addEventListener("click", (e) => {
   if (!$("app").hidden) focusScanInput();
 });
+
+// Phòng trường hợp focus bị lệch (lỡ click vào checkbox/vùng khác) mà
+// KHÔNG kèm theo click mới trước khi máy quét gõ tiếp — bắt ký tự có thể
+// thuộc mã vé ([A-Za-z0-9_-]) ở MỨC DOCUMENT, không phụ thuộc field nào
+// đang focus, rồi tự chuyển thẳng vào scanInput. Bỏ qua khi: đang đúng
+// scanInput (để luồng debounce riêng của nó xử lý, tránh gõ đúp), đang ở
+// field nhập khoá gate (gõ khoá bình thường), hoặc có phím tổ hợp
+// (Ctrl/Alt/Meta — có thể là shortcut trình duyệt, không phải máy quét).
+const TICKET_CHAR_PATTERN = /^[A-Za-z0-9_-]$/;
+
+document.addEventListener("keydown", (e) => {
+  if ($("app").hidden) return;
+  if (document.activeElement === scanInput) return;
+  if (document.activeElement === $("gateInput")) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+  if (TICKET_CHAR_PATTERN.test(e.key)) {
+    e.preventDefault();
+    scanInput.focus();
+    scanInput.value += e.key;
+    scanInput.dispatchEvent(new Event("input", { bubbles: true }));
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    scanInput.focus();
+    clearTimeout(debounceTimer);
+    submitScan(scanInput.value);
+  }
+});
 </script>
 </body>
 </html>
