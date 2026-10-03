@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LumiShow — Tester Ticket (nội bộ)</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#121815; --border:rgba(255,255,255,.1);
+    --text:#e6f1ea; --dim:#8fa196; --green:#3ddc84; --red:#ff6b6b; --gold:#fbbb21;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  .wrap{max-width:1500px;margin:0 auto;padding:28px 28px 80px;}
+  h1{font-size:19px;font-weight:700;margin:0 0 4px;}
+  .sub{color:var(--dim);font-size:12.5px;margin:0 0 22px;}
+
+  /* ---- Gate mật khẩu ---- */
+  #gate{max-width:360px;margin:80px auto;padding:28px;background:var(--panel);border:1px solid var(--border);border-radius:14px;}
+  #gate h2{font-size:16px;margin:0 0 16px;}
+  #gate input{width:100%;padding:11px 12px;border-radius:8px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:14px;margin-bottom:10px;}
+  #gate button{width:100%;padding:11px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:14px;cursor:pointer;}
+  #gate button:hover{opacity:.9;}
+  #gateError{color:var(--red);font-size:12.5px;min-height:16px;margin-top:4px;}
+  [hidden]{display:none!important;}
+
+  .head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .head-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{padding:9px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-weight:600;font-size:13px;cursor:pointer;}
+  .btn:hover{border-color:rgba(255,255,255,.25);}
+  .btn.primary{background:var(--green);color:#04140b;border:none;}
+  .btn.primary:hover{opacity:.9;}
+  .btn.primary:disabled{opacity:.35;cursor:default;}
+  .btn.danger{color:var(--red);border-color:rgba(255,107,107,.35);}
+  .btn.danger:hover{background:rgba(255,107,107,.1);}
+
+  /* ---- Panel điều khiển đặt vé ---- */
+  .controls{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:18px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:11.5px;color:var(--dim);}
+  .field input[type=email]{padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:13.5px;width:260px;}
+  .checkrow{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text);padding-bottom:9px;}
+  .selcount{color:var(--dim);font-size:12.5px;padding-bottom:11px;}
+  .selcount b{color:var(--gold);}
+  .msg{font-size:12.5px;padding:4px 0;min-height:16px;}
+  .msg.ok{color:var(--green);}
+  .msg.err{color:var(--red);}
+
+  /* ---- Layout chính: sơ đồ ghế + sidebar lịch sử ---- */
+  .layout{display:flex;gap:18px;align-items:flex-start;}
+  .seat-panel{flex:1 1 auto;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .seat-panel .legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin-bottom:12px;flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .legend .i-avail{background:#1b2420;border:1px solid rgba(255,255,255,.2);}
+  .legend .i-sel{background:var(--green);}
+  .legend .i-sold{background:#2a2320;}
+  .seat-count{color:var(--dim);font-size:12.5px;margin-bottom:14px;}
+  .seat-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:7px;}
+  .seat-row .row-label{flex:0 0 32px;color:var(--dim);font-size:11.5px;font-weight:700;padding-top:6px;}
+  .seat-row .seats{display:flex;flex-wrap:wrap;gap:4px;}
+  .seat-btn{
+    width:30px;height:26px;border-radius:5px;border:1px solid rgba(255,255,255,.15);
+    background:#1b2420;color:var(--text);font-size:10px;cursor:pointer;padding:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .seat-btn:hover{border-color:var(--green);}
+  .seat-btn.selected{background:var(--green);color:#04140b;border-color:var(--green);font-weight:700;}
+  .seat-btn.sold{background:#2a2320;color:#6b5f4a;cursor:default;border-color:transparent;}
+  .seat-btn.sold:hover{border-color:transparent;}
+  .seat-btn.held{background:#2a2820;color:var(--gold);cursor:default;}
+
+  /* ---- Sidebar lịch sử ---- */
+  .sidebar{flex:0 0 320px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;max-height:calc(100vh - 160px);overflow-y:auto;position:sticky;top:20px;}
+  .sidebar h2{font-size:14px;margin:0 0 4px;}
+  .sidebar .sub2{color:var(--dim);font-size:11.5px;margin:0 0 14px;}
+  .hist-item{border:1px solid var(--border);border-radius:9px;padding:10px 11px;margin-bottom:8px;font-size:12.5px;cursor:pointer;}
+  .hist-item:hover{border-color:rgba(255,255,255,.25);}
+  .hist-item .hi-top{display:flex;justify-content:space-between;gap:8px;font-weight:700;}
+  .hist-item .hi-code{color:var(--gold);font-size:11px;word-break:break-all;}
+  .hist-item .hi-meta{color:var(--dim);font-size:11px;margin-top:4px;}
+  .hist-item .hi-badge{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:10px;}
+  .hi-badge.in{background:rgba(61,220,132,.15);color:var(--green);}
+  .hi-badge.out{background:rgba(255,255,255,.08);color:var(--dim);}
+  .hist-qr{display:none;text-align:center;margin-top:8px;}
+  .hist-qr.open{display:block;}
+  .hist-qr img{width:120px;height:120px;border-radius:8px;background:#fff;padding:8px;}
+  .hist-empty{color:var(--dim);font-size:12.5px;text-align:center;padding:20px 0;}
+
+  /* ---- Kết quả vé vừa tạo (hiển thị trên web) ---- */
+  .result{background:var(--panel);border:1px solid rgba(61,220,132,.35);border-radius:12px;padding:16px 18px;margin-bottom:18px;}
+  .result h3{margin:0 0 12px;font-size:14px;color:var(--green);}
+  .result-grid{display:flex;gap:16px;flex-wrap:wrap;}
+  .result-card{text-align:center;background:#0d1310;border:1px solid var(--border);border-radius:10px;padding:12px;}
+  .result-card img{width:140px;height:140px;border-radius:8px;background:#fff;padding:8px;}
+  .result-card .rc-seat{font-weight:700;margin-top:8px;}
+  .result-card .rc-code{color:var(--dim);font-size:10.5px;margin-top:3px;word-break:break-all;max-width:140px;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h2>Nhập mật khẩu admin</h2>
+  <input type="password" id="pinInput" placeholder="PIN admin" autocomplete="off">
+  <button id="gateBtn">Vào trang Tester Ticket</button>
+  <div id="gateError"></div>
+</div>
+
+<div class="wrap" id="app" hidden>
+
+  <div class="head-row">
+    <div>
+      <h1>🧪 Tester Ticket</h1>
+      <p class="sub">Công cụ nội bộ — đặt vé ảo lấy QR thật để test app soát vé/quét mã. Suất diễn ảo riêng, KHÔNG xuất hiện trên web thật, không ảnh hưởng doanh thu/báo cáo thật.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn" id="refreshBtn">↻ Tải lại sơ đồ</button>
+      <button class="btn danger" id="resetBtn">⟲ Reset toàn bộ ghế</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="field">
+      <label for="emailInput">Email nhận vé (không bắt buộc)</label>
+      <input type="email" id="emailInput" placeholder="tester@example.com" autocomplete="off">
+    </div>
+    <label class="checkrow"><input type="checkbox" id="showOnWebChk" checked> Hiển thị vé trên web sau khi đặt</label>
+    <div class="selcount" id="selCount">Chưa chọn ghế nào</div>
+    <button class="btn primary" id="createBtn" disabled>Đặt vé test</button>
+  </div>
+  <div class="msg" id="createMsg"></div>
+
+  <div class="result" id="resultBox" hidden>
+    <h3>✅ Vé test vừa tạo — quét thử ngay</h3>
+    <div class="result-grid" id="resultGrid"></div>
+  </div>
+
+  <div class="layout">
+    <div class="seat-panel">
+      <div class="legend">
+        <span><i class="i-avail"></i> Còn trống</span>
+        <span><i class="i-sel"></i> Đang chọn</span>
+        <span><i class="i-sold"></i> Đã tạo vé (test)</span>
+      </div>
+      <div class="seat-count" id="seatCount">Đang tải sơ đồ ghế...</div>
+      <div id="seatGrid"></div>
+    </div>
+
+    <div class="sidebar">
+      <h2>Lịch sử mã QR test</h2>
+      <p class="sub2">Bấm vào 1 mục để hiện lại QR, quét thử lại không cần đặt vé mới.</p>
+      <div id="historyList"><div class="hist-empty">Đang tải...</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = "https://lumishow-website.onrender.com/api";
+let PIN = "";
+let seatsState = {};   // { seatId: "AVAILABLE" | "SOLD" | ... }
+const selected = new Set();
+
+function $(id){ return document.getElementById(id); }
+
+async function api(path, body){
+  const res = await fetch(API + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: PIN, ...body })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Lỗi không xác định");
+  }
+  return data;
+}
+
+function qrUrl(ticketCode){
+  return `${API}/tickets/${encodeURIComponent(ticketCode)}/qr.png`;
+}
+
+// ---- Gate ----
+$("gateBtn").addEventListener("click", async () => {
+  const pin = $("pinInput").value.trim();
+  $("gateError").textContent = "";
+  try {
+    const res = await fetch(API + "/tester-ticket/verify-pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pin })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.message || "Sai PIN");
+    PIN = pin;
+    $("gate").hidden = true;
+    $("app").hidden = false;
+    loadSeats();
+    loadHistory();
+  } catch (err) {
+    $("gateError").textContent = err.message;
+  }
+});
+$("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("gateBtn").click(); });
+
+// ---- Sơ đồ ghế ----
+function parseSeat(seatId){
+  const m = seatId.match(/^([A-Z]+)(\d+)$/);
+  return { row: m[1], number: parseInt(m[2], 10) };
+}
+
+function renderGrid(){
+  const rows = {};
+  Object.keys(seatsState).forEach((seatId) => {
+    const { row, number } = parseSeat(seatId);
+    (rows[row] = rows[row] || []).push({ seatId, number, status: seatsState[seatId] });
+  });
+
+  const rowKeys = Object.keys(rows).sort();
+  const grid = $("seatGrid");
+  grid.innerHTML = "";
+
+  rowKeys.forEach((row) => {
+    const seats = rows[row].sort((a, b) => a.number - b.number);
+    const rowEl = document.createElement("div");
+    rowEl.className = "seat-row";
+
+    const label = document.createElement("div");
+    label.className = "row-label";
+    label.textContent = row;
+    rowEl.appendChild(label);
+
+    const seatsEl = document.createElement("div");
+    seatsEl.className = "seats";
+
+    seats.forEach(({ seatId, number, status }) => {
+      const btn = document.createElement("button");
+      btn.className = "seat-btn";
+      btn.textContent = number;
+      btn.title = seatId;
+
+      if (status === "AVAILABLE") {
+        if (selected.has(seatId)) btn.classList.add("selected");
+        btn.addEventListener("click", () => toggleSeat(seatId, btn));
+      } else if (status === "HELD") {
+        btn.classList.add("held");
+        btn.disabled = true;
+      } else {
+        btn.classList.add("sold");
+        btn.disabled = true;
+      }
+
+      seatsEl.appendChild(btn);
+    });
+
+    rowEl.appendChild(seatsEl);
+    grid.appendChild(rowEl);
+  });
+
+  const total = Object.keys(seatsState).length;
+  const avail = Object.values(seatsState).filter((s) => s === "AVAILABLE").length;
+  $("seatCount").textContent = `Còn trống: ${avail}/${total} ghế`;
+}
+
+function toggleSeat(seatId, btn){
+  if (selected.has(seatId)) {
+    selected.delete(seatId);
+    btn.classList.remove("selected");
+  } else {
+    selected.add(seatId);
+    btn.classList.add("selected");
+  }
+  updateSelCount();
+}
+
+function updateSelCount(){
+  $("selCount").textContent = selected.size === 0
+    ? "Chưa chọn ghế nào"
+    : `Đang chọn ${selected.size} ghế`;
+  $("createBtn").disabled = selected.size === 0;
+}
+
+async function loadSeats(){
+  $("seatCount").textContent = "Đang tải sơ đồ ghế...";
+  try {
+    const data = await api("/tester-ticket/seats", {});
+    seatsState = {};
+    Object.keys(data.seats).forEach((id) => { seatsState[id] = data.seats[id].status; });
+    renderGrid();
+  } catch (err) {
+    $("seatCount").textContent = "Lỗi tải sơ đồ: " + err.message;
+  }
+}
+
+$("refreshBtn").addEventListener("click", loadSeats);
+
+$("resetBtn").addEventListener("click", async () => {
+  if (!confirm("Reset toàn bộ ghế của suất test về trống? Lịch sử mã QR vẫn được giữ lại.")) return;
+  try {
+    await api("/tester-ticket/reset", {});
+    selected.clear();
+    updateSelCount();
+    $("resultBox").hidden = true;
+    await loadSeats();
+  } catch (err) {
+    alert("Không thể reset: " + err.message);
+  }
+});
+
+// ---- Đặt vé test ----
+$("createBtn").addEventListener("click", async () => {
+  const msg = $("createMsg");
+  msg.className = "msg";
+  msg.textContent = "";
+
+  const seatIds = [...selected];
+  const customerEmail = $("emailInput").value.trim();
+  const showOnWeb = $("showOnWebChk").checked;
+
+  $("createBtn").disabled = true;
+
+  try {
+    const data = await api("/tester-ticket/create", { seatIds, customerEmail: customerEmail || undefined });
+
+    let okMsg = `Đã tạo ${data.tickets.length} vé test.`;
+    if (customerEmail) okMsg += data.emailSent ? ` Đã gửi email tới ${customerEmail}.` : ` (Gửi email thất bại: ${data.emailError || "?"})`;
+    msg.textContent = okMsg;
+    msg.className = "msg ok";
+
+    if (showOnWeb) renderResult(data.tickets);
+    else $("resultBox").hidden = true;
+
+    selected.clear();
+    updateSelCount();
+    $("emailInput").value = "";
+    await loadSeats();
+    await loadHistory();
+
+  } catch (err) {
+    msg.textContent = "Lỗi: " + err.message;
+    msg.className = "msg err";
+    $("createBtn").disabled = selected.size === 0;
+  }
+});
+
+function renderResult(tickets){
+  const grid = $("resultGrid");
+  grid.innerHTML = "";
+  tickets.forEach((t) => {
+    const card = document.createElement("div");
+    card.className = "result-card";
+    card.innerHTML = `
+      <img src="${qrUrl(t.ticketCode)}" alt="QR ${t.ticketCode}">
+      <div class="rc-seat">Ghế ${t.seatId}</div>
+      <div class="rc-code">${t.ticketCode}</div>
+    `;
+    grid.appendChild(card);
+  });
+  $("resultBox").hidden = false;
+}
+
+// ---- Lịch sử mã QR test ----
+async function loadHistory(){
+  const list = $("historyList");
+  try {
+    const data = await api("/tester-ticket/history", { limit: 60 });
+    if (!data.history.length) {
+      list.innerHTML = '<div class="hist-empty">Chưa có vé test nào</div>';
+      return;
+    }
+    list.innerHTML = "";
+    data.history.forEach((h) => {
+      const item = document.createElement("div");
+      item.className = "hist-item";
+      const time = h.createdAt ? new Date(h.createdAt).toLocaleString("vi-VN") : "";
+      item.innerHTML = `
+        <div class="hi-top"><span>Ghế ${h.seatId}</span><span class="hi-badge ${h.checkedIn ? "in" : "out"}">${h.checkedIn ? "Đã check-in" : "Chưa check-in"}</span></div>
+        <div class="hi-meta">${time}${h.customerEmail ? " · " + h.customerEmail : ""}</div>
+        <div class="hi-meta hi-code">${h.ticketCode}</div>
+        <div class="hist-qr"><img src="${qrUrl(h.ticketCode)}" alt="QR"></div>
+      `;
+      item.addEventListener("click", () => {
+        item.querySelector(".hist-qr").classList.toggle("open");
+      });
+      list.appendChild(item);
+    });
+  } catch (err) {
+    list.innerHTML = `<div class="hist-empty">Lỗi tải lịch sử: ${err.message}</div>`;
+  }
+}
+</script>
+</body>
+</html>
