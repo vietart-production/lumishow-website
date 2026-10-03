@@ -540,10 +540,41 @@ async function cleanupExpiredHoldsThrottled() {
     }
 }
 
+// ==========================================
+// DANH SÁCH SUẤT DIỄN ĐANG MỞ BÁN (public, cho frontend tự dựng lịch) — thay
+// thế cơ chế mảng hardcode OPEN_SHOWTIME_GROUPS (dat-ve.html) / OPEN_PAIRS
+// (index.html): khoá/mở suất qua admin-showtimes.html giờ tự phản ánh ở đây
+// ngay, không cần sửa code frontend + deploy lại mỗi lần (xem CLAUDE.md mục
+// "Tạm khoá bán vé..."/"Mở lịch diễn..." cho lịch sử quy trình thủ công cũ).
+// Chỉ trả suất còn hôm nay/tương lai (bỏ suất đã qua dù status vẫn OPEN —
+// chưa có cơ chế tự đóng suất đã diễn).
+// ==========================================
+
+async function listOpenShowtimes({ showId }) {
+
+    if (!showId) {
+        throw new Error("Thiếu showId");
+    }
+
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    const snap = await db.collection("shows").doc(showId)
+        .collection("showtimes")
+        .where("status", "==", "OPEN")
+        .get();
+
+    return snap.docs
+        .map((doc) => doc.id)
+        .filter((showtimeId) => showtimeId.split("_")[0] >= todayKey)
+        .sort();
+}
+
 module.exports = {
     getSeatStates,
     getHoldStatus,
     createHold,
     releaseExpiredHold,
-    cleanupExpiredHolds
+    cleanupExpiredHolds,
+    listOpenShowtimes
 };

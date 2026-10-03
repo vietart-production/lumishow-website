@@ -934,39 +934,64 @@
 
   langToggle?.addEventListener('click', () => setLang(currentLang === 'vi' ? 'en' : 'vi'));
 
-  // ============ LỊCH DIỄN — chỉ hiển thị các suất ĐANG MỞ THẬT (2026-09-26) ============
-  // Mùa diễn hiện KHÔNG còn liên tục (chỉ 4 suất rải rác đang OPEN thật
-  // trong Firestore) nên KHÔNG dùng SEASON_START/END + chuỗi tuần Thứ6-7-CN
-  // nữa — thay bằng danh sách suất mở thật, nhóm theo cặp cuối tuần (mỗi
-  // cặp = 1 "run" để nút prev/next tuần vẫn hoạt động y như cũ). PHẢI khớp
-  // tay với status OPEN thật + OPEN_SHOWTIME_GROUPS bên frontend/dat-ve.html
-  // mỗi khi mở/khoá thêm suất khác. dow: 0=Thứ 6, 1=Thứ 7, 2=Chủ nhật (index
-  // vào dict.dows), dùng để hiển thị đúng nhãn thứ dù nhóm chỉ có 2 ngày
-  // (không có Thứ 6 trong cặp preview này).
-  const OPEN_PAIRS = [
-    [ { y: 2026, m: 10, d: 3,  dow: 1 }, { y: 2026, m: 10, d: 4,  dow: 2 } ], // 3-4/10, đều 16h30
-    [ { y: 2026, m: 10, d: 10, dow: 1 }, { y: 2026, m: 10, d: 11, dow: 2 } ]  // 10-11/10, đều 16h30
-  ];
-  const OPEN_TIMES_BY_DATE = {
-    '2026-10-03': ['16:30'],
-    '2026-10-04': ['16:30', '10:00'],
-    '2026-10-10': ['16:30'],
-    '2026-10-11': ['16:30']
-  };
+  // ============ LỊCH DIỄN — lấy SỐNG danh sách suất đang mở từ backend ============
+  // Trước đây dùng mảng hardcode OPEN_PAIRS/OPEN_TIMES_BY_DATE, phải tự tay sửa
+  // + deploy lại mỗi khi khoá/mở suất qua admin-showtimes.html (xem CLAUDE.md).
+  // Giờ gọi GET /shows/:showId/showtimes/open (cùng endpoint + thuật toán gom
+  // nhóm cuối tuần với frontend/dat-ve.html's groupOpenShowtimes(), xem đó để
+  // biết chi tiết) rồi tự dựng runs/dowByRunDay/OPEN_TIMES_BY_DATE lúc tải
+  // trang — không cần khớp tay 2 file nữa.
+  const API_BASE_URL = 'https://lumishow-website.onrender.com/api';
+  const SHOW_ID = 'son-than-thuy-quai';
+  const DOW_FRI_SAT_SUN = { 5: 0, 6: 1, 0: 2 }; // JS Date.getDay() -> index trong dict.dows
 
   function fmt(d){ return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0'); }
   function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-  // Mỗi "run" giờ là 1 cặp ngày mở thật (info -> Date thật), không còn Thứ6+Thứ7+CN.
-  const runs = OPEN_PAIRS.map(pair => pair.map(info => new Date(info.y, info.m - 1, info.d)));
-  const dowByRunDay = OPEN_PAIRS.map(pair => pair.map(info => info.dow));
-
-  // Mặc định chọn cặp gần nhất, và trong cặp đó chọn suất gần thứ 2 (index 1)
-  // thay vì suất gần nhất — chốt 2026-09-26.
+  let runs = [];
+  let dowByRunDay = [];
+  let OPEN_TIMES_BY_DATE = {};
   let runIndex = 0;
-  // Mặc định: 3 lịch -> chọn giữa, 2 lịch -> chọn đầu tiên, 1 lịch -> chọn duy nhất
-  // (chốt 2026-09-27, thay cho luật cũ luôn ưu tiên phần tử thứ 2 "Thứ 7").
-  let selectedDay = Math.floor((runs[0].length - 1) / 2);
+  let selectedDay = 0;
+
+  /* Gom danh sách showtimeId phẳng thành cặp/cụm ngày liền nhau (<=2 ngày lịch
+     cách nhau = cùng 1 cụm cuối tuần) rồi đổ vào runs/dowByRunDay/OPEN_TIMES_BY_DATE.
+     Giống hệt thuật toán groupOpenShowtimes() bên dat-ve.html. */
+  function applyOpenShowtimes(showtimeIds){
+    const byDate = new Map();
+    showtimeIds.forEach(id => {
+      const [datePart, time] = id.split('_');
+      const [y, m, d] = datePart.split('-').map(Number);
+      if (!byDate.has(datePart)) byDate.set(datePart, { y, m, d, date: new Date(y, m - 1, d), times: [] });
+      byDate.get(datePart).times.push(time);
+    });
+
+    const dates = [...byDate.values()].sort((a, b) => a.date - b.date);
+    dates.forEach(info => info.times.sort());
+
+    const groups = [];
+    let current = [];
+    let prevDate = null;
+    dates.forEach(info => {
+      if (prevDate && (info.date - prevDate) / 86400000 > 2){
+        groups.push(current);
+        current = [];
+      }
+      current.push(info);
+      prevDate = info.date;
+    });
+    if (current.length) groups.push(current);
+
+    runs = groups.map(group => group.map(info => info.date));
+    dowByRunDay = groups.map(group => group.map(info => DOW_FRI_SAT_SUN[info.date.getDay()] ?? 1));
+    OPEN_TIMES_BY_DATE = {};
+    groups.forEach(group => group.forEach(info => { OPEN_TIMES_BY_DATE[isoDate(info.date)] = info.times; }));
+
+    runIndex = 0;
+    // Mặc định: 3 lịch -> chọn giữa, 2 lịch -> chọn đầu tiên, 1 lịch -> chọn duy nhất
+    // (chốt 2026-09-27, thay cho luật cũ luôn ưu tiên phần tử thứ 2 "Thứ 7").
+    selectedDay = runs.length > 0 ? Math.floor((runs[0].length - 1) / 2) : 0;
+  }
 
   const weekendTrack = document.getElementById('weekendTrack');
   const weekPrevBtn = document.getElementById('weekPrev');
@@ -975,6 +1000,18 @@
 
   function renderWeekend(){
     if (!weekendTrack) return;
+
+    if (runs.length === 0){
+      // Không có suất nào đang mở (hoặc tải danh sách thất bại) — fail closed,
+      // không hiện lịch rỗng/lỗi JS.
+      weekendTrack.innerHTML = '';
+      if (scheduleBookBtn) scheduleBookBtn.style.display = 'none';
+      if (weekPrevBtn) weekPrevBtn.disabled = true;
+      if (weekNextBtn) weekNextBtn.disabled = true;
+      return;
+    }
+    if (scheduleBookBtn) scheduleBookBtn.style.display = '';
+
     const run = runs[runIndex];
     const dict = I18N[currentLang];
 
@@ -1012,7 +1049,19 @@
     if (runIndex < runs.length - 1) { runIndex++; selectedDay = Math.floor((runs[runIndex].length - 1) / 2); renderWeekend(); }
   });
 
-  renderWeekend();
+  (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/shows/${encodeURIComponent(SHOW_ID)}/showtimes/open`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.success || !Array.isArray(data.showtimeIds)) throw new Error('Dữ liệu suất diễn không hợp lệ');
+      applyOpenShowtimes(data.showtimeIds);
+    } catch (error) {
+      console.error('FETCH OPEN SHOWTIMES ERROR:', error);
+      applyOpenShowtimes([]); // Fail closed.
+    }
+    renderWeekend();
+  })();
 
   // Hero background: if a <video> is used instead of <img>, auto-play it after 2s
   // and gradually fade the edge glow once playback actually starts

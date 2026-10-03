@@ -3066,31 +3066,79 @@ let runIndex = Math.max(0, runs.findIndex(r => r[2] >= today));
 let dayIndex = 0, timeIndex = 0;
 const pad = n => String(n).padStart(2,'0');
 
-// Suất diễn đang mở thật (2026-09-27) — PHẢI khớp tay với status OPEN thật
-// trong Firestore + OPEN_PAIRS ở frontend/index.html mỗi khi mở/khoá thêm
-// suất khác. Cấu trúc lồng nhóm(tuần) -> ngày -> giờ (times[]) — dayTrack
-// chỉ chọn NGÀY, timeRow chọn GIỜ trong ngày đó (đưa lại UI 2 tầng như bản
-// lịch tuần liên tục cũ), vì 4/10 giờ có 2 suất cùng ngày (10h00 + 16h30).
-const OPEN_SHOWTIME_GROUPS = [
-  [
-    { y: 2026, m: 10, d: 3, dow: 1, times: ['16:30'] },
-    { y: 2026, m: 10, d: 4, dow: 2, times: ['10:00', '16:30'] }
-  ],
-  [
-    { y: 2026, m: 10, d: 10, dow: 1, times: ['16:30'] },
-    { y: 2026, m: 10, d: 11, dow: 2, times: ['16:30'] }
-  ]
-];
+// Suất diễn đang mở thật — lấy SỐNG từ backend (GET /shows/:showId/showtimes/open,
+// xem booking.service.js:listOpenShowtimes) thay vì mảng hardcode như trước
+// (2026-09-26 — 2026-10-03). Khoá/mở suất qua admin-showtimes.html giờ tự
+// phản ánh ở đây ngay lúc tải trang, không cần sửa code + deploy lại mỗi lần.
+// Cấu trúc lồng nhóm(tuần) -> ngày -> giờ (times[]) — dayTrack chỉ chọn NGÀY,
+// timeRow chọn GIỜ trong ngày đó (UI 2 tầng như bản lịch tuần liên tục cũ) —
+// dựng bằng groupOpenShowtimes() từ danh sách showtimeId phẳng backend trả về,
+// KHÔNG hardcode cặp ngày cụ thể nào nữa. index.html (OPEN_PAIRS) dùng chung
+// endpoint này, xem fetchOpenShowtimeGroups() ở đó.
+let OPEN_SHOWTIME_GROUPS = [];
 let openRunIndex = 0;
-// Mặc định: 3 lịch -> chọn giữa, 2 lịch -> chọn đầu tiên, 1 lịch -> chọn duy nhất
-// (chốt 2026-09-27, thay cho luật cũ luôn ưu tiên phần tử thứ 2).
-let openDayIndex = Math.floor((OPEN_SHOWTIME_GROUPS[0].length - 1) / 2);
+let openDayIndex = 0;
 let openTimeIndex = 0;
+
+// JS Date.getDay() (0=CN...6=T7) -> index trong DOWS (0=Thứ6,1=Thứ7,2=Chủ nhật,
+// xem mục 14 I18N) — suất diễn chỉ bao giờ rơi vào Thứ 6/7/CN.
+const DOW_FRI_SAT_SUN = { 5: 0, 6: 1, 0: 2 };
+
+/* Gom danh sách showtimeId phẳng (vd "2026-10-03_16:30") từ backend thành
+   cấu trúc nhóm(tuần)->ngày->giờ. Các ngày cách nhau <= 2 ngày lịch được coi
+   là cùng 1 cụm cuối tuần (Thứ6-7-CN liền nhau); cách xa hơn thì bắt đầu
+   nhóm mới — tự suy ra từ chính danh sách suất đang mở thật, không hardcode
+   cặp ngày cụ thể nào. */
+function groupOpenShowtimes(showtimeIds){
+  const byDate = new Map();
+  showtimeIds.forEach(id => {
+    const [datePart, time] = id.split('_');
+    const [y, m, d] = datePart.split('-').map(Number);
+    if (!byDate.has(datePart)) byDate.set(datePart, { y, m, d, date: new Date(y, m - 1, d), times: [] });
+    byDate.get(datePart).times.push(time);
+  });
+
+  const dates = [...byDate.values()].sort((a, b) => a.date - b.date);
+  dates.forEach(info => info.times.sort());
+
+  const groups = [];
+  let current = [];
+  let prevDate = null;
+  dates.forEach(info => {
+    if (prevDate && (info.date - prevDate) / 86400000 > 2){
+      groups.push(current);
+      current = [];
+    }
+    current.push({ y: info.y, m: info.m, d: info.d, dow: DOW_FRI_SAT_SUN[info.date.getDay()] ?? 1, times: info.times });
+    prevDate = info.date;
+  });
+  if (current.length) groups.push(current);
+
+  return groups;
+}
+
+/* Gọi 1 lần lúc khởi động (mục 15) — xem TEST_MODE doc ở đầu file. */
+async function fetchOpenShowtimeGroups(){
+  if (TEST_MODE){
+    return groupOpenShowtimes(['2026-10-03_16:30', '2026-10-04_10:00', '2026-10-04_16:30']);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/shows/${encodeURIComponent(SHOW_ID)}/showtimes/open`);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const data = await response.json();
+  if (!data.success || !Array.isArray(data.showtimeIds)){
+    throw new Error('Dữ liệu suất diễn không hợp lệ');
+  }
+
+  return groupOpenShowtimes(data.showtimeIds);
+}
 
 function buildShowKey(info, time){
   return info.y + '-' + pad(info.m) + '-' + pad(info.d) + '_' + time;
 }
-(function applyOpenShowtimeFromUrl(){
+
+function applyOpenShowtimeFromUrl(){
   const suat = new URLSearchParams(location.search).get('suat');
   if (!suat) return;
   const [datePart, timePart] = String(suat).split('_');
@@ -3105,7 +3153,7 @@ function buildShowKey(info, time){
       return;
     }
   }
-})();
+}
 
 function currentShowKey(){
   const info = OPEN_SHOWTIME_GROUPS[openRunIndex][openDayIndex];
@@ -3150,6 +3198,18 @@ function findScheduleIndexByShowKey(showKey){
 })();
 
 function renderSchedule(){
+  if (OPEN_SHOWTIME_GROUPS.length === 0){
+    // Không có suất nào đang mở (hoặc tải danh sách suất thất bại) — fail
+    // closed, không hiện lịch rỗng/lỗi JS, chỉ báo rõ cho khách.
+    document.getElementById('weekLabel').textContent = '';
+    document.getElementById('dayTrack').textContent = '';
+    document.getElementById('timeRow').textContent = '';
+    document.getElementById('weekPrev').disabled = true;
+    document.getElementById('weekNext').disabled = true;
+    document.getElementById('showWhen').textContent = t('err.noOpenShowtimes');
+    return;
+  }
+
   const group = OPEN_SHOWTIME_GROUPS[openRunIndex];
   const info = group[openDayIndex];
   document.getElementById('weekLabel').textContent = MONTHS[info.m - 1] + ' · ' + info.y;
@@ -3214,6 +3274,8 @@ document.getElementById('weekNext').addEventListener('click',
   }); });
 
 async function loadShow() {
+  if (OPEN_SHOWTIME_GROUPS.length === 0) return; // renderSchedule() đã báo lỗi, không có suất nào để tải ghế.
+
   if (holdSession) {
     stopPaymentPolling();
     clearInterval(holdSession.timerId);
@@ -3500,6 +3562,7 @@ const I18N = {
     'msg.holdSessionEnded':'Phiên giữ ghế đã kết thúc.',
     'msg.thankYou':'Cảm ơn bạn! Yêu cầu đặt vé đã được ghi nhận.',
     'err.loadShowFail':'Không thể kết nối hệ thống đặt vé. Vui lòng thử lại sau.',
+    'err.noOpenShowtimes':'Hiện chưa mở bán suất diễn nào. Vui lòng quay lại sau.',
     'msg.holdResumed':'Đã khôi phục phiên giữ ghế của bạn.',
     'confirm.changeShowTitle':'Đổi suất diễn?',
     'confirm.changeShowBodyHold':'Phiên giữ ghế hiện tại sẽ bị hủy và ghế được trả lại.',
@@ -3624,6 +3687,7 @@ const I18N = {
     'msg.holdSessionEnded':'The hold session has ended.',
     'msg.thankYou':'Thank you! Your booking request has been received.',
     'err.loadShowFail':'Could not connect to the booking system. Please try again later.',
+    'err.noOpenShowtimes':'No showtimes are open for booking right now. Please check back later.',
     'msg.holdResumed':'Your hold session has been restored.',
     'confirm.changeShowTitle':'Change showtime?',
     'confirm.changeShowBodyHold':'Your current hold will be cancelled and the seats released.',
@@ -3681,9 +3745,24 @@ document.getElementById('langToggle').addEventListener('click', () => setLang(cu
    15. KHỞI ĐỘNG
    ========================================================= */
 renderTiers();
-renderSchedule();
 drawSafetyBoxes();
 (async () => {
+  try {
+    OPEN_SHOWTIME_GROUPS = await fetchOpenShowtimeGroups();
+  } catch (error) {
+    console.error('FETCH OPEN SHOWTIMES ERROR:', error);
+    OPEN_SHOWTIME_GROUPS = []; // Fail closed — renderSchedule() tự báo lỗi rõ ràng.
+  }
+
+  if (OPEN_SHOWTIME_GROUPS.length > 0){
+    // Mặc định: 3 lịch -> chọn giữa, 2 lịch -> chọn đầu tiên, 1 lịch -> chọn
+    // duy nhất (chốt 2026-09-27, thay cho luật cũ luôn ưu tiên phần tử thứ 2).
+    openDayIndex = Math.floor((OPEN_SHOWTIME_GROUPS[0].length - 1) / 2);
+    applyOpenShowtimeFromUrl();
+  }
+
+  renderSchedule();
+
   const resumed = await tryResumeHold();
   if (!resumed) await loadShow();
 })();

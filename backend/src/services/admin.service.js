@@ -4,8 +4,28 @@ const { FieldPath } = require("firebase-admin/firestore");
 const BOOKING_CONFIG = require("../config/booking.config");
 const { sendTicketEmail } = require("./email.service");
 const SEAT_TIERS = require("../../scripts/seatTiers.json");
+const LOCKED_ZONE_SEATS = new Set(require("../../scripts/lockedZoneSeats.json").seatIds);
 
 const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+
+// ==========================================
+// KHU GHẾ "KHÔNG ĐƯỢC THẦU BÁN" (toàn bộ lẻ + range chẵn, 13 hàng — xem
+// CLAUDE.md mục "Khóa 1 phần ghế") — một số ghế trong khu này đã LỠ bán được
+// trước khi khu bị khoá (vd khách mua sớm từ tháng 9). Khi đơn đó sau này bị
+// huỷ/xoá/đổi ghế, ghế phải quay lại BLOCKED (đúng ý nghĩa gốc: không phải
+// hàng để bán) chứ KHÔNG được thả về AVAILABLE — nếu không nó sẽ "sáng lên"
+// (bán được) giữa khu đã khoá, đúng lỗi phát hiện thực tế ở ghế B21/B17/B19
+// suất 2026-10-04_16:30 sau khi đổi vé cho khách Võ Thị Minh Nguyệt
+// (2026-10-03). Dùng hàm này ở MỌI chỗ "trả ghế lại" (huỷ vé theo ghế, xoá
+// đơn, đổi vé) thay vì set cứng "AVAILABLE".
+// ==========================================
+
+function releaseStatusFor(seatId) {
+    return LOCKED_ZONE_SEATS.has(seatId) ? "BLOCKED" : "AVAILABLE";
+}
+
+const RELEASE_BLOCK_NOTE = "Khoá lại tự động — ghế thuộc khu không-được-thầu-bán, " +
+    "trả về sau khi huỷ/xoá/đổi đơn (xem releaseStatusFor() trong admin.service.js)";
 
 // Chỉ cho phép mã ghế dạng {hàng}{số}: 1-2 chữ cái hoa + 1-3 số (vd B12, AB9),
 // hoặc mã khu VIP dạng VIP{số} (VIP1-VIP43, xem VIP_SEAT_XY ở frontend/dat-ve.html).
@@ -93,8 +113,10 @@ async function cancelTicketBySeat({ showId, showtimeId, seatId }) {
         });
 
         if (seatSnap.exists) {
+            const releaseStatus = releaseStatusFor(seatId);
             transaction.update(seatRef, {
-                status: "AVAILABLE",
+                status: releaseStatus,
+                blockNote: releaseStatus === "BLOCKED" ? RELEASE_BLOCK_NOTE : null,
                 holdId: null,
                 holdExpiresAt: null,
                 updatedAt: now
@@ -495,8 +517,10 @@ async function deleteOrder({ showId, orderId }) {
             }
 
             releasedSeats++;
+            const releaseStatus = releaseStatusFor(seatId);
             batch.update(seatsRef.doc(seatId), {
-                status: "AVAILABLE",
+                status: releaseStatus,
+                blockNote: releaseStatus === "BLOCKED" ? RELEASE_BLOCK_NOTE : null,
                 holdId: null,
                 holdExpiresAt: null,
                 updatedAt: new Date()
@@ -745,12 +769,16 @@ async function exchangePaidOrderTickets({ showId, orderId, toShowtimeId, toSeatI
             });
         });
 
-        sourceSeatRefs.forEach((ref) => transaction.update(ref, {
-            status: "AVAILABLE",
-            holdId: null,
-            holdExpiresAt: null,
-            updatedAt: now
-        }));
+        sourceSeatRefs.forEach((ref, i) => {
+            const releaseStatus = releaseStatusFor(fromSeatIds[i]);
+            transaction.update(ref, {
+                status: releaseStatus,
+                blockNote: releaseStatus === "BLOCKED" ? RELEASE_BLOCK_NOTE : null,
+                holdId: null,
+                holdExpiresAt: null,
+                updatedAt: now
+            });
+        });
 
         targetSeatRefs.forEach((ref) => transaction.update(ref, {
             status: "SOLD",

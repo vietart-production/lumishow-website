@@ -6,7 +6,8 @@ const router = express.Router();
 const {
     getSeatStates,
     getHoldStatus,
-    createHold
+    createHold,
+    listOpenShowtimes
 } = require("../services/booking.service");
 
 // Giới hạn riêng, chặt hơn rate-limit chung của /api — chống 1 IP gọi
@@ -65,6 +66,36 @@ router.get(
 
     }
 );
+
+// ==========================================
+// GET /api/shows/:showId/showtimes/open
+// Public, không cần PIN/key — danh sách showtimeId đang status=OPEN (hôm
+// nay/tương lai), cho frontend tự dựng lịch thay vì đọc mảng hardcode. Xem
+// listOpenShowtimes() trong booking.service.js.
+// ==========================================
+
+router.get("/shows/:showId/showtimes/open", async (req, res) => {
+
+    try {
+
+        const { showId } = req.params;
+        const showtimeIds = await listOpenShowtimes({ showId });
+
+        return res.status(200).json({
+            success: true,
+            showtimeIds
+        });
+
+    } catch (error) {
+
+        console.error("LIST OPEN SHOWTIMES ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể lấy danh sách suất diễn đang mở"
+        });
+    }
+});
 
 // ==========================================
 // POST /api/bookings/hold
