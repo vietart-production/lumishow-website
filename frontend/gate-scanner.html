@@ -84,11 +84,12 @@
   /* ---- Vé giấy in ra — ẨN khi xem trên màn hình, CHỈ hiện khi in ---- */
   .print-only{display:none;}
   @media print{
-    /* Khổ 58mm — chốt theo máy Xprinter XP-58IIH (vùng in thực tế chỉ 48mm,
-       ~5mm mỗi bên không in được phần cứng). margin ở @page phụ thuộc driver
-       có tôn trọng hay không nên để nhỏ, padding thật trong .ticket-page mới
-       là lớp đệm chắc chắn (58mm - 2*5mm padding = đúng 48mm vùng in). */
-    @page{ size: 58mm auto; margin: 2mm; }
+    /* Khổ 78mm — khổ giấy THẬT đang lắp trong máy in Epson TM-T82II (không
+       phải 58mm như định ban đầu cho Xprinter — đổi máy in thực tế dùng).
+       margin ở @page phụ thuộc driver có tôn trọng hay không nên để nhỏ,
+       padding thật trong .ticket-page mới là lớp đệm chắc chắn (78mm -
+       2*5mm padding = 68mm vùng nội dung, nằm trong vùng in thật của máy). */
+    @page{ size: 78mm auto; margin: 2mm; }
     body *{ visibility: hidden; }
     #printArea, #printArea *{ visibility: visible; }
     #printArea{
