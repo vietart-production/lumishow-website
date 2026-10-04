@@ -93,7 +93,7 @@
     #printArea, #printArea *{ visibility: visible; }
     #printArea{
       display:block; position:absolute; top:0; left:0; width:100%;
-      font-family: Arial, sans-serif; color:#000; text-align:center;
+      font-family: Arial, Tahoma, "Segoe UI", sans-serif; color:#000; text-align:center;
     }
     /* Mỗi ghế = 1 vé nhỏ riêng, QR riêng — ngắt trang giữa các vé để máy in
        nhiệt tự cắt rời từng vé trong CÙNG 1 lượt in (1 lần quét cả đơn ra
@@ -544,7 +544,15 @@ function printTicket(id){
     </div>
   `).join("");
 
-  window.print();
+  // Chờ TOÀN BỘ ảnh QR tải xong rồi mới in — gọi window.print() ngay sau khi
+  // set src dễ bị in lúc ảnh (lấy từ Render) chưa kịp tải xong, ra ô QR
+  // trống. Timeout 3s phòng ảnh lỗi/mạng chậm, vẫn cho in tiếp (hơn là treo
+  // vô thời hạn không in được gì).
+  const imgs = Array.from($("printArea").querySelectorAll("img"));
+  Promise.race([
+    Promise.all(imgs.map((img) => img.decode().catch(() => {}))),
+    new Promise((resolve) => setTimeout(resolve, 3000))
+  ]).then(() => window.print());
 }
 
 function renderResults(){
