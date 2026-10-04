@@ -84,12 +84,15 @@
   /* ---- Vé giấy in ra — ẨN khi xem trên màn hình, CHỈ hiện khi in ---- */
   .print-only{display:none;}
   @media print{
-    /* Khổ 78mm — khổ giấy THẬT đang lắp trong máy in Epson TM-T82II (không
-       phải 58mm như định ban đầu cho Xprinter — đổi máy in thực tế dùng).
-       margin ở @page phụ thuộc driver có tôn trọng hay không nên để nhỏ,
-       padding thật trong .ticket-page mới là lớp đệm chắc chắn (78mm -
-       2*5mm padding = 68mm vùng nội dung, nằm trong vùng in thật của máy). */
-    @page{ size: 78mm auto; margin: 2mm; }
+    /* Khổ 80mm — ĐÚNG khổ mặc định của driver Epson TM-T82II (kiểm tra thật
+       trong Printing Preferences -> Advanced -> Paper Size: "Roll Paper 80 x
+       297 mm"), không phải 78mm đo tay hay 58mm định ban đầu cho Xprinter.
+       In kiosk-printing (silent) dùng đúng mặc định này của driver, không
+       qua dialog để chỉnh — CSS phải khớp CHÍNH XÁC số đó Chrome mới chọn
+       đúng preset. margin ở @page phụ thuộc driver có tôn trọng hay không
+       nên để nhỏ, padding thật trong .ticket-page mới là lớp đệm chắc chắn
+       (80mm - 2*5mm padding = 70mm vùng nội dung). */
+    @page{ size: 80mm auto; margin: 2mm; }
     body *{ visibility: hidden; }
     #printArea, #printArea *{ visibility: visible; }
     #printArea{

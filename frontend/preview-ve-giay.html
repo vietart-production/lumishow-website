@@ -57,7 +57,7 @@
      gate-scanner.html (visibility hidden/visible), không in kèm khung mô
      phỏng giấy/chú thích trên màn hình. ---- */
   @media print{
-    @page{ size: 78mm auto; margin: 2mm; }
+    @page{ size: 80mm auto; margin: 2mm; }
     body *{ visibility:hidden; }
     body[data-print="1"] #ticket1, body[data-print="1"] #ticket1 *{ visibility:visible; }
     body[data-print="2"] #ticket2, body[data-print="2"] #ticket2 *{ visibility:visible; }
@@ -71,14 +71,14 @@
 <p class="sub">Trang phác thảo riêng — KHÔNG gọi API/Firestore thật, chỉ dữ liệu mẫu + QR placeholder. Chỉnh CSS <code>.ticket-page</code>/<code>.pt-*</code> ở đây, xong copy nguyên văn sang khối <code>@media print</code> trong <code>gate-scanner.html</code>.</p>
 
 <div class="sizes">
-  <button class="active" data-w="78">Khổ 78mm (Epson TM-T82II — máy in thật đang dùng)</button>
+  <button class="active" data-w="80">Khổ 80mm (Epson TM-T82II — máy in thật đang dùng)</button>
   <button data-w="58">Khổ 58mm (để so sánh)</button>
 </div>
 
 <div class="stage">
   <div class="paper-wrap">
     <p class="cap">Vé 1 — tên ngắn</p>
-    <div class="paper" id="paper1" style="width:78mm;">
+    <div class="paper" id="paper1" style="width:80mm;">
       <div class="ticket-page" id="ticket1">
         <div class="pt-brand">LUMISHOW</div>
         <div class="pt-show">Sơn Thần Thủy Quái</div>
@@ -97,7 +97,7 @@
 
   <div class="paper-wrap">
     <p class="cap">Vé 2 — tên dài (test tràn chữ)</p>
-    <div class="paper" id="paper2" style="width:78mm;">
+    <div class="paper" id="paper2" style="width:80mm;">
       <div class="ticket-page" id="ticket2">
         <div class="pt-brand">LUMISHOW</div>
         <div class="pt-show">Sơn Thần Thủy Quái</div>
