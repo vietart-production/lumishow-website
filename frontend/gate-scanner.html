@@ -157,6 +157,10 @@
         <input type="checkbox" id="printingEnabledToggle">
         <label for="printingEnabledToggle">🖨️ Bật in vé (máy in đã sẵn sàng)</label>
       </div>
+      <div class="toggle-item" id="kioskPrintingItem" hidden>
+        <input type="checkbox" id="kioskPrintingToggle">
+        <label for="kioskPrintingToggle">Trình duyệt đang chạy với cờ --kiosk-printing (in thẳng, không dialog)</label>
+      </div>
     </div>
 
     <p class="feed-label">3 lượt quét gần nhất</p>
@@ -266,6 +270,24 @@ $("autoPrintToggle").addEventListener("change", (e) => {
 let printingEnabled = false;
 $("printingEnabledToggle").addEventListener("change", (e) => {
   printingEnabled = e.target.checked;
+  $("kioskPrintingItem").hidden = !printingEnabled;
+  if (!printingEnabled) {
+    kioskPrintingMode = false;
+    $("kioskPrintingToggle").checked = false;
+  }
+});
+
+// Khai báo (KHÔNG tự phát hiện được từ JS — xem giải thích trong cuộc trò
+// chuyện) trình duyệt hiện tại có đang mở kèm cờ --kiosk-printing hay
+// không. CHỈ gate auto-print: thiếu cờ này mà vẫn auto-print thì mỗi lượt
+// quét sẽ bật 1 dialog in chặn đứng luồng quét liên tục — tắt kioskPrinting
+// thì auto-print coi như không chạy, chỉ còn nút "In vé" tay (bấm tay dừng
+// ở dialog cũng không sao, đó là hành động chủ động). Không nhớ qua
+// localStorage, cùng lý do với printingEnabled — luôn hỏi lại mỗi lần tải
+// trang vì phụ thuộc đúng cửa sổ trình duyệt nào đang mở.
+let kioskPrintingMode = false;
+$("kioskPrintingToggle").addEventListener("change", (e) => {
+  kioskPrintingMode = e.target.checked;
 });
 
 // ---------------------------------------------------------------
@@ -504,7 +526,7 @@ function pushResult(result){
   results = results.slice(0, MAX_RESULTS);
   renderResults();
 
-  if (autoPrintMode && printingEnabled && result.ok) {
+  if (autoPrintMode && printingEnabled && kioskPrintingMode && result.ok) {
     printTicket(result.id);
   }
 }
