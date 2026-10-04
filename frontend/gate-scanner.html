@@ -153,6 +153,10 @@
         <input type="checkbox" id="autoPrintToggle">
         <label for="autoPrintToggle">Tự động in vé sau khi check-in</label>
       </div>
+      <div class="toggle-item">
+        <input type="checkbox" id="printingEnabledToggle">
+        <label for="printingEnabledToggle">🖨️ Bật in vé (máy in đã sẵn sàng)</label>
+      </div>
     </div>
 
     <p class="feed-label">3 lượt quét gần nhất</p>
@@ -249,6 +253,19 @@ $("autoPrintToggle").checked = autoPrintMode;
 $("autoPrintToggle").addEventListener("change", (e) => {
   autoPrintMode = e.target.checked;
   try { localStorage.setItem(AUTO_PRINT_STORAGE, autoPrintMode ? "1" : "0"); } catch (err) {}
+});
+
+// Công tắc TỔNG cho việc in — kiosk-printing (xem CLAUDE.md/hướng dẫn Chrome
+// --kiosk-printing) in THẲNG vào máy in mặc định của hệ điều hành, KHÔNG qua
+// dialog nên KHÔNG có cách nào từ web biết máy in có đang cắm/bật hay không
+// — lỡ máy in bị rút mà vẫn bấm in thì job in "biến mất" không báo lỗi gì.
+// Mặc định TẮT và KHÔNG nhớ qua localStorage (khác autoPrintMode) — mỗi lần
+// tải lại trang bắt buộc tự xác nhận máy in đã sẵn sàng rồi mới bật, tránh
+// quên tắt/bật giữa các lần đổi máy in (Canon test -> Xprinter thật...).
+// Gate cả nút "In vé" tay LẪN auto-print trong printTicket()/pushResult().
+let printingEnabled = false;
+$("printingEnabledToggle").addEventListener("change", (e) => {
+  printingEnabled = e.target.checked;
 });
 
 // ---------------------------------------------------------------
@@ -487,7 +504,7 @@ function pushResult(result){
   results = results.slice(0, MAX_RESULTS);
   renderResults();
 
-  if (autoPrintMode && result.ok) {
+  if (autoPrintMode && printingEnabled && result.ok) {
     printTicket(result.id);
   }
 }
@@ -502,6 +519,11 @@ function fmtTime(d){
 // cài driver) — không cần code riêng cho từng loại máy in. QR tái dùng
 // thẳng endpoint /tickets/:code/qr.png có sẵn, không cần vẽ QR ở client.
 function printTicket(id){
+  if (!printingEnabled) {
+    alert("Đang TẮT in vé — bật công tắc \"🖨️ Bật in vé\" ở trên trước khi in (xác nhận máy in đã cắm/sẵn sàng).");
+    return;
+  }
+
   const r = results.find((x) => x.id === id);
   if (!r || !r.ticketsDetail || !r.ticketsDetail.length) return;
 
