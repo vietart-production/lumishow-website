@@ -92,7 +92,7 @@
        đúng preset. margin ở @page phụ thuộc driver có tôn trọng hay không
        nên để nhỏ, padding thật trong .ticket-page mới là lớp đệm chắc chắn
        (80mm - 2*5mm padding = 70mm vùng nội dung). */
-    @page{ size: 80mm auto; margin: 2mm; }
+    @page{ size: 80mm auto; margin: 1mm; }
     body *{ visibility: hidden; }
     #printArea, #printArea *{ visibility: visible; }
     #printArea{
@@ -103,7 +103,7 @@
        nhiệt tự cắt rời từng vé trong CÙNG 1 lượt in (1 lần quét cả đơn ra
        luôn 1-10 vé rời, không phải 1 vé liệt kê nhiều ghế). */
     .ticket-page{
-      box-sizing:border-box; width:100%; padding:4mm 5mm;
+      box-sizing:border-box; width:100%; padding:1mm 5mm 4mm;
       break-after:page; page-break-after:always;
     }
     .ticket-page:last-child{ break-after:auto; page-break-after:auto; }

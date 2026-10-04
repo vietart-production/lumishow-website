@@ -33,7 +33,7 @@
   /* ===== Nội dung vé — ĐÚNG class dùng trong gate-scanner.html @media print,
      copy nguyên văn khi áp dụng thật ===== */
   .ticket-page{
-    box-sizing:border-box; width:100%; padding:4mm 5mm;
+    box-sizing:border-box; width:100%; padding:1mm 5mm 4mm;
     font-family: Arial, sans-serif; color:#000; text-align:center;
   }
   .pt-brand{font-size:16px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
@@ -57,7 +57,7 @@
      gate-scanner.html (visibility hidden/visible), không in kèm khung mô
      phỏng giấy/chú thích trên màn hình. ---- */
   @media print{
-    @page{ size: 80mm auto; margin: 2mm; }
+    @page{ size: 80mm auto; margin: 1mm; }
     body *{ visibility:hidden; }
     body[data-print="1"] #ticket1, body[data-print="1"] #ticket1 *{ visibility:visible; }
     body[data-print="2"] #ticket2, body[data-print="2"] #ticket2 *{ visibility:visible; }
