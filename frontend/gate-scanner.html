@@ -107,6 +107,9 @@
       break-after:page; page-break-after:always;
     }
     .ticket-page:last-child{ break-after:auto; page-break-after:auto; }
+    /* Tick "Cắt rời từng vé" TẮT -> bỏ ngắt trang giữa các vé, in liền 1
+       dải không cắt (class gắn vào #printArea lúc in, xem printTicket()). */
+    #printArea.no-cut .ticket-page{ break-after:auto; page-break-after:auto; }
     .pt-brand{font-size:16px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
     .pt-show{font-size:12px;margin:0 0 8px;}
     .pt-divider{border-top:1px dashed #000;margin:8px 0;}
@@ -161,6 +164,10 @@
         <input type="checkbox" id="printingEnabledToggle">
         <label for="printingEnabledToggle">🖨️ Bật in vé (máy in đã sẵn sàng)</label>
       </div>
+      <div class="toggle-item">
+        <input type="checkbox" id="cutEachTicketToggle">
+        <label for="cutEachTicketToggle">✂️ Cắt rời từng vé (nhiều ghế/lượt)</label>
+      </div>
     </div>
 
     <p class="feed-label">3 lượt quét gần nhất</p>
@@ -176,6 +183,7 @@ const API = "https://lumishow-website.onrender.com/api";
 const KEY_STORAGE = "lumishow-gate-key";
 const WHOLE_ORDER_STORAGE = "lumishow-gate-whole-order";
 const AUTO_PRINT_STORAGE = "lumishow-gate-auto-print";
+const CUT_EACH_TICKET_STORAGE = "lumishow-gate-cut-each-ticket";
 
 // Regex định dạng mã vé — CHỈ dùng để quyết định "máy quét gõ xong chưa"
 // trong debounce dưới đây, giống hệt ticketCodePattern trong TicketManager.cs
@@ -270,6 +278,22 @@ $("autoPrintToggle").addEventListener("change", (e) => {
 let printingEnabled = false;
 $("printingEnabledToggle").addEventListener("change", (e) => {
   printingEnabled = e.target.checked;
+});
+
+// Tick = ngắt trang giữa mỗi vé khi 1 lượt in ra nhiều vé (check-in cả đơn
+// nhiều ghế) — máy in nhiệt tự cắt rời từng vé. Bỏ tick = in liền 1 dải,
+// không cắt (xem class "no-cut" gắn vào #printArea trong printTicket()).
+// Nhớ theo máy (localStorage) như wholeOrderMode, mặc định BẬT (giữ đúng
+// hành vi gốc — cắt rời từng vé).
+let cutEachTicket = true;
+try {
+  const savedCut = localStorage.getItem(CUT_EACH_TICKET_STORAGE);
+  if (savedCut !== null) cutEachTicket = savedCut === "1";
+} catch (e) {}
+$("cutEachTicketToggle").checked = cutEachTicket;
+$("cutEachTicketToggle").addEventListener("change", (e) => {
+  cutEachTicket = e.target.checked;
+  try { localStorage.setItem(CUT_EACH_TICKET_STORAGE, cutEachTicket ? "1" : "0"); } catch (err) {}
 });
 
 // ---------------------------------------------------------------
@@ -533,6 +557,7 @@ function printTicket(id){
 
   const timeStr = r.time.toLocaleDateString("vi-VN") + " " + fmtTime(r.time);
 
+  $("printArea").classList.toggle("no-cut", !cutEachTicket);
   $("printArea").innerHTML = r.ticketsDetail.map((t) => `
     <div class="ticket-page">
       <div class="pt-brand">LUMISHOW</div>
