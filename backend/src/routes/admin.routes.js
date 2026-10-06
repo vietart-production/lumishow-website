@@ -12,6 +12,7 @@ const {
     logGateScan,
     listGateScanHistory,
     cancelTicketBySeat,
+    cancelOrderSeats,
     createManualTicket,
     listUpcomingShowtimes,
     deleteOrder,
@@ -510,6 +511,33 @@ router.post("/admin/orders/lookup", requirePin, async (req, res) => {
         return res.status(200).json({ success: true, order });
     } catch (error) {
         return res.status(400).json({ success: false, message: error.message || "Không thể tra cứu đơn" });
+    }
+});
+
+// ==========================================
+// POST /api/admin/orders/cancel-seats
+// body: { password, orderId, seatIdsToCancel: string[] }
+// Huỷ 1 phần ghế của đơn đã thanh toán (khách trả lại vài ghế, giữ lại phần
+// còn lại) — tự tính lại seatIds/subtotal/amount trên order, tự trả ghế về
+// đúng trạng thái (BLOCKED nếu thuộc khu khoá, không ép AVAILABLE). Không
+// huỷ hết toàn bộ ghế qua endpoint này — dùng /admin/orders/delete.
+// ==========================================
+
+router.post("/admin/orders/cancel-seats", requirePin, async (req, res) => {
+    try {
+        const { orderId, seatIdsToCancel } = req.body;
+        const result = await cancelOrderSeats({ showId: SHOW_ID, orderId, seatIdsToCancel });
+        return res.status(200).json({
+            success: true,
+            message: `Đã huỷ ${result.cancelledSeats.length} ghế, còn lại ${result.remainingSeats.length} ghế hợp lệ`,
+            result
+        });
+    } catch (error) {
+        console.error("ADMIN CANCEL ORDER SEATS ERROR:", error);
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể huỷ ghế"
+        });
     }
 });
 

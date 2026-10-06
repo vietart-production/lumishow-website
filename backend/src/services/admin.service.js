@@ -134,6 +134,151 @@ async function cancelTicketBySeat({ showId, showtimeId, seatId }) {
 }
 
 // ==========================================
+// HUỶ MỘT PHẦN GHẾ CỦA ĐƠN ĐÃ THANH TOÁN — khách trả lại vài ghế trong 1 đơn
+// nhiều ghế (giữ phần còn lại), khác cancelTicketBySeat() (huỷ 1 vé lẻ,
+// không đụng order) và deleteOrder() (xoá nguyên cả đơn). Tự tính lại
+// amount/subtotal/seatIds trên order cho khớp đúng các ghế còn lại — PHẢI
+// cập nhật seatIds, không chỉ amount, vì exchangePaidOrderTickets() dựa vào
+// order.seatIds.length để khớp số vé hợp lệ (xem sự cố thật 2026-10-06, đơn
+// Youngim Jung: sửa tay amount qua script tmp_ mà quên seatIds làm hỏng
+// tính năng đổi vé của đơn vĩnh viễn — đây là lý do hàm này được viết thành
+// tool thay vì lặp lại script tạm mỗi lần).
+// ==========================================
+
+async function cancelOrderSeats({ showId, orderId, seatIdsToCancel }) {
+
+    if (!orderId || !Array.isArray(seatIdsToCancel) || seatIdsToCancel.length === 0) {
+        throw new Error("Thiếu orderId/seatIdsToCancel");
+    }
+
+    const uniqueSeatIds = [...new Set(seatIdsToCancel)];
+    if (uniqueSeatIds.length !== seatIdsToCancel.length) {
+        throw new Error("Danh sách ghế huỷ bị trùng");
+    }
+    if (uniqueSeatIds.some((seatId) => !SEAT_ID_RE.test(seatId))) {
+        throw new Error("Mã ghế không hợp lệ");
+    }
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const now = new Date();
+
+    return db.runTransaction(async (transaction) => {
+
+        // ---- Đọc hết trước, Firestore transaction không cho đọc sau khi đã ghi ----
+
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists) {
+            throw new Error("Không tìm thấy đơn hàng");
+        }
+
+        const order = orderSnap.data();
+        if (order.showId && order.showId !== showId) {
+            throw new Error("Đơn hàng không thuộc show này");
+        }
+        if (order.orderStatus !== "PAID" || order.paymentStatus !== "PAID") {
+            throw new Error("Chỉ huỷ ghế từng phần cho đơn đã thanh toán");
+        }
+
+        const showtimeId = order.showtimeId;
+        if (!showtimeId) {
+            throw new Error("Đơn hàng không có suất diễn");
+        }
+        if (!Array.isArray(order.seatIds) || !uniqueSeatIds.every((s) => order.seatIds.includes(s))) {
+            throw new Error("Có ghế không thuộc đơn hàng này");
+        }
+
+        const ticketsSnap = await transaction.get(
+            db.collection("tickets")
+                .where("orderId", "==", orderId)
+                .where("ticketStatus", "==", "valid")
+        );
+        if (ticketsSnap.empty) {
+            throw new Error("Đơn hàng không còn vé hợp lệ nào");
+        }
+
+        const validTicketDocs = ticketsSnap.docs;
+        const ticketBySeat = new Map(validTicketDocs.map((doc) => [doc.data().seatId, doc]));
+
+        const missingSeat = uniqueSeatIds.find((seatId) => !ticketBySeat.has(seatId));
+        if (missingSeat) {
+            throw new Error(`Ghế ${missingSeat} không có vé hợp lệ trong đơn (có thể đã huỷ trước đó)`);
+        }
+
+        const ticketsToCancel = uniqueSeatIds.map((seatId) => ticketBySeat.get(seatId));
+
+        const checkedInTicket = ticketsToCancel.find((doc) => doc.data().checkedIn === true);
+        if (checkedInTicket) {
+            throw new Error(`Ghế ${checkedInTicket.data().seatId} đã check-in, không thể huỷ`);
+        }
+
+        if (validTicketDocs.length - ticketsToCancel.length <= 0) {
+            throw new Error('Không thể huỷ hết toàn bộ ghế qua công cụ này — dùng "Xoá đơn" để huỷ cả đơn');
+        }
+
+        const seatRefs = uniqueSeatIds.map((seatId) => db.collection("shows").doc(showId)
+            .collection("showtimes").doc(showtimeId).collection("seats").doc(seatId));
+        const seatSnaps = await Promise.all(seatRefs.map((ref) => transaction.get(ref)));
+
+        // ---- Hết phần đọc, từ đây chỉ ghi ----
+
+        const remainingSeatIds = [];
+        let newSubtotal = 0;
+        validTicketDocs.forEach((doc) => {
+            const data = doc.data();
+            if (!uniqueSeatIds.includes(data.seatId)) {
+                remainingSeatIds.push(data.seatId);
+                newSubtotal += data.price || 0;
+            }
+        });
+
+        // ticket.price là giá ghế gốc (chưa trừ coupon, xem payment.service.js) nên
+        // amount mới phải tự áp lại % coupon cũ (nếu có) trên subtotal mới, không
+        // thể suy ra bằng cách trừ thẳng giá ghế đã huỷ khỏi amount cũ.
+        let newAmount = newSubtotal;
+        if (order.coupon && order.coupon.percentOff) {
+            const discount = Math.round(newSubtotal * order.coupon.percentOff / 100);
+            newAmount = newSubtotal - discount;
+        }
+
+        ticketsToCancel.forEach((ticketDoc) => {
+            transaction.update(ticketDoc.ref, {
+                ticketStatus: "cancelled",
+                cancelledAt: now,
+                cancelledBy: "admin-panel"
+            });
+        });
+
+        uniqueSeatIds.forEach((seatId, i) => {
+            const seatSnap = seatSnaps[i];
+            if (seatSnap.exists) {
+                const releaseStatus = releaseStatusFor(seatId);
+                transaction.update(seatSnap.ref, {
+                    status: releaseStatus,
+                    blockNote: releaseStatus === "BLOCKED" ? RELEASE_BLOCK_NOTE : null,
+                    holdId: null,
+                    holdExpiresAt: null,
+                    updatedAt: now
+                });
+            }
+        });
+
+        transaction.update(orderRef, {
+            seatIds: remainingSeatIds,
+            subtotal: newSubtotal,
+            amount: newAmount,
+            updatedAt: now
+        });
+
+        return {
+            cancelledSeats: uniqueSeatIds,
+            remainingSeats: remainingSeatIds,
+            newAmount,
+            newSubtotal
+        };
+    });
+}
+
+// ==========================================
 // TẠO VÉ THỦ CÔNG — bán tay/tiền mặt tại cổng. Giá/hạng lấy đúng từ dữ
 // liệu ghế thật trong Firestore (không cho nhân viên tự gõ giá), tự sinh
 // ticketCode + để checkedIn=false (vẫn phải quét vào cửa như vé thường).
@@ -1311,6 +1456,7 @@ module.exports = {
     logGateScan,
     listGateScanHistory,
     cancelTicketBySeat,
+    cancelOrderSeats,
     createManualTicket,
     exchangePaidOrderTickets,
     listUpcomingShowtimes,
