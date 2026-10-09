@@ -5,6 +5,7 @@ const BOOKING_CONFIG = require("../config/booking.config");
 const { sendTicketEmail } = require("./email.service");
 const SEAT_TIERS = require("../../scripts/seatTiers.json");
 const LOCKED_ZONE_SEATS = new Set(require("../../scripts/lockedZoneSeats.json").seatIds);
+const { appendGateScanRow } = require("./googleSheets.service");
 
 const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
 
@@ -646,6 +647,8 @@ const GATE_SCAN_HISTORY_LIMIT = 100;
 
 async function logGateScan({ ticketCode, customerName, seats, showtimeId, outcome, checkedInCount, totalCount, message, testMode }) {
 
+    const scannedAt = new Date();
+
     await db.collection("gateScanHistory").add({
         ticketCode: ticketCode || null,
         customerName: customerName || "",
@@ -656,8 +659,17 @@ async function logGateScan({ ticketCode, customerName, seats, showtimeId, outcom
         totalCount: totalCount || 0,
         message: message || "",
         testMode: !!testMode,
-        scannedAt: new Date()
+        scannedAt
     });
+
+    // Đẩy lên Google Sheet cho venue xem real-time — không đẩy vé test, và lỗi ở
+    // đây KHÔNG BAO GIỜ được làm hỏng việc quét vé thật ở cổng (chỉ log lỗi).
+    if (!testMode) {
+        appendGateScanRow({
+            scannedAt, ticketCode, customerName, seats, showtimeId,
+            outcome, checkedInCount, totalCount, message
+        }).catch((err) => console.error("GOOGLE SHEET GATE SCAN LOG ERROR:", err.message));
+    }
 
     const overflow = await db.collection("gateScanHistory")
         .orderBy("scannedAt", "desc")
