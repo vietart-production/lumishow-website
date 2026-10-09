@@ -36,17 +36,22 @@
     box-sizing:border-box; width:100%; padding:1mm 5mm 4mm;
     font-family: Arial, sans-serif; color:#000; text-align:center;
   }
-  .pt-brand{font-size:16px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
-  .pt-show{font-size:12px;margin:0 0 8px;}
+  .pt-brand{font-size:26px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
+  .pt-show{font-size:14px;margin:0 0 8px;}
   .pt-divider{border-top:1px dashed #000;margin:8px 0;}
-  .pt-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:3px 0;text-align:left;}
+  .pt-row{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin:3px 0;text-align:left;}
   .pt-row span{color:#333;flex-shrink:0;}
   .pt-row b{font-weight:700;text-align:right;overflow-wrap:anywhere;}
-  .pt-qr{margin:10px 0;}
-  .pt-qr .qr-placeholder{
-    width:28mm;height:28mm;margin:0 auto;background:#eee;border:1px dashed #999;
+  .pt-showtime-block{margin:6px 0;}
+  .pt-showtime-label{font-size:13px;color:#333;}
+  .pt-showtime-value{font-size:24px;font-weight:800;margin-top:2px;}
+  .pt-qr-seat-row{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0;}
+  .pt-qr-seat-row .qr-placeholder{
+    width:26mm;height:26mm;background:#eee;border:1px dashed #999;
     display:flex;align-items:center;justify-content:center;color:#999;font-size:10px;
   }
+  .pt-seat-label{font-size:13px;color:#333;}
+  .pt-seat-value{font-size:40px;font-weight:900;letter-spacing:1px;}
   .pt-code{font-size:10px;color:#333;word-break:break-all;margin-top:4px;}
   .pt-time{font-size:9.5px;color:#555;margin-top:4px;}
 
@@ -84,10 +89,18 @@
         <div class="pt-show">Sơn Thần Thủy Quái</div>
         <div class="pt-divider"></div>
         <div class="pt-row"><span>Khách</span><b>Anh Nam</b></div>
-        <div class="pt-row"><span>Ghế</span><b>B12</b></div>
-        <div class="pt-row"><span>Suất diễn</span><b>2026-10-11_16:30</b></div>
+        <div class="pt-showtime-block">
+          <div class="pt-showtime-label">Suất diễn</div>
+          <div class="pt-showtime-value">2026-10-11_16:30</div>
+        </div>
         <div class="pt-divider"></div>
-        <div class="pt-qr"><div class="qr-placeholder">QR</div></div>
+        <div class="pt-qr-seat-row">
+          <div class="qr-placeholder">QR</div>
+          <div>
+            <div class="pt-seat-label">Ghế</div>
+            <div class="pt-seat-value">B12</div>
+          </div>
+        </div>
         <div class="pt-code">LS-1791058882608-B12</div>
         <div class="pt-time">11/10/2026 16:28:03</div>
       </div>
@@ -96,18 +109,30 @@
   </div>
 
   <div class="paper-wrap">
-    <p class="cap">Vé 2 — tên dài (test tràn chữ)</p>
+    <p class="cap">Vé 2 — tên dài (test tràn chữ) + mô phỏng vé tester (đã bỏ "_TESTER")</p>
     <div class="paper" id="paper2" style="width:80mm;">
       <div class="ticket-page" id="ticket2">
         <div class="pt-brand">LUMISHOW</div>
         <div class="pt-show">Sơn Thần Thủy Quái</div>
         <div class="pt-divider"></div>
         <div class="pt-row"><span>Khách</span><b>Nguyễn Thị Minh Nguyệt Hương</b></div>
-        <div class="pt-row"><span>Ghế</span><b>K116</b></div>
-        <div class="pt-row"><span>Suất diễn</span><b>2026-12-27_10:00</b></div>
+        <div class="pt-showtime-block">
+          <div class="pt-showtime-label">Suất diễn</div>
+          <!-- Mô phỏng vé tester-ticket.html: showtimeId thật là
+               "2026-12-27_TESTER" nhưng displayShowtimeId() trong
+               gate-scanner.html bỏ hậu tố "_TESTER" trước khi in/hiện —
+               ở đây hardcode luôn giá trị ĐÃ bỏ để demo kết quả. -->
+          <div class="pt-showtime-value">2026-12-27</div>
+        </div>
         <div class="pt-divider"></div>
-        <div class="pt-qr"><div class="qr-placeholder">QR</div></div>
-        <div class="pt-code">LS-1791058882608-K116</div>
+        <div class="pt-qr-seat-row">
+          <div class="qr-placeholder">QR</div>
+          <div>
+            <div class="pt-seat-label">Ghế</div>
+            <div class="pt-seat-value">K116</div>
+          </div>
+        </div>
+        <div class="pt-code">LS-TEST-1791058882608-K116</div>
         <div class="pt-time">27/12/2026 09:55:11</div>
       </div>
     </div>

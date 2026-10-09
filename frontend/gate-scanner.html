@@ -551,6 +551,13 @@ function fmtTime(d){
   return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+// showtimeId của vé tạo qua tester-ticket.html luôn dạng "{ngày}_TESTER" (xem
+// testerTicket.service.js) — bỏ hậu tố này khi hiển thị (vé in + feed trên
+// màn hình) để không lộ chữ "TESTER" ra giấy/khách, chỉ còn lại phần ngày.
+function displayShowtimeId(id){
+  return (id || "").replace(/_?TESTER$/i, "");
+}
+
 // In vé giấy — đổ dữ liệu vào #printArea (ẨN trên màn hình, chỉ hiện khi
 // in, xem CSS @media print) rồi gọi window.print(). Dùng dialog in của hệ
 // điều hành nên chạy được với BẤT KỲ máy in đang kết nối (USB/Bluetooth đã
@@ -576,7 +583,7 @@ function printTicket(id){
       <div class="pt-row"><span>Khách</span><b>${escapeHtml(r.customerName || "—")}</b></div>
       <div class="pt-showtime-block">
         <div class="pt-showtime-label">Suất diễn</div>
-        <div class="pt-showtime-value">${escapeHtml(r.showtimeId || "—")}</div>
+        <div class="pt-showtime-value">${escapeHtml(displayShowtimeId(r.showtimeId) || "—")}</div>
       </div>
       <div class="pt-divider"></div>
       <div class="pt-qr-seat-row">
@@ -621,7 +628,7 @@ function renderResults(){
     const seatLine = r.seats.length ? "Ghế " + r.seats.join(", ") : "";
     const nameSeatLine = [r.customerName, seatLine].filter(Boolean).join(" · ");
 
-    const subLine = [r.showtimeId, (!r.ok || r.partial) ? r.message : ""].filter(Boolean).join(" · ");
+    const subLine = [displayShowtimeId(r.showtimeId), (!r.ok || r.partial) ? r.message : ""].filter(Boolean).join(" · ");
 
     return `
       <div class="result-card ${cls}">
