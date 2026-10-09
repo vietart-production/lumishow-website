@@ -33,8 +33,11 @@ function tabTitleForDate(date) {
     const parts = new Intl.DateTimeFormat("en-GB", {
         timeZone: "Asia/Ho_Chi_Minh", day: "numeric", month: "numeric"
     }).formatToParts(date);
-    const day = parts.find((p) => p.type === "day").value;
-    const month = parts.find((p) => p.type === "month").value;
+    // Intl vẫn zero-pad dù để "numeric" (tuỳ ICU) — ép parseInt để chắc chắn bỏ
+    // số 0 đầu, khớp đúng tên tab "Checkin 9/10" người dùng tự tạo (không phải
+    // "Checkin 09/10").
+    const day = parseInt(parts.find((p) => p.type === "day").value, 10);
+    const month = parseInt(parts.find((p) => p.type === "month").value, 10);
     return `Checkin ${day}/${month}`;
 }
 
