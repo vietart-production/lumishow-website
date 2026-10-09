@@ -110,19 +110,25 @@
     /* Tick "Cắt rời từng vé" TẮT -> bỏ ngắt trang giữa các vé, in liền 1
        dải không cắt (class gắn vào #printArea lúc in, xem printTicket()). */
     #printArea.no-cut .ticket-page{ break-after:auto; page-break-after:auto; }
-    .pt-brand{font-size:16px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
-    .pt-show{font-size:12px;margin:0 0 8px;}
+    .pt-brand{font-size:26px;font-weight:800;letter-spacing:1px;margin:0 0 2px;}
+    .pt-show{font-size:14px;margin:0 0 8px;}
     .pt-divider{border-top:1px dashed #000;margin:8px 0;}
-    .pt-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:3px 0;text-align:left;}
+    .pt-row{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin:3px 0;text-align:left;}
     .pt-row span{color:#333;flex-shrink:0;}
     .pt-row b{font-weight:700;text-align:right;overflow-wrap:anywhere;}
-    /* Số ghế + giờ check-in là 2 thông tin nhân viên cổng cần liếc thấy ngay
-       từ xa (soát khách vào đúng ghế, đối chiếu giờ vào cửa) — phóng to hẳn
-       riêng, tách khỏi .pt-row thường, không chung cỡ chữ với Khách/Suất diễn. */
-    .pt-seat-big{font-size:46px;font-weight:900;letter-spacing:1px;margin:4px 0;}
-    .pt-qr img{width:28mm;height:28mm;margin:10px 0;}
+    /* "Suất diễn" — nhãn thường + giá trị phóng to riêng 1 khối, căn giữa
+       (khớp ảnh mẫu), không còn chung hàng span/b như .pt-row nữa. */
+    .pt-showtime-block{margin:6px 0;}
+    .pt-showtime-label{font-size:13px;color:#333;}
+    .pt-showtime-value{font-size:24px;font-weight:800;margin-top:2px;}
+    /* QR + số ghế nằm NGANG HÀNG (khớp ảnh mẫu) — ghế là thông tin nhân viên
+       cổng cần liếc thấy ngay từ xa nên phóng to hẳn, tách khỏi .pt-row. */
+    .pt-qr-seat-row{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0;}
+    .pt-qr-seat-row img{width:26mm;height:26mm;}
+    .pt-seat-label{font-size:13px;color:#333;}
+    .pt-seat-value{font-size:40px;font-weight:900;letter-spacing:1px;}
     .pt-code{font-size:10px;color:#333;word-break:break-all;margin-top:4px;}
-    .pt-time-big{font-size:22px;font-weight:700;color:#000;margin-top:6px;}
+    .pt-time{font-size:9.5px;color:#555;margin-top:4px;}
   }
 </style>
 </head>
@@ -568,12 +574,20 @@ function printTicket(id){
       <div class="pt-show">Sơn Thần Thủy Quái</div>
       <div class="pt-divider"></div>
       <div class="pt-row"><span>Khách</span><b>${escapeHtml(r.customerName || "—")}</b></div>
-      <div class="pt-row"><span>Suất diễn</span><b>${escapeHtml(r.showtimeId || "—")}</b></div>
-      <div class="pt-seat-big">${escapeHtml(t.seatId || "—")}</div>
+      <div class="pt-showtime-block">
+        <div class="pt-showtime-label">Suất diễn</div>
+        <div class="pt-showtime-value">${escapeHtml(r.showtimeId || "—")}</div>
+      </div>
       <div class="pt-divider"></div>
-      <div class="pt-qr"><img src="${API}/tickets/${encodeURIComponent(t.ticketCode)}/qr.png" alt="QR"></div>
+      <div class="pt-qr-seat-row">
+        <img src="${API}/tickets/${encodeURIComponent(t.ticketCode)}/qr.png" alt="QR">
+        <div>
+          <div class="pt-seat-label">Ghế</div>
+          <div class="pt-seat-value">${escapeHtml(t.seatId || "—")}</div>
+        </div>
+      </div>
       <div class="pt-code">${escapeHtml(t.ticketCode)}</div>
-      <div class="pt-time-big">${escapeHtml(timeStr)}</div>
+      <div class="pt-time">${escapeHtml(timeStr)}</div>
     </div>
   `).join("");
 

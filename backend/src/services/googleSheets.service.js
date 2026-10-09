@@ -41,33 +41,59 @@ function tabTitleForDate(date) {
     return `Checkin ${day}/${month}`;
 }
 
-const knownTabs = new Set();
+// sheetId (numeric, khác title) cần cho request format header — cache theo
+// title để khỏi gọi spreadsheets.get() lại mỗi lần quét.
+const tabSheetIds = new Map();
 
 async function ensureTabExists(sheets, title) {
-    if (knownTabs.has(title)) return;
+    if (tabSheetIds.has(title)) return tabSheetIds.get(title);
 
     const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
-    const exists = (meta.data.sheets || []).some((s) => s.properties.title === title);
+    let sheet = (meta.data.sheets || []).find((s) => s.properties.title === title);
 
-    if (!exists) {
-        await sheets.spreadsheets.batchUpdate({
+    if (!sheet) {
+        const created = await sheets.spreadsheets.batchUpdate({
             spreadsheetId: SHEET_ID,
             requestBody: { requests: [{ addSheet: { properties: { title } } }] }
         });
+        sheet = created.data.replies[0].addSheet;
+        const sheetId = sheet.properties.sheetId;
+
         await sheets.spreadsheets.values.update({
             spreadsheetId: SHEET_ID,
             range: `'${title}'!A1`,
             valueInputOption: "RAW",
             requestBody: { values: [HEADER_ROW] }
         });
+
+        // Tab mới -> bôi nền xanh cho cả dòng tên cột (row 1), chữ trắng đậm
+        // cho dễ phân biệt với dữ liệu bên dưới. Phủ rộng tới cột L để luôn
+        // trùm luôn khối tổng hợp J/K dù dòng 1 bên đó có dữ liệu hay chưa.
+        await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: SHEET_ID,
+            requestBody: {
+                requests: [{
+                    repeatCell: {
+                        range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 12 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.16, green: 0.4, blue: 0.85 },
+                                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } }
+                            }
+                        },
+                        fields: "userEnteredFormat(backgroundColor,textFormat)"
+                    }
+                }]
+            }
+        });
     }
 
-    knownTabs.add(title);
+    tabSheetIds.set(title, sheet.properties.sheetId);
+    return sheet.properties.sheetId;
 }
 
 async function appendGateScanRow({
-    scannedAt, ticketCode, customerName, seats, showtimeId,
-    outcome, checkedInCount, totalCount, message
+    scannedAt, ticketCode, customerName, seats, showtimeId, checkedInCount, totalCount, message
 }) {
     if (!SHEET_ID) return; // Chưa cấu hình GATE_SCAN_SHEET_ID — bỏ qua, không throw.
 
@@ -83,7 +109,11 @@ async function appendGateScanRow({
         spreadsheetId: SHEET_ID,
         range: `'${title}'!A:H`,
         valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
+        // OVERWRITE (không phải INSERT_ROWS) — chỉ ghi vào dòng trống tiếp theo
+        // trong đúng cột A:H, KHÔNG chèn/đẩy nguyên hàng xuống. Quan trọng vì
+        // cột J/K bên cạnh giữ khối tổng hợp cố định ở đầu bảng — INSERT_ROWS
+        // sẽ đẩy khối đó trôi xuống dần theo mỗi lượt quét.
+        insertDataOption: "OVERWRITE",
         requestBody: {
             values: [[
                 timeLabel,
@@ -91,7 +121,7 @@ async function appendGateScanRow({
                 customerName || "",
                 (seats || []).join(", "),
                 showtimeId || "",
-                outcome || "",
+                "Thành Công", // chỉ gọi hàm này khi checkedInCount > 0 (xem admin.service.js)
                 `${checkedInCount || 0}/${totalCount || 0}`,
                 message || ""
             ]]
@@ -99,4 +129,28 @@ async function appendGateScanRow({
     });
 }
 
-module.exports = { appendGateScanRow };
+// Khối tổng hợp "đã quét/đã bán" theo suất + theo hạng, ghim cố định ở J1:K6
+// (không nằm trong vùng A:H nên không bị cuốn theo mỗi lần append). Ghi đè
+// toàn bộ mỗi lần gọi — luôn phản ánh đúng tổng mới nhất.
+async function writeShowtimeSummary({ scannedAt, showtimeId, totalSold, totalCheckedIn, tiers }) {
+    if (!SHEET_ID) return;
+
+    const sheets = getSheetsClient();
+    const title = tabTitleForDate(scannedAt);
+    await ensureTabExists(sheets, title);
+
+    const rows = [
+        ["Suất diễn", showtimeId || ""],
+        ["Đã quét / Đã bán", `${totalCheckedIn}/${totalSold}`],
+        ...tiers.map((t) => [t.label, `${t.checkedIn}/${t.sold}`])
+    ];
+
+    await sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `'${title}'!J1:K${rows.length}`,
+        valueInputOption: "RAW",
+        requestBody: { values: rows }
+    });
+}
+
+module.exports = { appendGateScanRow, writeShowtimeSummary };

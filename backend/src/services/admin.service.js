@@ -5,7 +5,15 @@ const BOOKING_CONFIG = require("../config/booking.config");
 const { sendTicketEmail } = require("./email.service");
 const SEAT_TIERS = require("../../scripts/seatTiers.json");
 const LOCKED_ZONE_SEATS = new Set(require("../../scripts/lockedZoneSeats.json").seatIds);
-const { appendGateScanRow } = require("./googleSheets.service");
+const { appendGateScanRow, writeShowtimeSummary } = require("./googleSheets.service");
+
+// Show thật DUY NHẤT trong hệ thống (khớp SHOW_ID hardcode ở admin.routes.js)
+// — dùng để tính tổng hợp vé theo suất cho Google Sheet, không áp cho show
+// test ("tester-ticket").
+const REAL_SHOW_ID = "son-than-thuy-quai";
+
+const TIER_LABELS = { "vua-hung": "Vua Hùng", "son-than": "Sơn Thần", "thuy-quai": "Thủy Quái", "mi-nuong": "Mị Nương" };
+const TIER_ORDER = ["vua-hung", "son-than", "thuy-quai", "mi-nuong"];
 
 const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
 
@@ -645,6 +653,44 @@ async function checkInOrderByTicketCode({ ticketCode, dryRun }) {
 
 const GATE_SCAN_HISTORY_LIMIT = 100;
 
+// Tổng hợp số vé đã bán / đã quét (check-in) của 1 suất diễn, tách theo hạng
+// ghế — dùng seatTiers.json (mã ghế -> hạng) làm nguồn tra cứu vì ticket docs
+// (payment.service.js) không tự lưu field tier, chỉ seats subcollection mới
+// có — tránh phải đọc thêm collection seats mỗi lần quét.
+async function computeShowtimeSummary(showtimeId) {
+
+    const ticketsSnap = await db.collection("tickets")
+        .where("showId", "==", REAL_SHOW_ID)
+        .where("showtimeId", "==", showtimeId)
+        .where("ticketStatus", "==", "valid")
+        .get();
+
+    const perTier = {};
+    TIER_ORDER.forEach((t) => { perTier[t] = { sold: 0, checkedIn: 0 }; });
+
+    let totalSold = 0;
+    let totalCheckedIn = 0;
+
+    ticketsSnap.docs.forEach((doc) => {
+        const d = doc.data();
+        totalSold++;
+        if (d.checkedIn) totalCheckedIn++;
+
+        const tier = SEAT_TIERS[d.seatId];
+        if (tier && perTier[tier]) {
+            perTier[tier].sold++;
+            if (d.checkedIn) perTier[tier].checkedIn++;
+        }
+    });
+
+    return {
+        showtimeId,
+        totalSold,
+        totalCheckedIn,
+        tiers: TIER_ORDER.map((t) => ({ label: TIER_LABELS[t], ...perTier[t] }))
+    };
+}
+
 async function logGateScan({ ticketCode, customerName, seats, showtimeId, outcome, checkedInCount, totalCount, message, testMode }) {
 
     const scannedAt = new Date();
@@ -674,6 +720,15 @@ async function logGateScan({ ticketCode, customerName, seats, showtimeId, outcom
             scannedAt, ticketCode, customerName, seats, showtimeId,
             outcome, checkedInCount, totalCount, message
         }).catch((err) => console.error("GOOGLE SHEET GATE SCAN LOG ERROR:", err.message));
+
+        // Tổng hợp đã bán/đã quét theo hạng — computeShowtimeSummary() luôn
+        // lọc theo REAL_SHOW_ID nên quét vé tester-ticket (showId khác) tự
+        // nhiên trả về 0, không làm sai dữ liệu show thật.
+        if (showtimeId) {
+            computeShowtimeSummary(showtimeId)
+                .then((summary) => writeShowtimeSummary({ scannedAt, ...summary }))
+                .catch((err) => console.error("GOOGLE SHEET SUMMARY ERROR:", err.message));
+        }
     }
 
     const overflow = await db.collection("gateScanHistory")
