@@ -41,28 +41,107 @@ function tabTitleForDate(date) {
     return `Checkin ${day}/${month}`;
 }
 
-const knownTabs = new Set();
+// sheetId (numeric, khác title) cần cho mọi request batchUpdate định dạng ô —
+// cache theo title để khỏi gọi spreadsheets.get() lại mỗi lần quét.
+const tabSheetIds = new Map();
 
 async function ensureTabExists(sheets, title) {
-    if (knownTabs.has(title)) return;
+    if (tabSheetIds.has(title)) return tabSheetIds.get(title);
 
     const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
-    const exists = (meta.data.sheets || []).some((s) => s.properties.title === title);
+    let sheet = (meta.data.sheets || []).find((s) => s.properties.title === title);
 
-    if (!exists) {
-        await sheets.spreadsheets.batchUpdate({
+    if (!sheet) {
+        const created = await sheets.spreadsheets.batchUpdate({
             spreadsheetId: SHEET_ID,
-            requestBody: { requests: [{ addSheet: { properties: { title } } }] }
+            requestBody: {
+                requests: [{
+                    addSheet: {
+                        properties: {
+                            title,
+                            // Cột A (giờ quét) và D (ghế) rộng hơn hẳn để chứa chữ cỡ lớn —
+                            // đây là 2 cột cần "đập vào mắt" nhất khi nhân viên liếc nhanh.
+                            gridProperties: { columnCount: 8 }
+                        }
+                    }
+                }]
+            }
         });
+        sheet = created.data.replies[0].addSheet;
+
         await sheets.spreadsheets.values.update({
             spreadsheetId: SHEET_ID,
             range: `'${title}'!A1`,
             valueInputOption: "RAW",
             requestBody: { values: [HEADER_ROW] }
         });
+
+        await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: SHEET_ID,
+            requestBody: {
+                requests: [
+                    {
+                        updateDimensionProperties: {
+                            range: { sheetId: sheet.properties.sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
+                            properties: { pixelSize: 160 },
+                            fields: "pixelSize"
+                        }
+                    },
+                    {
+                        updateDimensionProperties: {
+                            range: { sheetId: sheet.properties.sheetId, dimension: "COLUMNS", startIndex: 3, endIndex: 4 },
+                            properties: { pixelSize: 110 },
+                            fields: "pixelSize"
+                        }
+                    }
+                ]
+            }
+        });
     }
 
-    knownTabs.add(title);
+    tabSheetIds.set(title, sheet.properties.sheetId);
+    return sheet.properties.sheetId;
+}
+
+// Format "nổi bật" cho đúng 1 dòng vừa ghi: cột A (giờ quét) + D (ghế) phóng to
+// gấp nhiều lần (~3x cỡ chữ thường), in đậm, căn giữa — đây là 2 thông tin nhân
+// viên cổng cần liếc thấy ngay từ xa, mọi cột khác giữ cỡ chữ mặc định.
+async function highlightRow(sheets, sheetId, rowIndex) {
+    const bigFormat = {
+        userEnteredFormat: {
+            textFormat: { fontSize: 26, bold: true },
+            horizontalAlignment: "CENTER",
+            verticalAlignment: "MIDDLE"
+        }
+    };
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SHEET_ID,
+        requestBody: {
+            requests: [
+                {
+                    repeatCell: {
+                        range: { sheetId, startRowIndex: rowIndex - 1, endRowIndex: rowIndex, startColumnIndex: 0, endColumnIndex: 1 },
+                        cell: bigFormat,
+                        fields: "userEnteredFormat(textFormat,horizontalAlignment,verticalAlignment)"
+                    }
+                },
+                {
+                    repeatCell: {
+                        range: { sheetId, startRowIndex: rowIndex - 1, endRowIndex: rowIndex, startColumnIndex: 3, endColumnIndex: 4 },
+                        cell: bigFormat,
+                        fields: "userEnteredFormat(textFormat,horizontalAlignment,verticalAlignment)"
+                    }
+                },
+                {
+                    updateDimensionProperties: {
+                        range: { sheetId, dimension: "ROWS", startIndex: rowIndex - 1, endIndex: rowIndex },
+                        properties: { pixelSize: 46 },
+                        fields: "pixelSize"
+                    }
+                }
+            ]
+        }
+    });
 }
 
 async function appendGateScanRow({
@@ -73,13 +152,13 @@ async function appendGateScanRow({
 
     const sheets = getSheetsClient();
     const title = tabTitleForDate(scannedAt);
-    await ensureTabExists(sheets, title);
+    const sheetId = await ensureTabExists(sheets, title);
 
     const timeLabel = new Intl.DateTimeFormat("vi-VN", {
         timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", second: "2-digit"
     }).format(scannedAt);
 
-    await sheets.spreadsheets.values.append({
+    const appendRes = await sheets.spreadsheets.values.append({
         spreadsheetId: SHEET_ID,
         range: `'${title}'!A:H`,
         valueInputOption: "RAW",
@@ -97,6 +176,13 @@ async function appendGateScanRow({
             ]]
         }
     });
+
+    // updatedRange dạng "'Checkin 9/10'!A5:H5" — lấy số dòng vừa ghi để format
+    // đúng dòng đó, không ảnh hưởng dòng khác.
+    const rowMatch = appendRes.data.updates.updatedRange.match(/![A-Z]+(\d+):/);
+    if (rowMatch) {
+        await highlightRow(sheets, sheetId, parseInt(rowMatch[1], 10));
+    }
 }
 
 module.exports = { appendGateScanRow };
