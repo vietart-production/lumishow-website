@@ -662,9 +662,14 @@ async function logGateScan({ ticketCode, customerName, seats, showtimeId, outcom
         scannedAt
     });
 
-    // Đẩy lên Google Sheet cho venue xem real-time — không đẩy vé test, và lỗi ở
-    // đây KHÔNG BAO GIỜ được làm hỏng việc quét vé thật ở cổng (chỉ log lỗi).
-    if (!testMode) {
+    // Đẩy lên Google Sheet cho venue xem real-time — chỉ đẩy lượt quét THÀNH
+    // CÔNG thật sự (checkedInCount > 0, tín hiệu có sẵn đúng ở cả 3 route gọi
+    // hàm này: /lookup luôn 0 vì chỉ log khi chưa ready, /checkin 0/1 theo
+    // result.success, /checkin-order là số vé thật sự check-in được). Không
+    // đẩy vé test, và lỗi ở đây KHÔNG BAO GIỜ được làm hỏng việc quét vé thật
+    // ở cổng (chỉ log lỗi). Vẫn ghi MỌI lượt (kể cả lỗi) vào gateScanHistory ở
+    // trên — chỉ Sheet là lọc, không đổi hành vi lưu lịch sử thật.
+    if (!testMode && checkedInCount > 0) {
         appendGateScanRow({
             scannedAt, ticketCode, customerName, seats, showtimeId,
             outcome, checkedInCount, totalCount, message
