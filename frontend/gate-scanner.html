@@ -116,9 +116,13 @@
     .pt-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:3px 0;text-align:left;}
     .pt-row span{color:#333;flex-shrink:0;}
     .pt-row b{font-weight:700;text-align:right;overflow-wrap:anywhere;}
+    /* Số ghế + giờ check-in là 2 thông tin nhân viên cổng cần liếc thấy ngay
+       từ xa (soát khách vào đúng ghế, đối chiếu giờ vào cửa) — phóng to hẳn
+       riêng, tách khỏi .pt-row thường, không chung cỡ chữ với Khách/Suất diễn. */
+    .pt-seat-big{font-size:46px;font-weight:900;letter-spacing:1px;margin:4px 0;}
     .pt-qr img{width:28mm;height:28mm;margin:10px 0;}
     .pt-code{font-size:10px;color:#333;word-break:break-all;margin-top:4px;}
-    .pt-time{font-size:9.5px;color:#555;margin-top:4px;}
+    .pt-time-big{font-size:22px;font-weight:700;color:#000;margin-top:6px;}
   }
 </style>
 </head>
@@ -564,12 +568,12 @@ function printTicket(id){
       <div class="pt-show">Sơn Thần Thủy Quái</div>
       <div class="pt-divider"></div>
       <div class="pt-row"><span>Khách</span><b>${escapeHtml(r.customerName || "—")}</b></div>
-      <div class="pt-row"><span>Ghế</span><b>${escapeHtml(t.seatId || "—")}</b></div>
       <div class="pt-row"><span>Suất diễn</span><b>${escapeHtml(r.showtimeId || "—")}</b></div>
+      <div class="pt-seat-big">${escapeHtml(t.seatId || "—")}</div>
       <div class="pt-divider"></div>
       <div class="pt-qr"><img src="${API}/tickets/${encodeURIComponent(t.ticketCode)}/qr.png" alt="QR"></div>
       <div class="pt-code">${escapeHtml(t.ticketCode)}</div>
-      <div class="pt-time">${escapeHtml(timeStr)}</div>
+      <div class="pt-time-big">${escapeHtml(timeStr)}</div>
     </div>
   `).join("");
 
