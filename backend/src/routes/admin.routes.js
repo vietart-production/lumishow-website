@@ -14,6 +14,7 @@ const {
     cancelTicketBySeat,
     cancelOrderSeats,
     createManualTicket,
+    createManualOrder,
     listUpcomingShowtimes,
     deleteOrder,
     updateOrderCustomerInfo,
@@ -30,7 +31,7 @@ const {
     bulkUpdateSeats,
     renameSeat
 } = require("../services/admin.service");
-const { sendTicketEmail } = require("../services/email.service");
+const { sendTicketEmail, sendOrderNotificationEmail } = require("../services/email.service");
 const { createNews, updateNews, reorderNews, deleteNews } = require("../services/news.service");
 const { logAdminActivity, listAdminActivity } = require("../services/activityLog.service");
 
@@ -236,6 +237,66 @@ router.post("/admin/tickets/create", requirePin, async (req, res) => {
         return res.status(400).json({
             success: false,
             message: error.message || "Không thể tạo vé"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/admin/orders/create
+// body: { password, showtimeId, seatIds[], customerName, customerPhone, customerEmail }
+// Tạo 1 đơn thủ công NHIỀU GHẾ GỘP CHUNG (khác /admin/tickets/create — mỗi
+// lần gọi 1 ghế/1 đơn riêng, dùng cho admin-create-order.html). amount tự
+// cộng giá thật, gửi lại đúng 2 mail dùng cho đơn PayOS thật ngay sau khi
+// tạo xong (soft-fail — lỗi gửi mail không chặn việc đơn đã tạo thành công).
+// ==========================================
+
+router.post("/admin/orders/create", requirePin, async (req, res) => {
+
+    try {
+
+        const { showtimeId, seatIds, customerName, customerPhone, customerEmail } = req.body;
+
+        const result = await createManualOrder({
+            showId: SHOW_ID,
+            showtimeId,
+            seatIds,
+            customerName,
+            customerPhone,
+            customerEmail
+        });
+
+        let ticketEmailSent = false;
+        let notifySent = false;
+
+        try {
+            await sendTicketEmail(result.order, result.tickets);
+            ticketEmailSent = true;
+        } catch (emailError) {
+            console.error("ADMIN CREATE ORDER TICKET EMAIL ERROR:", emailError);
+        }
+
+        try {
+            await sendOrderNotificationEmail(result.order, result.tickets);
+            notifySent = true;
+        } catch (notifyError) {
+            console.error("ADMIN CREATE ORDER NOTIFY EMAIL ERROR:", notifyError);
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: `Đã tạo đơn #${result.order.orderCode}, ${result.tickets.length} ghế, tổng ${result.order.amount.toLocaleString("vi-VN")}đ`,
+            ticketEmailSent,
+            notifySent,
+            result
+        });
+
+    } catch (error) {
+
+        console.error("ADMIN CREATE MANUAL ORDER ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể tạo đơn"
         });
     }
 });

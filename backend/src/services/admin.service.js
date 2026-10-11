@@ -410,6 +410,105 @@ async function createManualTicket({
 }
 
 // ==========================================
+// TẠO ĐƠN VÉ THỦ CÔNG — NHIỀU GHẾ GỘP 1 ĐƠN (admin-create-order.html) —
+// khác createManualTicket() ở trên (1 ghế = 1 đơn riêng, dùng cho ca bán
+// buôn "Rạp Xiếc Customer" mỗi ghế 1 đơn tách lẻ, xem CLAUDE.md). Đây là
+// cho 1 khách mua NHIỀU ghế cùng lúc — amount tự cộng giá THẬT từ Firestore
+// (không tin số client gửi, giống payment.service.js), và (ở route gọi hàm
+// này) tự gửi lại đúng 2 mail đã dùng cho đơn PayOS thật: sendTicketEmail()
+// cho khách + sendOrderNotificationEmail() báo nội bộ team vận hành.
+// ==========================================
+
+async function createManualOrder({ showId, showtimeId, seatIds, customerName, customerPhone, customerEmail }) {
+
+    if (!showId || !showtimeId || !Array.isArray(seatIds) || seatIds.length === 0 || !customerName) {
+        throw new Error("Thiếu showId/showtimeId/seatIds/customerName");
+    }
+    if (seatIds.length > BOOKING_CONFIG.MAX_SEATS_PER_ORDER) {
+        throw new Error(`Số ghế tối đa ${BOOKING_CONFIG.MAX_SEATS_PER_ORDER}`);
+    }
+    if (new Set(seatIds).size !== seatIds.length || seatIds.some((seatId) => !SEAT_ID_RE.test(seatId))) {
+        throw new Error("Danh sách ghế không hợp lệ hoặc bị trùng");
+    }
+
+    const orderCode = Date.now();
+    const orderRef = db.collection("orders").doc();
+    const now = new Date();
+
+    return db.runTransaction(async (transaction) => {
+
+        // ---- ĐỌC ----
+        const seatRefs = seatIds.map((seatId) => db.collection("shows").doc(showId)
+            .collection("showtimes").doc(showtimeId).collection("seats").doc(seatId));
+        const seatSnaps = await Promise.all(seatRefs.map((ref) => transaction.get(ref)));
+
+        seatSnaps.forEach((snap, i) => {
+            if (!snap.exists) throw new Error(`Ghế ${seatIds[i]} không tồn tại`);
+            if (snap.data().status !== "AVAILABLE") {
+                throw new Error(`Ghế ${seatIds[i]} không còn trống (đang ${snap.data().status})`);
+            }
+        });
+
+        // ---- GHI ----
+        const amount = seatSnaps.reduce((sum, snap) => sum + snap.data().price, 0);
+
+        transaction.set(orderRef, {
+            showId, showtimeId, seatIds,
+            customerName,
+            customerPhone: customerPhone || "",
+            customerEmail: customerEmail || "",
+            amount, subtotal: amount, coupon: null,
+            orderStatus: "PAID",
+            paymentStatus: "PAID",
+            paymentMethod: "cash",
+            source: "manual",
+            orderCode,
+            createdAt: now, paidAt: now, updatedAt: now
+        });
+
+        const tickets = seatSnaps.map((snap, i) => {
+            const seatData = snap.data();
+            const seatId = seatIds[i];
+            const ticketCode = `LS-${orderCode}-${seatId}`;
+
+            transaction.set(db.collection("tickets").doc(), {
+                orderId: orderRef.id,
+                showId, showtimeId, seatId,
+                customerName,
+                customerPhone: customerPhone || "",
+                customerEmail: customerEmail || "",
+                price: seatData.price,
+                tier: seatData.tier,
+                tierName: seatData.tierName,
+                paymentStatus: "paid",
+                ticketStatus: "valid",
+                ticketCode,
+                source: "manual",
+                checkedIn: false,
+                checkedInAt: null,
+                createdAt: now
+            });
+
+            return { seatId, tierName: seatData.tierName, price: seatData.price, ticketCode };
+        });
+
+        seatRefs.forEach((ref) => transaction.update(ref, {
+            status: "SOLD", holdId: null, holdExpiresAt: null, updatedAt: now
+        }));
+
+        return {
+            order: {
+                customerName,
+                customerPhone: customerPhone || "",
+                customerEmail: customerEmail || "",
+                orderCode, amount, showId, showtimeId
+            },
+            tickets
+        };
+    });
+}
+
+// ==========================================
 // KHÓA RIÊNG CHO APP SOÁT VÉ (gate) — tách khỏi ADMIN_PIN vì app quét liên
 // tục ở màn hình chính, không đi qua màn hình nhập PIN như AdminPanelController
 // (huỷ/tạo vé). Không có fallback mặc định như ADMIN_PIN: thiếu env thì
@@ -1727,6 +1826,7 @@ module.exports = {
     cancelTicketBySeat,
     cancelOrderSeats,
     createManualTicket,
+    createManualOrder,
     exchangePaidOrderTickets,
     listConflictTickets,
     getSeatPrices,
