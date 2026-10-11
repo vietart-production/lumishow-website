@@ -30,10 +30,43 @@
   .field{display:flex;flex-direction:column;gap:4px;}
   .field label{font-size:11px;color:var(--dim);}
   .field input{padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;min-width:150px;}
-  .field input#fShowtime{font-family:"Courier New",monospace;min-width:170px;}
-  #loadBtn{padding:9px 14px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:12.5px;align-self:flex-end;}
-  #loadBtn:hover{border-color:rgba(255,255,255,.35);}
   .spacer{flex:1;}
+
+  /* ---- Combobox chọn suất diễn — COPY nguyên cơ chế từ partner-orders.html
+     ("Danh sách đơn"), chỉ đổi: chọn 1 pill là tải sơ đồ ngay (không có hàng
+     "Mọi suất diễn" vì trang này bắt buộc phải chọn đúng 1 suất). ---- */
+  .st-picker{position:relative;min-width:230px;}
+  .st-btn{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:8px 12px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);
+    color:var(--text);font-size:13px;cursor:pointer;text-align:left;
+  }
+  .st-btn:hover{border-color:rgba(255,255,255,.22);}
+  .st-btn .chev{width:14px;height:14px;flex-shrink:0;color:var(--dim);transition:transform .15s;}
+  .st-picker.open .st-btn .chev{transform:rotate(180deg);}
+  .st-btn .st-btn-label.placeholder{color:var(--dim);}
+  .st-panel{
+    position:absolute;top:calc(100% + 6px);left:0;width:min(420px,90vw);max-height:min(480px,70vh);
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 16px 40px rgba(0,0,0,.5);overflow:hidden;display:flex;flex-direction:column;z-index:20;
+  }
+  .st-search-row{padding:10px;border-bottom:1px solid var(--border);flex:0 0 auto;}
+  .st-search{width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:13px;}
+  .st-search:focus{outline:none;border-color:var(--green);}
+  .st-list{overflow-y:auto;padding:6px 0;}
+  .st-month{padding:12px 14px 6px;font-size:12px;font-weight:700;color:var(--dim);border-top:1px solid var(--border);margin-top:4px;}
+  .st-month:first-of-type{border-top:none;margin-top:0;}
+  .st-date-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 14px;}
+  .st-date-label{font-size:12.5px;color:var(--text);white-space:nowrap;}
+  .st-date-label .dow{color:var(--dim);margin-right:5px;}
+  .st-pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+  .st-pill{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;white-space:nowrap;}
+  .st-pill.st-open{background:rgba(61,220,132,.14);color:var(--green);}
+  .st-pill.st-open:hover{background:rgba(61,220,132,.26);}
+  .st-pill.st-closed{background:transparent;color:var(--dim);border-color:var(--border);opacity:.6;}
+  .st-pill.st-closed:hover{opacity:1;}
+  .st-pill.active{border-color:currentColor;box-shadow:0 0 0 1px currentColor inset;}
+  .st-no-match{padding:24px 14px;text-align:center;color:var(--dim);font-size:13px;}
   .total-box{text-align:right;}
   .total-box .tl{font-size:11px;color:var(--dim);}
   .total-box .tv{font-size:18px;font-weight:800;color:var(--gold);}
@@ -74,10 +107,20 @@
   <div class="top">
     <h1>🎟️ Tạo đơn vé thủ công — nhiều ghế gộp 1 đơn</h1>
     <div class="field">
-      <label for="fShowtime">Suất diễn (YYYY-MM-DD_HH:MM)</label>
-      <input type="text" id="fShowtime" placeholder="2026-10-18_16:30">
+      <label for="stBtn">Suất diễn</label>
+      <div class="st-picker" id="stPicker">
+        <button type="button" class="st-btn" id="stBtn">
+          <span class="st-btn-label placeholder" id="stBtnLabel">Chọn suất diễn...</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="st-panel" id="stPanel" hidden>
+          <div class="st-search-row">
+            <input type="text" class="st-search" id="stSearch" placeholder="Tìm theo ngày, thứ hoặc giờ...">
+          </div>
+          <div class="st-list" id="stList"></div>
+        </div>
+      </div>
     </div>
-    <button id="loadBtn">Tải sơ đồ</button>
     <div class="field">
       <label for="fName">Tên khách *</label>
       <input type="text" id="fName" placeholder="Nguyễn Văn A">
@@ -149,7 +192,7 @@ async function verifyPin(p){
   if (!res.ok) throw new Error(data.message || "Lỗi không xác định");
 }
 
-function showApp(){ $("gate").hidden = true; $("app").hidden = false; }
+function showApp(){ $("gate").hidden = true; $("app").hidden = false; loadShowtimesList(); }
 
 $("gateBtn").addEventListener("click", async () => {
   const p = $("gateInput").value.trim();
@@ -334,15 +377,101 @@ function updateSelectionUI(){
   $("createBtn").disabled = ids.length === 0 || !currentShowtimeId;
 }
 
+// ---- Combobox chọn suất diễn — COPY cơ chế từ partner-orders.html
+// ("Danh sách đơn"), tái dùng thẳng /partner/showtimes/list (đã chấp nhận
+// PIN admin qua checkPartnerKey() từ lần sửa trước, không cần route riêng).
+// Khác trang đó: chọn 1 pill là TẢI SƠ ĐỒ NGAY (không có hàng "Mọi suất
+// diễn" vì trang này bắt buộc đúng 1 suất).
+const DOW_SHORT = ["CN","T2","T3","T4","T5","T6","T7"];
+let allShowtimes = [];
+
+const stPicker = $("stPicker"), stBtn = $("stBtn"), stBtnLabel = $("stBtnLabel");
+const stPanel = $("stPanel"), stSearch = $("stSearch"), stList = $("stList");
+
+async function loadShowtimesList(){
+  try {
+    const res = await fetch(`${API}/partner/showtimes/list`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey: pin })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) return;
+    allShowtimes = data.showtimes;
+    renderShowtimePicker(allShowtimes);
+  } catch (e) {}
+}
+
+function renderShowtimePicker(showtimes){
+  const byMonth = new Map();
+  showtimes.forEach(st => {
+    const [datePart] = st.showtimeId.split("_");
+    const [y, m] = datePart.split("-").map(Number);
+    const monthKey = `${y}-${String(m).padStart(2,"0")}`;
+    if (!byMonth.has(monthKey)) byMonth.set(monthKey, new Map());
+    const byDate = byMonth.get(monthKey);
+    if (!byDate.has(datePart)) byDate.set(datePart, []);
+    byDate.get(datePart).push(st);
+  });
+
+  const monthKeys = [...byMonth.keys()].sort().reverse();
+  let html = "";
+  if (monthKeys.length === 0) html = `<div class="st-no-match">Không có suất diễn nào khớp tìm kiếm.</div>`;
+
+  monthKeys.forEach(monthKey => {
+    const [y, m] = monthKey.split("-").map(Number);
+    html += `<div class="st-month">Tháng ${m}, ${y}</div>`;
+    const byDate = byMonth.get(monthKey);
+    const dateKeys = [...byDate.keys()].sort().reverse();
+    dateKeys.forEach(datePart => {
+      const [dy, dm, dd] = datePart.split("-").map(Number);
+      const dow = DOW_SHORT[new Date(dy, dm - 1, dd).getDay()];
+      const pills = byDate.get(datePart)
+        .sort((a, b) => a.showtimeId.localeCompare(b.showtimeId))
+        .map(st => {
+          const time = st.showtimeId.split("_")[1];
+          const cls = st.status === "OPEN" ? "st-open" : "st-closed";
+          const active = st.showtimeId === currentShowtimeId ? " active" : "";
+          return `<button type="button" class="st-pill ${cls}${active}" data-showtime="${st.showtimeId}">${time}</button>`;
+        }).join("");
+      html += `<div class="st-date-row">
+        <span class="st-date-label"><span class="dow">${dow}</span>${String(dd).padStart(2,"0")}/${String(dm).padStart(2,"0")}</span>
+        <span class="st-pills">${pills}</span>
+      </div>`;
+    });
+  });
+  stList.innerHTML = html;
+}
+
+function fmtShowtimeLabel(showtimeId){
+  const [datePart, timePart] = showtimeId.split("_");
+  const [y, m, d] = datePart.split("-").map(Number);
+  return `${DOW_SHORT[new Date(y, m - 1, d).getDay()]}, ${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y} · ${timePart}`;
+}
+
+function openStPanel(){ stPanel.hidden = false; stPicker.classList.add("open"); stSearch.value = ""; renderShowtimePicker(allShowtimes); stSearch.focus(); }
+function closeStPanel(){ stPanel.hidden = true; stPicker.classList.remove("open"); }
+
+stBtn.addEventListener("click", () => { stPanel.hidden ? openStPanel() : closeStPanel(); });
+document.addEventListener("click", (e) => { if (!stPicker.contains(e.target)) closeStPanel(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeStPanel(); });
+
+stSearch.addEventListener("input", () => {
+  const q = stSearch.value.trim().toLowerCase();
+  if (!q) { renderShowtimePicker(allShowtimes); return; }
+  renderShowtimePicker(allShowtimes.filter(st => fmtShowtimeLabel(st.showtimeId).toLowerCase().includes(q) || st.showtimeId.toLowerCase().includes(q)));
+});
+
+stList.addEventListener("click", (e) => {
+  const pill = e.target.closest(".st-pill");
+  if (!pill) return;
+  closeStPanel();
+  loadShowtime(pill.dataset.showtime);
+});
+
 // ---- Tải sơ đồ ghế của 1 suất diễn ----
-$("loadBtn").addEventListener("click", loadShowtime);
-async function loadShowtime(){
-  const showtimeId = $("fShowtime").value.trim();
-  if (!/^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}$/.test(showtimeId)) {
-    toast("Suất diễn phải đúng dạng YYYY-MM-DD_HH:MM");
-    return;
-  }
+async function loadShowtime(showtimeId){
   currentShowtimeId = showtimeId;
+  stBtnLabel.textContent = fmtShowtimeLabel(showtimeId);
+  stBtnLabel.classList.remove("placeholder");
   selectedIds.clear();
   try {
     const res = await fetch(`${API}/shows/${SHOW_ID}/showtimes/${showtimeId}/seats`);
@@ -358,7 +487,6 @@ async function loadShowtime(){
     toast("Lỗi tải sơ đồ: " + e.message);
   }
 }
-$("fShowtime").addEventListener("keydown", e => { if (e.key === "Enter") loadShowtime(); });
 
 // ---- Click chọn/bỏ chọn ghế ----
 svg.addEventListener("click", (e) => {
