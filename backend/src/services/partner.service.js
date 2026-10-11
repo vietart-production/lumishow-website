@@ -20,14 +20,19 @@ const PARTNER_API_KEY = process.env.PARTNER_API_KEY || "";
 // So sánh hằng-thời-gian như checkPin() trong admin.service.js — cùng lý do
 // (khác độ dài trả false ngay, không so từng ký tự để tránh rò rỉ qua thời
 // gian phản hồi).
-function checkPartnerKey(key) {
+function checkPartnerKeyStrict(key) {
     if (typeof key !== "string") return false;
-    if (checkPin(key)) return true;
     if (!PARTNER_API_KEY) return false;
     const a = Buffer.from(key);
     const b = Buffer.from(PARTNER_API_KEY);
     if (a.length !== b.length) return false;
     return crypto.timingSafeEqual(a, b);
+}
+
+function checkPartnerKey(key) {
+    if (typeof key !== "string") return false;
+    if (checkPin(key)) return true;
+    return checkPartnerKeyStrict(key);
 }
 
 const ALLOWED_STATUS = new Set(["PAID", "PENDING_PAYMENT", "CANCELLED", "EXPIRED"]);
@@ -176,6 +181,7 @@ async function listShowtimesForPartner() {
 
 module.exports = {
     checkPartnerKey,
+    checkPartnerKeyStrict,
     listOrdersForPartner,
     listShowtimesForPartner
 };

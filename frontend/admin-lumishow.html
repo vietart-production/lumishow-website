@@ -31,9 +31,9 @@ p.sub{color:var(--muted);margin:0 0 30px;font-size:13.5px}
 <body>
 
 <div id="gate">
-  <h2>Nhập PIN admin</h2>
-  <p>Nhập PIN admin để vào danh sách công cụ quản lý.</p>
-  <input type="password" id="gateInput" placeholder="PIN admin" autocomplete="off">
+  <h2>Nhập API key</h2>
+  <p>Nhập API key riêng của trang quản lý tổng hợp này (khác PIN admin dùng ở từng trang con bên trong).</p>
+  <input type="password" id="gateInput" placeholder="API key" autocomplete="off">
   <button id="gateBtn">Vào trang quản lý</button>
   <div id="gateError"></div>
 </div>
@@ -80,26 +80,30 @@ p.sub{color:var(--muted);margin:0 0 30px;font-size:13.5px}
 
 <script>
 const API='https://lumishow-website.onrender.com/api';
-const KEY_STORAGE='lumishow-admin-pin';
+// Dùng CHUNG key sessionStorage với partner-orders.html ("Danh sách đơn")
+// vì cùng xác thực bằng apiKey — mở khoá hub rồi thì vào thẳng trang đó
+// không cần nhập lại. KHÁC với "lumishow-admin-pin" (PIN admin dùng ở các
+// trang con còn lại) — hub cố ý tách riêng (xem CLAUDE.md 2026-10-11).
+const KEY_STORAGE='lumishow_partner_key';
 const $=id=>document.getElementById(id);
 
-async function verifyPin(pin){
-  const r=await fetch(API+'/admin/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pin})});
+async function verifyApiKey(apiKey){
+  const r=await fetch(API+'/partner/verify-key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey})});
   const d=await r.json().catch(()=>({}));
-  if(r.status===401) throw new Error(d.message||'Sai PIN admin');
+  if(r.status===401) throw new Error(d.message||'Sai API key');
   if(!r.ok) throw new Error(d.message||'Lỗi không xác định');
 }
 
 function showApp(){ $('gate').hidden=true; $('app').hidden=false; }
 
 $('gateBtn').addEventListener('click', async () => {
-  const pin=$('gateInput').value.trim();
+  const apiKey=$('gateInput').value.trim();
   $('gateError').textContent='';
-  if(!pin){ $('gateError').textContent='Nhập PIN admin'; return; }
+  if(!apiKey){ $('gateError').textContent='Nhập API key'; return; }
   $('gateBtn').disabled=true;
   try{
-    await verifyPin(pin);
-    try{ sessionStorage.setItem(KEY_STORAGE, pin); }catch(e){}
+    await verifyApiKey(apiKey);
+    try{ sessionStorage.setItem(KEY_STORAGE, apiKey); }catch(e){}
     showApp();
   }catch(err){
     $('gateError').textContent=err.message;
@@ -113,7 +117,7 @@ $('gateInput').addEventListener('keydown', e => { if(e.key==='Enter') $('gateBtn
   let saved='';
   try{ saved=sessionStorage.getItem(KEY_STORAGE)||''; }catch(e){}
   if(!saved) return;
-  verifyPin(saved).then(showApp).catch(()=>{ try{ sessionStorage.removeItem(KEY_STORAGE); }catch(e){} });
+  verifyApiKey(saved).then(showApp).catch(()=>{ try{ sessionStorage.removeItem(KEY_STORAGE); }catch(e){} });
 })();
 </script>
 </body></html>

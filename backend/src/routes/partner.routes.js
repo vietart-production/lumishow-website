@@ -3,7 +3,7 @@ const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
 
-const { checkPartnerKey, listOrdersForPartner, listShowtimesForPartner } = require("../services/partner.service");
+const { checkPartnerKey, checkPartnerKeyStrict, listOrdersForPartner, listShowtimesForPartner } = require("../services/partner.service");
 
 // Endpoint nhạy cảm (đọc PII khách: tên/SĐT/email) nhưng chỉ đọc, không
 // huỷ/tạo được gì — giới hạn nhẹ hơn adminLimiter (huỷ/tạo vé) một chút,
@@ -34,6 +34,25 @@ function requirePartnerKey(req, res, next) {
     }
     next();
 }
+
+// ==========================================
+// POST /api/partner/verify-key
+// body: { apiKey }
+// Dùng cho gate của admin-lumishow.html (trang hub) — CỐ Ý dùng
+// checkPartnerKeyStrict() (chỉ nhận đúng PARTNER_API_KEY thật, KHÔNG nhận
+// ADMIN_PIN) để vào được danh mục tổng hợp mọi trang quản lý cần đúng
+// "api key" riêng, tách khỏi PIN admin dùng ở từng trang con bên trong (xem
+// CLAUDE.md/lịch sử 2026-10-11: đổi chỗ 2 lớp khoá — hub cần api key, trang
+// "Danh sách đơn" (partner-orders.html) dùng PIN admin như các trang khác).
+// Không tự làm gì thêm, giống /admin/verify-pin.
+// ==========================================
+
+router.post("/partner/verify-key", (req, res) => {
+    if (!checkPartnerKeyStrict(req.body.apiKey)) {
+        return res.status(401).json({ success: false, message: "Sai API key" });
+    }
+    return res.status(200).json({ success: true });
+});
 
 // ==========================================
 // POST /api/partner/orders/list
