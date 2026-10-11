@@ -138,9 +138,9 @@
 <body>
 
 <div id="gate">
-  <h2>Khoá app soát vé</h2>
-  <p>Nhập khoá riêng của app soát vé (GATE_API_KEY) để vào màn hình quét vé tại cổng.</p>
-  <input type="password" id="gateInput" placeholder="Khoá app soát vé" autocomplete="off">
+  <h2>Nhập PIN admin</h2>
+  <p>Nhập PIN admin (đồng bộ với các trang quản lý khác) để vào màn hình quét vé tại cổng.</p>
+  <input type="password" id="gateInput" placeholder="PIN admin" autocomplete="off">
   <button id="gateBtn">Vào màn hình quét vé</button>
   <div id="gateError"></div>
 </div>
@@ -193,7 +193,10 @@
 
 <script>
 const API = "https://lumishow-website.onrender.com/api";
-const KEY_STORAGE = "lumishow-gate-key";
+// Dùng CHUNG key sessionStorage với mọi trang admin khác (admin-orders.html,
+// admin-conflicts.html...) — gõ PIN 1 lần, điều hướng qua lại giữa các trang
+// từ admin-lumishow.html không cần nhập lại.
+const KEY_STORAGE = "lumishow-admin-pin";
 const WHOLE_ORDER_STORAGE = "lumishow-gate-whole-order";
 const AUTO_PRINT_STORAGE = "lumishow-gate-auto-print";
 const CUT_EACH_TICKET_STORAGE = "lumishow-gate-cut-each-ticket";
@@ -313,9 +316,11 @@ $("cutEachTicketToggle").addEventListener("change", (e) => {
 });
 
 // ---------------------------------------------------------------
-// GATE (khoá app soát vé) — xác thực bằng cách gọi thẳng /tickets/lookup
-// với 1 mã giả, vì endpoint này không có route /verify-key riêng. 401 = sai
-// khoá, 200 (dù vé không tồn tại) = khoá đúng. Không ghi log admin vì
+// GATE (PIN admin) — xác thực bằng cách gọi thẳng /tickets/lookup với 1 mã
+// giả, vì endpoint này không có route /verify-key riêng. Gửi lên dưới tên
+// field "gateKey" như cũ (backend checkGateKey() giờ chấp nhận cả ADMIN_PIN
+// lẫn GATE_API_KEY gốc của app Unity, xem admin.service.js). 401 = sai PIN,
+// 200 (dù vé không tồn tại) = PIN đúng. Không ghi log admin vì
 // /admin/tickets/lookup bị loại khỏi adminActivityLog từ trước.
 // ---------------------------------------------------------------
 async function verifyGateKey(key){
@@ -325,14 +330,14 @@ async function verifyGateKey(key){
     body: JSON.stringify({ gateKey: key, ticketCode: "GATE-KEY-VERIFY" })
   });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401) throw new Error(data.message || "Sai khoá app soát vé");
+  if (res.status === 401) throw new Error(data.message || "Sai PIN admin");
   if (!res.ok) throw new Error(data.message || "Lỗi không xác định");
 }
 
 $("gateBtn").addEventListener("click", async () => {
   const key = $("gateInput").value.trim();
   $("gateError").textContent = "";
-  if (!key) { $("gateError").textContent = "Nhập khoá app soát vé"; return; }
+  if (!key) { $("gateError").textContent = "Nhập PIN admin"; return; }
   $("gateBtn").disabled = true;
   try {
     await verifyGateKey(key);

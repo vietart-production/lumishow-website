@@ -414,13 +414,23 @@ async function createManualTicket({
 // tục ở màn hình chính, không đi qua màn hình nhập PIN như AdminPanelController
 // (huỷ/tạo vé). Không có fallback mặc định như ADMIN_PIN: thiếu env thì
 // fail-closed, giống PARTNER_API_KEY.
+//
+// (2026-10-11) Đồng bộ PIN cho trang hub admin-lumishow.html: checkGateKey()
+// giờ CŨNG chấp nhận ADMIN_PIN (qua checkPin()) — nhân viên dùng đúng 1 PIN
+// cho mọi trang quản lý, kể cả gate-scanner.html/gate-scan-history.html.
+// GATE_API_KEY gốc GIỮ NGUYÊN, KHÔNG xoá — app Unity (APK đã build, baked-in
+// key riêng) vẫn gọi được y như cũ, không cần build lại. Không làm yếu bảo
+// mật: ADMIN_PIN vốn đã là khoá "cao cấp" hơn GATE_API_KEY (tạo/huỷ được vé
+// thật), cho phép nó làm được việc của khoá thấp cấp hơn không mở thêm lỗ
+// hổng nào mới.
 // ==========================================
 
 const GATE_API_KEY = process.env.GATE_API_KEY || "";
 
 function checkGateKey(key) {
-    if (!GATE_API_KEY) return false;
     if (typeof key !== "string") return false;
+    if (checkPin(key)) return true;
+    if (!GATE_API_KEY) return false;
     const a = Buffer.from(key);
     const b = Buffer.from(GATE_API_KEY);
     if (a.length !== b.length) return false;

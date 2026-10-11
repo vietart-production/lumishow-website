@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin LumiShow</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{--bg:#08100c;--panel:#111a14;--line:#2b4132;--text:#e8eee9;--muted:#a5b1a7;--gold:#fbbb21;--green:#3ddc84}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:40px 20px 70px}
+h1{font-size:25px;margin:0 0 6px;color:var(--gold)}
+p.sub{color:var(--muted);margin:0 0 30px;font-size:13.5px}
+.group{margin-bottom:28px}
+.group h2{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin:0 0 10px 2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;text-decoration:none;color:var(--text);transition:border-color .15s}
+.card:hover{border-color:var(--green)}
+.card .icon{font-size:22px;margin-bottom:8px;display:block}
+.card .title{font-weight:700;font-size:14.5px;margin-bottom:4px}
+.card .desc{color:var(--muted);font-size:12px;line-height:1.5}
+.card .tag{display:inline-block;margin-top:8px;font-size:10px;font-weight:700;letter-spacing:.3px;color:var(--gold);background:rgba(251,187,33,.12);border-radius:5px;padding:2px 7px}
+</style>
+<body><main class="wrap">
+
+<h1>Admin LumiShow</h1>
+<p class="sub">Mọi công cụ quản lý nội bộ đang dùng — bấm vào mục nào sẽ hỏi PIN của riêng mục đó (hầu hết dùng chung PIN admin).</p>
+
+<div class="group">
+<h2>Vé &amp; đơn hàng</h2>
+<div class="grid">
+<a class="card" href="admin-orders.html"><span class="icon">🎟️</span><div class="title">Quản lý đơn vé</div><div class="desc">Tra cứu theo mã đơn, sửa thông tin khách, huỷ một phần ghế, đổi suất/ghế, xoá đơn, gửi lại email vé.</div></a>
+<a class="card" href="admin-conflicts.html"><span class="icon">⚠️</span><div class="title">Xử lý vé xung đột ghế</div><div class="desc">Danh sách đơn đã thanh toán nhưng ghế bị trùng (conflict_needs_review) — đổi sang ghế thay thế.</div></a>
+</div>
+</div>
+
+<div class="group">
+<h2>Cổng soát vé</h2>
+<div class="grid">
+<a class="card" href="gate-scanner.html"><span class="icon">📷</span><div class="title">Soát vé cổng</div><div class="desc">Màn hình quét QR check-in tại cổng, in vé giấy, tự đẩy lịch sử lên Google Sheet.</div></a>
+<a class="card" href="gate-scan-history.html"><span class="icon">📜</span><div class="title">Lịch sử quét vé</div><div class="desc">Toàn bộ lượt quét gần đây (tối đa 100), kể cả lượt lỗi/TestScan.</div></a>
+</div>
+</div>
+
+<div class="group">
+<h2>Suất diễn &amp; nội dung</h2>
+<div class="grid">
+<a class="card" href="admin-showtimes.html"><span class="icon">🗓️</span><div class="title">Quản lý suất diễn</div><div class="desc">Mở/khoá suất, tạo suất mới, sửa sơ đồ ghế hàng loạt (khoá/mở/đổi tên ghế).</div></a>
+<a class="card" href="admin-news.html"><span class="icon">📰</span><div class="title">Quản lý tin tức</div><div class="desc">Thêm/sửa/xoá/sắp xếp tin tức hiển thị ở trang chủ.</div></a>
+</div>
+</div>
+
+<div class="group">
+<h2>Khác</h2>
+<div class="grid">
+<a class="card" href="admin-activity-log.html"><span class="icon">🕑</span><div class="title">Nhật ký hoạt động admin</div><div class="desc">Lịch sử mọi thao tác admin đã thực hiện (ai, lúc nào, làm gì).</div></a>
+<a class="card" href="tester-ticket.html"><span class="icon">🧪</span><div class="title">Đặt vé test</div><div class="desc">Tạo vé ảo lấy QR thật để thử soát vé tại cổng, không đụng dữ liệu show thật.</div></a>
+<a class="card" href="partner-orders.html"><span class="icon">🤝</span><div class="title">Tra cứu đơn (đối tác)</div><div class="desc">Trang cho kế toán/venue đối soát — khoá riêng bằng key đối tác, không dùng chung PIN admin.</div><span class="tag">KEY RIÊNG</span></a>
+</div>
+</div>
+
+</main></body></html>
