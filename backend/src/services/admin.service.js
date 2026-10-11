@@ -1176,6 +1176,193 @@ async function exchangePaidOrderTickets({ showId, orderId, toShowtimeId, toSeatI
 }
 
 // ==========================================
+// XỬ LÝ VÉ "XUNG ĐỘT GHẾ" (ticketStatus: "conflict_needs_review") — xảy ra
+// khi khách thanh toán PayOS thành công nhưng lúc chốt vé thì ghế đã bị
+// người khác giữ/mua trước (race condition, xem payment.service.js). Trước
+// đây xử lý tay hoàn toàn bằng script tạm mỗi lần phát sinh (xem lịch sử ca
+// Việt Anh Nguyễn 2026-10-11) — 3 hàm dưới đây thay bằng tool UI
+// (admin-conflicts.html) để lặp lại nhanh hơn, không cần viết lại script.
+// ==========================================
+
+// Liệt kê TOÀN BỘ đơn đang có vé xung đột, gom theo orderId — để nhân viên
+// biết có ca nào tồn đọng mà không cần biết trước orderCode (khác hẳn
+// findOrderByCode() vốn yêu cầu đã biết mã đơn).
+async function listConflictTickets({ showId }) {
+
+    const snap = await db.collection("tickets")
+        .where("showId", "==", showId)
+        .where("ticketStatus", "==", "conflict_needs_review")
+        .get();
+
+    const byOrder = new Map();
+
+    snap.docs.forEach((doc) => {
+        const t = doc.data();
+        if (!byOrder.has(t.orderId)) {
+            byOrder.set(t.orderId, {
+                orderId: t.orderId,
+                showtimeId: t.showtimeId,
+                customerName: t.customerName || "",
+                customerPhone: t.customerPhone || "",
+                customerEmail: t.customerEmail || "",
+                seats: []
+            });
+        }
+        byOrder.get(t.orderId).seats.push({ seatId: t.seatId, price: t.price, ticketCode: t.ticketCode });
+    });
+
+    const orderIds = [...byOrder.keys()];
+    if (orderIds.length === 0) return [];
+
+    // Ticket conflict không tự lưu orderCode/amount — lấy thêm từ order gốc.
+    const orderSnaps = await Promise.all(orderIds.map((id) => db.collection("orders").doc(id).get()));
+    orderSnaps.forEach((orderSnap, i) => {
+        const group = byOrder.get(orderIds[i]);
+        if (orderSnap.exists) {
+            group.orderCode = orderSnap.data().orderCode;
+            group.amount = orderSnap.data().amount;
+        }
+    });
+
+    return [...byOrder.values()];
+}
+
+// Tra giá/hạng/trạng thái THẬT của các ghế thay thế dự kiến — để tool tự đề
+// xuất amount mới trước khi nhân viên xác nhận (xem resolveConflictTickets).
+async function getSeatPrices({ showId, showtimeId, seatIds }) {
+
+    if (!showId || !showtimeId || !Array.isArray(seatIds) || seatIds.length === 0) {
+        throw new Error("Thiếu showId/showtimeId/seatIds");
+    }
+    if (seatIds.some((seatId) => !SEAT_ID_RE.test(seatId))) {
+        throw new Error("Mã ghế không hợp lệ");
+    }
+
+    const refs = seatIds.map((seatId) => db.collection("shows").doc(showId)
+        .collection("showtimes").doc(showtimeId).collection("seats").doc(seatId));
+    const snaps = await Promise.all(refs.map((ref) => ref.get()));
+
+    return seatIds.map((seatId, i) => {
+        const snap = snaps[i];
+        if (!snap.exists) return { seatId, exists: false, status: null, price: null, tierName: null };
+        const d = snap.data();
+        return { seatId, exists: true, status: d.status, price: d.price, tierName: d.tierName };
+    });
+}
+
+// Huỷ các vé đang "conflict_needs_review" của 1 đơn (giữ dấu vết) và cấp vé
+// "valid" mới cho đúng số ghế thay thế — 1 transaction, đọc hết rồi mới ghi
+// giống các hàm đổi/huỷ vé khác trong file này.
+async function resolveConflictTickets({ showId, orderId, newSeatIds, newAmount }) {
+
+    if (!orderId || !Array.isArray(newSeatIds) || newSeatIds.length === 0) {
+        throw new Error("Thiếu orderId/newSeatIds");
+    }
+    if (new Set(newSeatIds).size !== newSeatIds.length || newSeatIds.some((seatId) => !SEAT_ID_RE.test(seatId))) {
+        throw new Error("Danh sách ghế mới không hợp lệ hoặc bị trùng");
+    }
+    if (!Number.isFinite(newAmount) || newAmount < 0) {
+        throw new Error("Số tiền đơn (amount) không hợp lệ");
+    }
+
+    const orderRef = db.collection("orders").doc(orderId);
+
+    return db.runTransaction(async (transaction) => {
+
+        // ---- ĐỌC ----
+
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists) throw new Error("Không tìm thấy đơn hàng");
+        const order = orderSnap.data();
+
+        if (order.showId && order.showId !== showId) throw new Error("Đơn hàng không thuộc show này");
+        if (order.orderStatus !== "PAID" || order.paymentStatus !== "PAID") {
+            throw new Error("Chỉ xử lý xung đột cho đơn đã thanh toán");
+        }
+
+        const showtimeId = order.showtimeId;
+        if (!showtimeId) throw new Error("Đơn hàng không có suất diễn");
+
+        const conflictSnap = await transaction.get(
+            db.collection("tickets").where("orderId", "==", orderId).where("ticketStatus", "==", "conflict_needs_review")
+        );
+        if (conflictSnap.empty) throw new Error("Đơn không có vé nào đang xung đột (có thể đã được xử lý)");
+        if (conflictSnap.size !== newSeatIds.length) {
+            throw new Error(`Số ghế mới (${newSeatIds.length}) phải bằng số vé đang xung đột (${conflictSnap.size})`);
+        }
+
+        const newSeatRefs = newSeatIds.map((seatId) => db.collection("shows").doc(showId)
+            .collection("showtimes").doc(showtimeId).collection("seats").doc(seatId));
+        const newSeatSnaps = await Promise.all(newSeatRefs.map((ref) => transaction.get(ref)));
+
+        newSeatSnaps.forEach((snap, i) => {
+            if (!snap.exists) throw new Error(`Ghế ${newSeatIds[i]} không tồn tại`);
+            if (snap.data().status !== "AVAILABLE") {
+                throw new Error(`Ghế ${newSeatIds[i]} không còn trống (đang ${snap.data().status})`);
+            }
+        });
+
+        // ---- GHI ----
+
+        const now = new Date();
+
+        conflictSnap.docs.forEach((doc) => {
+            transaction.update(doc.ref, {
+                ticketStatus: "cancelled",
+                cancelledAt: now,
+                cancelledBy: "admin-conflicts",
+                cancelNote: `Xung đột ghế khi chốt đơn — đổi sang ${newSeatIds.join(", ")}`
+            });
+        });
+
+        const newTickets = newSeatSnaps.map((seatSnap, i) => {
+            const seatData = seatSnap.data();
+            const seatId = newSeatIds[i];
+            const ticketCode = `LS-${order.orderCode}-${seatId}`;
+
+            transaction.set(db.collection("tickets").doc(), {
+                orderId, showId, showtimeId, seatId,
+                customerName: order.customerName || "",
+                customerPhone: order.customerPhone || "",
+                customerEmail: order.customerEmail || "",
+                price: seatData.price,
+                paymentStatus: "paid",
+                ticketStatus: "valid",
+                ticketCode,
+                checkedIn: false,
+                checkedInAt: null,
+                createdAt: now
+            });
+
+            transaction.update(newSeatRefs[i], {
+                status: "SOLD", holdId: null, holdExpiresAt: null, updatedAt: now
+            });
+
+            return { seatId, tierName: seatData.tierName, price: seatData.price, ticketCode };
+        });
+
+        transaction.update(orderRef, {
+            seatIds: newSeatIds,
+            amount: newAmount,
+            subtotal: newAmount,
+            updatedAt: now
+        });
+
+        return {
+            order: {
+                customerName: order.customerName || "",
+                customerPhone: order.customerPhone || "",
+                customerEmail: order.customerEmail || "",
+                orderCode: order.orderCode,
+                amount: newAmount,
+                showId, showtimeId
+            },
+            newTickets
+        };
+    });
+}
+
+// ==========================================
 // TRANG "QUẢN LÝ SUẤT DIỄN" (admin-showtimes.html) — thay thế quy trình
 // script tmp_*.js thủ công để thêm/xoá/khoá suất diễn và sửa sơ đồ ghế.
 // Không có collection "ngày diễn" riêng — lịch được tính (derive) trực tiếp
@@ -1531,6 +1718,9 @@ module.exports = {
     cancelOrderSeats,
     createManualTicket,
     exchangePaidOrderTickets,
+    listConflictTickets,
+    getSeatPrices,
+    resolveConflictTickets,
     listUpcomingShowtimes,
     deleteOrder,
     updateOrderCustomerInfo,

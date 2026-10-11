@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Xử lý vé xung đột | LumiShow</title>
+<style>
+:root{--bg:#08100c;--panel:#111a14;--line:#2b4132;--text:#e8eee9;--muted:#a5b1a7;--gold:#fbbb21;--bad:#ef6b68;--ok:#7bde84}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}.wrap{max-width:820px;margin:40px auto;padding:0 18px}h1{font-size:25px;margin:0 0 6px;color:var(--gold)}p.sub{color:var(--muted);margin:0 0 20px}input,button{padding:10px;border:1px solid var(--line);border-radius:4px;background:#0a120d;color:var(--text)}button{background:var(--gold);color:#1e1703;border:0;font-weight:bold;cursor:pointer}.card{background:var(--panel);border:1px solid var(--line);padding:16px;margin:16px 0}.old-seats{color:var(--muted);font-size:13px;line-height:1.7;margin:8px 0}.old-seats b{color:var(--text)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}.row input{flex:1;min-width:200px}.row label{color:var(--muted);font-size:12.5px;white-space:nowrap}#amount{width:120px}.diff{font-size:12.5px;margin-top:6px}.diff.up{color:var(--bad)}.diff.down{color:var(--ok)}.notice{min-height:20px;color:var(--ok);margin:10px 0}.error{color:var(--bad)}.empty{color:var(--muted);text-align:center;padding:40px 0}[hidden]{display:none}
+</style><body><main class="wrap"><h1>Xử lý vé xung đột</h1><p class="sub">Vé bị "xung đột ghế" (khách đã trả tiền nhưng ghế bị người khác giữ trước) — chọn ghế thay thế rồi xác nhận.</p><div id="notice" class="notice"></div><div id="list"><p class="empty">Đang tải...</p></div></main><script>
+const API='https://lumishow-website.onrender.com/api';let pin=sessionStorage.getItem('lumishow-admin-pin')||prompt('Nhập PIN admin');
+const $=id=>document.getElementById(id),say=(text,bad=false)=>{$('notice').textContent=text;$('notice').className=bad?'error':'notice'};
+async function call(path,body){const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,password:pin})}),d=await r.json();if(!r.ok||!d.success)throw Error(d.message||'Thao tác thất bại');return d}
+
+let orders=[];
+
+function money(n){return (n||0).toLocaleString('vi-VN')+'đ'}
+
+function render(){
+  const list=$('list');
+  if(!orders.length){list.innerHTML='<p class="empty">Không có vé nào đang xung đột 🎉</p>';return}
+  list.innerHTML=orders.map(o=>{
+    const oldTotal=o.seats.reduce((s,x)=>s+(x.price||0),0);
+    const oldSeatsLine=o.seats.map(s=>`${s.seatId} (${money(s.price)})`).join(', ');
+    return `<div class="card" data-order="${o.orderId}">
+      <div><b>${esc(o.customerName)}</b> | ${esc(o.customerPhone)} | ${esc(o.customerEmail)}</div>
+      <div class="old-seats">Suất <b>${esc(o.showtimeId)}</b> — #${o.orderCode}<br>Ghế cũ (xung đột): ${esc(oldSeatsLine)} — tổng cũ ${money(oldTotal)}, đơn đã trả ${money(o.amount)}</div>
+      <div class="row">
+        <input type="text" class="newSeats" placeholder="Ghế mới, cách nhau bằng dấu phẩy (vd O44, O46, O48)">
+        <button class="priceBtn">Tính giá</button>
+      </div>
+      <div class="priceResult"></div>
+      <div class="row">
+        <label>Số tiền đơn (amount)</label>
+        <input type="number" id="amount">
+        <button class="confirmBtn">Xác nhận đổi ghế</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.card').forEach(card=>{
+    const orderId=card.dataset.order;
+    const order=orders.find(o=>o.orderId===orderId);
+    card.querySelector('.priceBtn').onclick=()=>priceCheck(card,order);
+    card.querySelector('.confirmBtn').onclick=()=>confirmResolve(card,order);
+  });
+}
+
+function parseSeats(card){
+  return card.querySelector('.newSeats').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
+}
+
+async function priceCheck(card,order){
+  const seatIds=parseSeats(card);
+  const resultEl=card.querySelector('.priceResult');
+  if(!seatIds.length){say('Chưa nhập ghế mới.',true);return}
+  if(seatIds.length!==order.seats.length){say(`Cần nhập đúng ${order.seats.length} ghế (bằng số vé đang xung đột).`,true);return}
+  try{
+    const d=await call('/admin/conflicts/seat-prices',{showtimeId:order.showtimeId,seatIds});
+    const bad=d.seats.find(s=>!s.exists||s.status!=='AVAILABLE');
+    if(bad){resultEl.innerHTML=`<p class="diff up">Ghế ${bad.seatId} ${bad.exists?`đang ${bad.status}, không còn trống`:'không tồn tại'}.</p>`;return}
+    const newTotal=d.seats.reduce((s,x)=>s+(x.price||0),0);
+    const oldTotal=order.seats.reduce((s,x)=>s+(x.price||0),0);
+    const diff=newTotal-oldTotal;
+    const breakdown=d.seats.map(s=>`${s.seatId} (${s.tierName}, ${money(s.price)})`).join(', ');
+    resultEl.innerHTML=`<p class="old-seats">Ghế mới: ${esc(breakdown)} — tổng ${money(newTotal)}</p>`+
+      (diff!==0?`<p class="diff ${diff>0?'up':'down'}">Chênh lệch so với giá ghế cũ: ${diff>0?'+':''}${money(diff)}</p>`:'');
+    card.querySelector('#amount').value=newTotal;
+    say('Đã tính giá — kiểm tra kỹ trước khi xác nhận.');
+  }catch(e){say(e.message,true)}
+}
+
+async function confirmResolve(card,order){
+  const seatIds=parseSeats(card);
+  const newAmount=Number(card.querySelector('#amount').value);
+  if(!seatIds.length){say('Chưa nhập ghế mới.',true);return}
+  if(!Number.isFinite(newAmount)||newAmount<0){say('Số tiền đơn không hợp lệ.',true);return}
+  if(!confirm(`Đổi ${order.seats.length} ghế xung đột sang ${seatIds.join(', ')}, amount mới ${money(newAmount)}?\nKhông thể hoàn tác.`))return;
+  try{
+    const d=await call('/admin/conflicts/resolve',{orderId:order.orderId,newSeatIds:seatIds,newAmount});
+    say(`${d.message}. ${d.emailSent?'Đã gửi email vé mới.':'Gửi email thất bại — dùng admin-orders.html để gửi lại.'}`);
+    orders=orders.filter(o=>o.orderId!==order.orderId);
+    render();
+  }catch(e){say(e.message,true)}
+}
+
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+async function load(){
+  try{
+    const d=await call('/admin/conflicts/list',{});
+    orders=d.orders;
+    render();
+  }catch(e){$('list').innerHTML=`<p class="empty error">${esc(e.message)}</p>`}
+}
+load();
+</script></body></html>

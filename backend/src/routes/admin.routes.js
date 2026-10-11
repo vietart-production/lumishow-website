@@ -20,6 +20,9 @@ const {
     findOrderByCode,
     resendOrderTicketEmail,
     exchangePaidOrderTickets,
+    listConflictTickets,
+    getSeatPrices,
+    resolveConflictTickets,
     getShowtimesCalendar,
     createShowtime,
     setShowtimesStatus,
@@ -611,6 +614,57 @@ router.post("/admin/orders/exchange-tickets", requirePin, async (req, res) => {
             success: false,
             message: error.message || "Không thể đổi vé"
         });
+    }
+});
+
+// ==========================================
+// TRANG "XỬ LÝ VÉ XUNG ĐỘT" (admin-conflicts.html) — xem ghi chú đầy đủ ở
+// 3 hàm service tương ứng trong admin.service.js.
+// ==========================================
+
+router.post("/admin/conflicts/list", requirePin, async (req, res) => {
+    try {
+        const orders = await listConflictTickets({ showId: SHOW_ID });
+        return res.status(200).json({ success: true, orders });
+    } catch (error) {
+        console.error("ADMIN LIST CONFLICTS ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể tải danh sách vé xung đột" });
+    }
+});
+
+router.post("/admin/conflicts/seat-prices", requirePin, async (req, res) => {
+    try {
+        const { showtimeId, seatIds } = req.body;
+        const seats = await getSeatPrices({ showId: SHOW_ID, showtimeId, seatIds });
+        return res.status(200).json({ success: true, seats });
+    } catch (error) {
+        console.error("ADMIN CONFLICT SEAT PRICES ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể tra giá ghế" });
+    }
+});
+
+router.post("/admin/conflicts/resolve", requirePin, async (req, res) => {
+    try {
+        const { orderId, newSeatIds, newAmount } = req.body;
+        const result = await resolveConflictTickets({ showId: SHOW_ID, orderId, newSeatIds, newAmount: Number(newAmount) });
+
+        let emailSent = false;
+        try {
+            await sendTicketEmail(result.order, result.newTickets);
+            emailSent = true;
+        } catch (emailError) {
+            console.error("ADMIN RESOLVE CONFLICT EMAIL ERROR:", emailError);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Đã đổi ${result.newTickets.length} ghế, đơn còn ${result.order.amount.toLocaleString("vi-VN")}đ`,
+            emailSent,
+            result
+        });
+    } catch (error) {
+        console.error("ADMIN RESOLVE CONFLICT ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể xử lý vé xung đột" });
     }
 });
 
