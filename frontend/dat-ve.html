@@ -2383,6 +2383,11 @@ function renderTiers(){
   const wrap = document.getElementById('tierList');
   wrap.textContent = '';
   Object.entries(TIERS).forEach(([key, t]) => {
+    // Tạm ẩn hạng Vua Hùng khỏi sidebar theo yêu cầu (2026-10-11) — CHỈ bỏ
+    // khỏi danh sách lọc hiển thị, ghế VIP trên sơ đồ vẫn giữ nguyên, vẫn
+    // chọn/đặt được bình thường (activeTiers rỗng mặc định = không lọc gì).
+    // Muốn hiện lại: xoá dòng if này.
+    if (key === 'vua-hung') return;
     const label = document.createElement('label');
     label.className = 'tier';
     label.style.setProperty('--tier-c', t.color);
