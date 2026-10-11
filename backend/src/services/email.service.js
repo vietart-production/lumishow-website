@@ -41,14 +41,18 @@ const PUBLIC_API_BASE =
 // (seatCode thật lưu trong hệ thống vẫn là VIPn, đây CHỈ đổi chữ hiển thị
 // cho người đọc mail, không đụng ticketCode/QR nào). Khu VIP hiển thị lại
 // thành 3 "hàng" A/B/C cho khách dễ hình dung: VIP1-12→A1-A12,
-// VIP13-26→B1-B14, VIP27-43→C1-C17.
+// VIP13-26→B1-B14, VIP27-43→C1-C17. LUÔN giữ tiền tố "VIP " phía trước —
+// hàng B/C của khu VIP (vd "B8") trùng hệt mã ghế THƯỜNG ở sơ đồ chính
+// (hàng B thật, hạng Sơn Thần, vị trí hoàn toàn khác) nên bare "B8" một
+// mình sẽ gây nhầm lẫn thật giữa 2 ghế khác nhau — giữ "VIP B8" để không
+// bao giờ lẫn với ghế thường B8.
 function displaySeatId(seatId) {
     const m = /^VIP(\d+)$/.exec(seatId || "");
     if (!m) return seatId;
     const num = parseInt(m[1], 10);
-    if (num <= 12) return "A" + num;
-    if (num <= 26) return "B" + (num - 12);
-    return "C" + (num - 26);
+    if (num <= 12) return "VIP A" + num;
+    if (num <= 26) return "VIP B" + (num - 12);
+    return "VIP C" + (num - 26);
 }
 
 const VENUE_NAME = "Rạp Xiếc Trung Ương";
