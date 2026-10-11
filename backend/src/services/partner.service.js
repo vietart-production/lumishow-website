@@ -1,20 +1,29 @@
 const crypto = require("crypto");
 const { db } = require("../config/firebase");
+const { checkPin } = require("./admin.service");
 
 const SHOW_ID = "son-than-thuy-quai";
 
 // Không có giá trị mặc định như ADMIN_PIN — thiếu env thì fail-closed
-// (checkPartnerKey luôn trả false), tránh vô tình chạy production với key
-// rỗng/đoán được. Đây là key riêng cho đối tác ngoài xem đơn/vé (chỉ đọc),
-// tách hẳn khỏi ADMIN_PIN (PIN đó huỷ/tạo được vé thật).
+// (checkPartnerKey luôn trả false trừ khi gõ đúng ADMIN_PIN), tránh vô tình
+// chạy production với key rỗng/đoán được. Đây vốn là key riêng cho đối tác
+// ngoài xem đơn/vé (chỉ đọc), tách hẳn khỏi ADMIN_PIN (PIN đó huỷ/tạo được
+// vé thật).
+//
+// (2026-10-11) Đồng bộ PIN cho trang hub admin-lumishow.html: checkPartnerKey()
+// giờ CŨNG chấp nhận ADMIN_PIN — nhân viên nội bộ dùng đúng 1 PIN cho mọi
+// trang. PARTNER_API_KEY gốc GIỮ NGUYÊN, đối tác ngoài đã được cấp key riêng
+// vẫn dùng được y như cũ. Cho ADMIN_PIN (khoá cao cấp hơn) làm được việc của
+// key chỉ-đọc này không mở thêm lỗ hổng nào mới.
 const PARTNER_API_KEY = process.env.PARTNER_API_KEY || "";
 
 // So sánh hằng-thời-gian như checkPin() trong admin.service.js — cùng lý do
 // (khác độ dài trả false ngay, không so từng ký tự để tránh rò rỉ qua thời
 // gian phản hồi).
 function checkPartnerKey(key) {
-    if (!PARTNER_API_KEY) return false;
     if (typeof key !== "string") return false;
+    if (checkPin(key)) return true;
+    if (!PARTNER_API_KEY) return false;
     const a = Buffer.from(key);
     const b = Buffer.from(PARTNER_API_KEY);
     if (a.length !== b.length) return false;

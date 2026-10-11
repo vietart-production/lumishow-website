@@ -18,8 +18,27 @@ p.sub{color:var(--muted);margin:0 0 30px;font-size:13.5px}
 .card .title{font-weight:700;font-size:14.5px;margin-bottom:4px}
 .card .desc{color:var(--muted);font-size:12px;line-height:1.5}
 .card .tag{display:inline-block;margin-top:8px;font-size:10px;font-weight:700;letter-spacing:.3px;color:var(--gold);background:rgba(251,187,33,.12);border-radius:5px;padding:2px 7px}
+#gate{max-width:360px;margin:14vh auto;padding:28px;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+#gate h2{font-size:17px;margin:0 0 6px}
+#gate p{color:var(--muted);font-size:12.5px;margin:0 0 18px}
+#gate input{width:100%;padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:#0d1310;color:var(--text);font-size:15px;margin-bottom:10px}
+#gate button{width:100%;padding:11px;border-radius:8px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:15px;cursor:pointer}
+#gate button:hover{opacity:.9}
+#gate button:disabled{opacity:.5;cursor:default}
+#gateError{color:#ef6b68;font-size:12.5px;min-height:16px;margin-top:4px}
+[hidden]{display:none!important}
 </style>
-<body><main class="wrap">
+<body>
+
+<div id="gate">
+  <h2>Nhập PIN admin</h2>
+  <p>Nhập PIN admin để vào danh sách công cụ quản lý.</p>
+  <input type="password" id="gateInput" placeholder="PIN admin" autocomplete="off">
+  <button id="gateBtn">Vào trang quản lý</button>
+  <div id="gateError"></div>
+</div>
+
+<main class="wrap" id="app" hidden>
 
 <h1>Admin LumiShow</h1>
 <p class="sub">Mọi công cụ quản lý nội bộ đang dùng — bấm vào mục nào sẽ hỏi PIN của riêng mục đó (hầu hết dùng chung PIN admin).</p>
@@ -53,8 +72,48 @@ p.sub{color:var(--muted);margin:0 0 30px;font-size:13.5px}
 <div class="grid">
 <a class="card" href="admin-activity-log.html"><span class="icon">🕑</span><div class="title">Nhật ký hoạt động admin</div><div class="desc">Lịch sử mọi thao tác admin đã thực hiện (ai, lúc nào, làm gì).</div></a>
 <a class="card" href="tester-ticket.html"><span class="icon">🧪</span><div class="title">Đặt vé test</div><div class="desc">Tạo vé ảo lấy QR thật để thử soát vé tại cổng, không đụng dữ liệu show thật.</div></a>
-<a class="card" href="partner-orders.html"><span class="icon">🤝</span><div class="title">Tra cứu đơn (đối tác)</div><div class="desc">Trang cho kế toán/venue đối soát — khoá riêng bằng key đối tác, không dùng chung PIN admin.</div><span class="tag">KEY RIÊNG</span></a>
+<a class="card" href="partner-orders.html"><span class="icon">🤝</span><div class="title">Danh sách đơn</div><div class="desc">Tra cứu/đối soát đơn vé, xuất Excel. Dùng chung PIN admin — đối tác ngoài vẫn dùng được key riêng đã cấp.</div></a>
 </div>
 </div>
 
-</main></body></html>
+</main>
+
+<script>
+const API='https://lumishow-website.onrender.com/api';
+const KEY_STORAGE='lumishow-admin-pin';
+const $=id=>document.getElementById(id);
+
+async function verifyPin(pin){
+  const r=await fetch(API+'/admin/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pin})});
+  const d=await r.json().catch(()=>({}));
+  if(r.status===401) throw new Error(d.message||'Sai PIN admin');
+  if(!r.ok) throw new Error(d.message||'Lỗi không xác định');
+}
+
+function showApp(){ $('gate').hidden=true; $('app').hidden=false; }
+
+$('gateBtn').addEventListener('click', async () => {
+  const pin=$('gateInput').value.trim();
+  $('gateError').textContent='';
+  if(!pin){ $('gateError').textContent='Nhập PIN admin'; return; }
+  $('gateBtn').disabled=true;
+  try{
+    await verifyPin(pin);
+    try{ sessionStorage.setItem(KEY_STORAGE, pin); }catch(e){}
+    showApp();
+  }catch(err){
+    $('gateError').textContent=err.message;
+  }finally{
+    $('gateBtn').disabled=false;
+  }
+});
+$('gateInput').addEventListener('keydown', e => { if(e.key==='Enter') $('gateBtn').click(); });
+
+(function tryResume(){
+  let saved='';
+  try{ saved=sessionStorage.getItem(KEY_STORAGE)||''; }catch(e){}
+  if(!saved) return;
+  verifyPin(saved).then(showApp).catch(()=>{ try{ sessionStorage.removeItem(KEY_STORAGE); }catch(e){} });
+})();
+</script>
+</body></html>
