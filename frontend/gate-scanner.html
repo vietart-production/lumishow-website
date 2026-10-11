@@ -61,7 +61,10 @@
   .toggle-row label{cursor:pointer;}
 
   .feed-label{color:var(--dim);font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;margin:0 0 10px 2px;}
-  #resultsFeed{display:flex;flex-direction:column;gap:10px;}
+  /* Cao vừa đúng ~5 thẻ (ước lượng theo chiều cao .result-card trung bình),
+     cuộn dọc cho phần còn lại — lịch sử tải từ server nên có thể dài hơn
+     nhiều 5 mục. */
+  #resultsFeed{display:flex;flex-direction:column;gap:10px;max-height:650px;overflow-y:auto;padding-right:4px;}
   .result-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 16px;border-left:4px solid var(--border);}
   .result-card.ok{border-left-color:var(--green);}
   .result-card.partial{border-left-color:var(--gold);}
@@ -180,9 +183,9 @@
       </div>
     </div>
 
-    <p class="feed-label">3 lượt quét gần nhất</p>
+    <p class="feed-label">Lịch sử quét vé</p>
     <div id="resultsFeed">
-      <p class="feed-empty" id="feedEmpty">Chưa có lượt quét nào</p>
+      <p class="feed-empty" id="feedEmpty">Đang tải lịch sử...</p>
     </div>
 
   </div>
@@ -202,7 +205,10 @@ const CUT_EACH_TICKET_STORAGE = "lumishow-gate-cut-each-ticket";
 const TICKET_CODE_PATTERN = /^[A-Za-z0-9_-]{4,64}$/;
 const SCAN_DEBOUNCE_MS = 150;
 const MAX_INVALID_STABLE_WAITS = 12;
-const MAX_RESULTS = 3;
+// Giới hạn mềm cho mảng results trong bộ nhớ (khớp trần 100 bản ghi của
+// gateScanHistory ở backend, xem listGateScanHistory()) — tránh phình vô hạn
+// trong 1 ca làm dài, không phải để "chỉ hiện 3" như tên cũ nữa.
+const MAX_RESULTS = 100;
 
 let GATE_KEY = "";
 let lastScanLen = -1;
@@ -335,6 +341,7 @@ $("gateBtn").addEventListener("click", async () => {
     $("gate").hidden = true;
     $("app").hidden = false;
     focusScanInput();
+    loadHistoryFromServer();
   } catch (err) {
     $("gateError").textContent = err.message;
   } finally {
@@ -351,6 +358,7 @@ $("gateInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("ga
   $("gate").hidden = true;
   $("app").hidden = false;
   focusScanInput();
+  loadHistoryFromServer();
 })();
 
 // ---------------------------------------------------------------
@@ -470,14 +478,15 @@ async function processQueue(){
 
 // result chuẩn hoá chung cho cả 3 nguồn (cache/checkin 1 vé/checkin cả đơn):
 // { ok, partial, ticketCode, customerName, showtimeId, seats:[...], checkedInCount,
-//   totalCount, message, ticketsDetail:[{ticketCode,seatId},...] }
-// ticketsDetail giữ ĐÚNG ticketCode thật của từng ghế (không gộp mất như seats)
-// — cần để in riêng từng vé nhỏ với QR đúng của ghế đó, xem printTicket().
+//   totalCount, message } — KHÔNG tự giữ ticketsDetail riêng nữa, suy ra lúc
+// cần (in vé) bằng deriveTicketsDetail() để dùng chung được với lịch sử tải
+// từ server (gateScanHistory chỉ lưu seats + 1 ticketCode đại diện, không lưu
+// ticketCode riêng từng ghế).
 async function handleScan(code){
   let result;
 
   if (checkedCache.has(code)) {
-    result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: "Vé đã được check-in trước đó", ticketsDetail: [] };
+    result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: "Vé đã được check-in trước đó" };
   } else {
     try {
       const lookup = await callGateApi("/admin/tickets/lookup", { ticketCode: code });
@@ -489,8 +498,7 @@ async function handleScan(code){
           showtimeId: lookup.ticket?.showtimeId || null,
           seats: lookup.ticket?.seatId ? [lookup.ticket.seatId] : [],
           checkedInCount: 0, totalCount: 1,
-          message: lookup.message,
-          ticketsDetail: []
+          message: lookup.message
         };
       } else if (wholeOrderMode) {
         const order = await callGateApi("/admin/tickets/checkin-order", { ticketCode: code, dryRun: testScanMode });
@@ -510,8 +518,7 @@ async function handleScan(code){
           seats,
           checkedInCount: checkedIn,
           totalCount: total,
-          message: checkedIn === 0 ? "Không vé nào check-in được (có thể đã check-in trước)" : "Đã check-in cả đơn",
-          ticketsDetail: successTickets.map((t) => ({ ticketCode: t.ticketCode, seatId: t.seatId || null }))
+          message: checkedIn === 0 ? "Không vé nào check-in được (có thể đã check-in trước)" : "Đã check-in cả đơn"
         };
       } else {
         const checkin = await callGateApi("/admin/tickets/checkin", { ticketCode: code, dryRun: testScanMode });
@@ -522,12 +529,11 @@ async function handleScan(code){
           showtimeId: checkin.ticket?.showtimeId || null,
           seats: checkin.ticket?.seatId ? [checkin.ticket.seatId] : [],
           checkedInCount: checkin.success ? 1 : 0, totalCount: 1,
-          message: checkin.message,
-          ticketsDetail: checkin.success ? [{ ticketCode: code, seatId: checkin.ticket?.seatId || null }] : []
+          message: checkin.message
         };
       }
     } catch (err) {
-      result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: err.message || "Lỗi hệ thống", ticketsDetail: [] };
+      result = { ok: false, partial: false, ticketCode: code, customerName: "", showtimeId: null, seats: [], checkedInCount: 0, totalCount: 1, message: err.message || "Lỗi hệ thống" };
     }
   }
 
@@ -558,6 +564,53 @@ function displayShowtimeId(id){
   return (id || "").replace(/_?TESTER$/i, "");
 }
 
+// Suy ra ticketCode RIÊNG của từng ghế từ đúng 1 ticketCode đại diện (mã vừa
+// quét) + danh sách seatId — dựa vào quy ước CỐ ĐỊNH toàn hệ thống
+// "LS-{orderCode}-{seatId}" (payment.service.js/admin.service.js, mọi nơi tạo
+// vé đều theo đúng format này). Cần hàm này vì lịch sử tải từ server
+// (gateScanHistory) chỉ lưu 1 ticketCode/lượt quét + mảng seats, không lưu
+// ticketCode riêng từng ghế — dùng CHUNG cho cả vé vừa quét lẫn vé tải lại từ
+// lịch sử, khỏi phải giữ 2 đường logic song song.
+function deriveTicketsDetail(ticketCode, seats){
+  if (!ticketCode || !seats || !seats.length) return [];
+  const lastDash = ticketCode.lastIndexOf("-");
+  if (lastDash === -1) return [];
+  const prefix = ticketCode.slice(0, lastDash); // "LS-{orderCode}"
+  return seats.map((seatId) => ({ ticketCode: `${prefix}-${seatId}`, seatId }));
+}
+
+// Tải lịch sử đã lưu ở server (gateScanHistory, tối đa 100 lượt gần nhất) —
+// gọi lúc vào trang (cả lần nhập khoá mới lẫn resume session) để reload
+// trang không mất lịch sử, khác hẳn mảng results cũ chỉ sống trong bộ nhớ
+// tab hiện tại.
+async function loadHistoryFromServer(){
+  try {
+    const data = await callGateApi("/admin/tickets/scan-history", {});
+    results = (data.history || []).map((r) => {
+      const checkedInCount = r.checkedInCount || 0;
+      const totalCount = r.totalCount || 1;
+      return {
+        id: ++resultIdCounter,
+        time: r.scannedAt ? new Date(r.scannedAt) : new Date(),
+        ticketCode: r.ticketCode || "",
+        customerName: r.customerName || "",
+        showtimeId: r.showtimeId || null,
+        seats: r.seats || [],
+        checkedInCount, totalCount,
+        ok: checkedInCount > 0,
+        partial: checkedInCount > 0 && checkedInCount < totalCount,
+        message: r.message || "",
+        testMode: !!r.testMode
+      };
+    });
+    renderResults();
+  } catch (err) {
+    // Không chặn màn hình quét nếu tải lịch sử lỗi (vd mất mạng) — chỉ để
+    // trống, staff vẫn quét được bình thường.
+    console.error("LOAD HISTORY ERROR:", err);
+  }
+}
+
 // In vé giấy — đổ dữ liệu vào #printArea (ẨN trên màn hình, chỉ hiện khi
 // in, xem CSS @media print) rồi gọi window.print(). Dùng dialog in của hệ
 // điều hành nên chạy được với BẤT KỲ máy in đang kết nối (USB/Bluetooth đã
@@ -570,12 +623,14 @@ function printTicket(id){
   }
 
   const r = results.find((x) => x.id === id);
-  if (!r || !r.ticketsDetail || !r.ticketsDetail.length) return;
+  if (!r) return;
+  const ticketsDetail = deriveTicketsDetail(r.ticketCode, r.seats);
+  if (!ticketsDetail.length) return;
 
   const timeStr = r.time.toLocaleDateString("vi-VN") + " " + fmtTime(r.time);
 
   $("printArea").classList.toggle("no-cut", !cutEachTicket);
-  $("printArea").innerHTML = r.ticketsDetail.map((t) => `
+  $("printArea").innerHTML = ticketsDetail.map((t) => `
     <div class="ticket-page">
       <div class="pt-brand">LUMISHOW</div>
       <div class="pt-show">Sơn Thần Thủy Quái</div>
