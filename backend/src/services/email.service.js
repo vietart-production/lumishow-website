@@ -37,6 +37,20 @@ const TECH_ALERT_EMAILS = parseEmailList(
 const PUBLIC_API_BASE =
     process.env.RENDER_EXTERNAL_URL || "https://lumishow-website.onrender.com";
 
+// Nhãn hiển thị khu VIP — COPY nguyên logic vipSeatLabel() từ dat-ve.html
+// (seatCode thật lưu trong hệ thống vẫn là VIPn, đây CHỈ đổi chữ hiển thị
+// cho người đọc mail, không đụng ticketCode/QR nào). Khu VIP hiển thị lại
+// thành 3 "hàng" A/B/C cho khách dễ hình dung: VIP1-12→A1-A12,
+// VIP13-26→B1-B14, VIP27-43→C1-C17.
+function displaySeatId(seatId) {
+    const m = /^VIP(\d+)$/.exec(seatId || "");
+    if (!m) return seatId;
+    const num = parseInt(m[1], 10);
+    if (num <= 12) return "A" + num;
+    if (num <= 26) return "B" + (num - 12);
+    return "C" + (num - 26);
+}
+
 const VENUE_NAME = "Rạp Xiếc Trung Ương";
 const VENUE_ADDRESS = "67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội";
 const SUPPORT_HOTLINE = "0869 512 246 (Ms. Chi)";
@@ -115,7 +129,7 @@ function qrBlockHtml(ticket, index, total) {
             ${divider}
             ${numberLabel}
             <img src="${qrImgUrl(ticket.ticketCode)}" width="160" height="160" alt="QR vé ${ticket.ticketCode}" style="display:block;margin:0 auto;border-radius:10px;background:#fff;padding:12px;">
-            <div style="color:#E6F1EA;font-size:14px;font-weight:700;margin-top:10px;">Ghế ${ticket.seatId}${ticket.tierName ? ` — ${ticket.tierName}` : ""}</div>
+            <div style="color:#E6F1EA;font-size:14px;font-weight:700;margin-top:10px;">Ghế ${displaySeatId(ticket.seatId)}${ticket.tierName ? ` — ${ticket.tierName}` : ""}</div>
         </td>
     </tr>`;
 }
@@ -125,7 +139,7 @@ async function buildTicketEmailHtml(order, tickets) {
     const { time, date } = splitShowtime(order.showtimeId);
 
     const tierSummary = [...new Set(tickets.map((t) => t.tierName))].join(", ");
-    const seatSummary = tickets.map((t) => t.seatId).join(", ");
+    const seatSummary = tickets.map((t) => displaySeatId(t.seatId)).join(", ");
 
     const qrThumbs = tickets
         .map((t, i) => qrBlockHtml(t, i, tickets.length))
@@ -315,7 +329,7 @@ async function sendTicketEmail(order, tickets) {
 function buildOrderNotificationHtml(order, tickets) {
 
     const { time, date } = splitShowtime(order.showtimeId);
-    const seatList = tickets.map((t) => t.seatId).join(", ");
+    const seatList = tickets.map((t) => displaySeatId(t.seatId)).join(", ");
     const tierSummary = [...new Set(tickets.map((t) => t.tierName))].join(", ");
 
     return `
