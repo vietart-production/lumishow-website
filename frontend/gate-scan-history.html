@@ -118,6 +118,16 @@ function fmtDateTime(iso){
   return d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+// Nhãn hiển thị khu VIP — đồng bộ với email.service.js/gate-scanner.html.
+function displaySeatId(seatId){
+  const m = /^VIP(\d+)$/.exec(seatId || "");
+  if (!m) return seatId;
+  const num = parseInt(m[1], 10);
+  if (num <= 12) return "VIP A" + num;
+  if (num <= 26) return "VIP B" + (num - 12);
+  return "VIP C" + (num - 26);
+}
+
 function renderHistory(items){
   if (!items.length) {
     $("list").innerHTML = '<p class="empty">Chưa có lượt quét nào</p>';
@@ -135,7 +145,7 @@ function renderHistory(items){
       : (partial ? `${icon} CHECK-IN MỘT PHẦN${countSuffix}` : `${icon} ĐÃ CHECK-IN${countSuffix}`);
     const testBadge = r.testMode ? ' <span style="color:var(--gold);font-weight:800;">[TEST]</span>' : "";
 
-    const seatLine = (r.seats || []).length ? "Ghế " + r.seats.join(", ") : "";
+    const seatLine = (r.seats || []).length ? "Ghế " + r.seats.map(displaySeatId).join(", ") : "";
     const nameSeatLine = [r.customerName, seatLine].filter(Boolean).join(" · ");
     const subLine = [r.showtimeId, (!ok || partial) ? r.message : ""].filter(Boolean).join(" · ");
 

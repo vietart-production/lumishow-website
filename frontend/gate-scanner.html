@@ -569,6 +569,21 @@ function displayShowtimeId(id){
   return (id || "").replace(/_?TESTER$/i, "");
 }
 
+// Nhãn hiển thị khu VIP — COPY nguyên logic vipSeatLabel() từ dat-ve.html
+// (seatCode thật lưu trong hệ thống vẫn là VIPn, đây CHỈ đổi chữ hiển thị
+// trên vé in + feed màn hình, KHÔNG đụng ticketCode dùng để tạo QR/in).
+// Giữ tiền tố "VIP " — hàng B/C của khu VIP (vd "B8") trùng hệt mã ghế
+// THƯỜNG ở sơ đồ chính, bare "B8" một mình gây nhầm lẫn thật giữa 2 ghế
+// khác nhau (xem email.service.js, cùng logic, đồng bộ nhãn email/vé in).
+function displaySeatId(seatId){
+  const m = /^VIP(\d+)$/.exec(seatId || "");
+  if (!m) return seatId;
+  const num = parseInt(m[1], 10);
+  if (num <= 12) return "VIP A" + num;
+  if (num <= 26) return "VIP B" + (num - 12);
+  return "VIP C" + (num - 26);
+}
+
 // Suy ra ticketCode RIÊNG của từng ghế từ đúng 1 ticketCode đại diện (mã vừa
 // quét) + danh sách seatId — dựa vào quy ước CỐ ĐỊNH toàn hệ thống
 // "LS-{orderCode}-{seatId}" (payment.service.js/admin.service.js, mọi nơi tạo
@@ -650,7 +665,7 @@ function printTicket(id){
         <img src="${API}/tickets/${encodeURIComponent(t.ticketCode)}/qr.png" alt="QR">
         <div>
           <div class="pt-seat-label">Ghế</div>
-          <div class="pt-seat-value">${escapeHtml(t.seatId || "—")}</div>
+          <div class="pt-seat-value">${escapeHtml(displaySeatId(t.seatId) || "—")}</div>
         </div>
       </div>
       <div class="pt-code">${escapeHtml(t.ticketCode)}</div>
@@ -685,7 +700,7 @@ function renderResults(){
       : (r.partial ? `${icon} CHECK-IN MỘT PHẦN${countSuffix}` : `${icon} ĐÃ CHECK-IN${countSuffix}`);
     const testBadge = r.testMode ? ' <span style="color:var(--gold);font-weight:800;">[TEST — chưa ghi]</span>' : "";
 
-    const seatLine = r.seats.length ? "Ghế " + r.seats.join(", ") : "";
+    const seatLine = r.seats.length ? "Ghế " + r.seats.map(displaySeatId).join(", ") : "";
     const nameSeatLine = [r.customerName, seatLine].filter(Boolean).join(" · ");
 
     const subLine = [displayShowtimeId(r.showtimeId), (!r.ok || r.partial) ? r.message : ""].filter(Boolean).join(" · ");
