@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quản lý mã giảm giá | LumiShow</title>
+<style>
+:root{--bg:#08100c;--panel:#111a14;--line:#2b4132;--text:#e8eee9;--muted:#a5b1a7;--gold:#fbbb21;--bad:#ef6b68;--ok:#7bde84}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}.wrap{max-width:760px;margin:40px auto;padding:0 18px}h1{font-size:25px;margin:0 0 6px;color:var(--gold)}p.sub{color:var(--muted);margin:0 0 20px}.card{background:var(--panel);border:1px solid var(--line);padding:16px;margin:16px 0}input,button{padding:10px;border:1px solid var(--line);border-radius:4px;background:#0a120d;color:var(--text)}button{background:var(--gold);color:#1e1703;border:0;font-weight:bold;cursor:pointer}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:12px;color:var(--muted)}.field input{width:150px}#code{width:180px;text-transform:uppercase}.notice{min-height:20px;color:var(--ok);margin:10px 0}.error{color:var(--bad)}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase}tr.inactive td{color:var(--muted)}.tag{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}.tag.active{background:rgba(123,222,132,.15);color:var(--ok)}.tag.inactive{background:rgba(239,107,104,.15);color:var(--bad)}.toggleBtn{padding:5px 10px;font-size:12px}.empty{color:var(--muted);text-align:center;padding:30px 0}
+</style><body><main class="wrap"><h1>Quản lý mã giảm giá</h1><p class="sub">Tạo/cập nhật mã, bật/tắt mã đang có.</p>
+
+<div class="card">
+<div class="row">
+<div class="field"><label>Mã</label><input type="text" id="code" placeholder="SALE10"></div>
+<div class="field"><label>% giảm</label><input type="number" id="percentOff" min="1" max="100" style="width:80px"></div>
+<div class="field"><label>Số lượt tối đa</label><input type="number" id="maxUses" min="1" placeholder="Không giới hạn"></div>
+<div class="field"><label>Hạn dùng</label><input type="date" id="expiresAt"></div>
+<button id="createBtn">Tạo / cập nhật</button>
+</div>
+</div>
+
+<div id="notice" class="notice"></div>
+
+<div class="card">
+<table>
+<thead><tr><th>Mã</th><th>%</th><th>Đã dùng/Tối đa</th><th>Hạn</th><th>Trạng thái</th><th></th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+<div id="empty" class="empty" hidden>Chưa có mã giảm giá nào.</div>
+</div>
+
+</main><script>
+const API='https://lumishow-website.onrender.com/api';let pin=sessionStorage.getItem('lumishow-admin-pin')||prompt('Nhập PIN admin');
+const $=id=>document.getElementById(id),say=(text,bad=false)=>{$('notice').textContent=text;$('notice').className=bad?'error':'notice'};
+async function call(path,body){const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,password:pin})}),d=await r.json();if(!r.ok||!d.success)throw Error(d.message||'Thao tác thất bại');return d}
+
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmtExpires(iso){ if(!iso) return '—'; return new Date(iso).toLocaleDateString('vi-VN') }
+
+async function load(){
+  try{
+    const d=await call('/admin/coupons/list',{});
+    render(d.coupons);
+  }catch(e){say(e.message,true)}
+}
+
+function render(coupons){
+  if(!coupons.length){$('rows').innerHTML='';$('empty').hidden=false;return}
+  $('empty').hidden=true;
+  $('rows').innerHTML=coupons.map(c=>`
+    <tr class="${c.active?'':'inactive'}">
+      <td><b>${esc(c.code)}</b></td>
+      <td>${c.percentOff}%</td>
+      <td>${c.usedCount}${c.maxUses!=null?'/'+c.maxUses:''}</td>
+      <td>${fmtExpires(c.expiresAt)}</td>
+      <td><span class="tag ${c.active?'active':'inactive'}">${c.active?'Đang bật':'Tạm ngừng'}</span></td>
+      <td><button class="toggleBtn" data-code="${esc(c.code)}" data-active="${c.active}">${c.active?'Tạm ngừng':'Kích hoạt lại'}</button></td>
+    </tr>
+  `).join('');
+}
+
+$('rows').addEventListener('click', async e => {
+  const btn=e.target.closest('.toggleBtn');
+  if(!btn) return;
+  const code=btn.dataset.code, nextActive=btn.dataset.active!=='true';
+  try{
+    const d=await call('/admin/coupons/set-active',{code,active:nextActive});
+    say(d.message);
+    await load();
+  }catch(err){say(err.message,true)}
+});
+
+$('createBtn').addEventListener('click', async () => {
+  const code=$('code').value.trim();
+  const percentOff=Number($('percentOff').value);
+  const maxUses=$('maxUses').value.trim()?Number($('maxUses').value):null;
+  const expiresAt=$('expiresAt').value||null;
+  if(!code){say('Nhập mã coupon.',true);return}
+  if(!percentOff||percentOff<1||percentOff>100){say('% giảm phải từ 1 đến 100.',true);return}
+  try{
+    const d=await call('/admin/coupons/create',{code,percentOff,maxUses,expiresAt});
+    say(d.message);
+    $('code').value='';$('percentOff').value='';$('maxUses').value='';$('expiresAt').value='';
+    await load();
+  }catch(e){say(e.message,true)}
+});
+
+load();
+</script></body></html>

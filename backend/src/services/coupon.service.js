@@ -202,10 +202,97 @@ async function releaseCouponUse(rawCode) {
     }
 }
 
+// ==========================================
+// QUẢN TRỊ COUPON (admin-coupons.html) — port nguyên logic từ
+// scripts/manageCoupons.js (trước đây chỉ chạy tay qua CLI mỗi lần cần tạo
+// mã, xem lịch sử phiên làm việc) thành hàm gọi được qua route admin PIN,
+// không cần script tạm nữa.
+// ==========================================
+
+async function createOrUpdateCoupon({ code: rawCode, percentOff, maxUses, expiresAt: rawExpiresAt }) {
+
+    const code = normalizeCode(rawCode);
+    if (!code) {
+        throw new Error("Thiếu mã coupon.");
+    }
+
+    const percent = Number(percentOff);
+    if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+        throw new Error("percentOff phải là số trong khoảng 1-100.");
+    }
+
+    let max = null;
+    if (maxUses !== null && maxUses !== undefined && maxUses !== "") {
+        max = Number(maxUses);
+        if (!Number.isFinite(max) || max <= 0 || !Number.isInteger(max)) {
+            throw new Error("Số lượt tối đa phải là số nguyên dương.");
+        }
+    }
+
+    let expiresAt = null;
+    if (rawExpiresAt) {
+        const parsed = new Date(rawExpiresAt);
+        if (Number.isNaN(parsed.getTime())) {
+            throw new Error("Hạn dùng không hợp lệ (dạng YYYY-MM-DD).");
+        }
+        expiresAt = parsed;
+    }
+
+    const ref = db.collection("coupons").doc(code);
+    const existing = await ref.get();
+
+    await ref.set({
+        code,
+        percentOff: percent,
+        active: true,
+        maxUses: max,
+        usedCount: existing.exists ? (existing.data().usedCount || 0) : 0,
+        expiresAt,
+        createdAt: existing.exists ? existing.data().createdAt : FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    return { code, percentOff: percent, maxUses: max, expiresAt, isNew: !existing.exists };
+}
+
+async function listCoupons() {
+    const snap = await db.collection("coupons").orderBy("createdAt", "desc").get();
+    return snap.docs.map((doc) => {
+        const d = doc.data();
+        return {
+            code: doc.id,
+            percentOff: d.percentOff,
+            active: !!d.active,
+            maxUses: d.maxUses != null ? d.maxUses : null,
+            usedCount: d.usedCount || 0,
+            expiresAt: d.expiresAt?.toDate ? d.expiresAt.toDate().toISOString() : (d.expiresAt || null)
+        };
+    });
+}
+
+async function setCouponActive({ code: rawCode, active }) {
+    const code = normalizeCode(rawCode);
+    if (!code) {
+        throw new Error("Thiếu mã coupon.");
+    }
+
+    const ref = db.collection("coupons").doc(code);
+    const snap = await ref.get();
+    if (!snap.exists) {
+        throw new Error(`Không tìm thấy coupon "${code}".`);
+    }
+
+    await ref.update({ active: !!active, updatedAt: FieldValue.serverTimestamp() });
+    return { code, active: !!active };
+}
+
 module.exports = {
     normalizeCode,
     getCouponStatus,
     applyCouponToAmount,
     reserveCouponToAmount,
-    releaseCouponUse
+    releaseCouponUse,
+    createOrUpdateCoupon,
+    listCoupons,
+    setCouponActive
 };

@@ -33,6 +33,7 @@ const {
 } = require("../services/admin.service");
 const { sendTicketEmail, sendOrderNotificationEmail } = require("../services/email.service");
 const { createNews, updateNews, reorderNews, deleteNews } = require("../services/news.service");
+const { createOrUpdateCoupon, listCoupons, setCouponActive } = require("../services/coupon.service");
 const { logAdminActivity, listAdminActivity } = require("../services/activityLog.service");
 
 const SHOW_ID = "son-than-thuy-quai";
@@ -864,6 +865,52 @@ router.post("/admin/activity/list", requirePin, async (req, res) => {
     } catch (error) {
         console.error("ADMIN LIST ACTIVITY ERROR:", error);
         return res.status(400).json({ success: false, message: error.message || "Không thể lấy lịch sử thao tác" });
+    }
+});
+
+// ==========================================
+// TRANG "QUẢN LÝ MÃ GIẢM GIÁ" (admin-coupons.html) — port nguyên logic từ
+// scripts/manageCoupons.js (trước đây chỉ chạy tay qua CLI), xem
+// coupon.service.js cho chi tiết validate.
+// ==========================================
+
+router.post("/admin/coupons/list", requirePin, async (req, res) => {
+    try {
+        const coupons = await listCoupons();
+        return res.status(200).json({ success: true, coupons });
+    } catch (error) {
+        console.error("ADMIN LIST COUPONS ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể lấy danh sách mã giảm giá" });
+    }
+});
+
+router.post("/admin/coupons/create", requirePin, async (req, res) => {
+    try {
+        const { code, percentOff, maxUses, expiresAt } = req.body;
+        const result = await createOrUpdateCoupon({ code, percentOff, maxUses, expiresAt });
+        return res.status(200).json({
+            success: true,
+            message: `Đã ${result.isNew ? "tạo" : "cập nhật"} mã "${result.code}"`,
+            result
+        });
+    } catch (error) {
+        console.error("ADMIN CREATE COUPON ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể tạo mã giảm giá" });
+    }
+});
+
+router.post("/admin/coupons/set-active", requirePin, async (req, res) => {
+    try {
+        const { code, active } = req.body;
+        const result = await setCouponActive({ code, active });
+        return res.status(200).json({
+            success: true,
+            message: `Đã ${result.active ? "kích hoạt lại" : "tạm ngừng"} mã "${result.code}"`,
+            result
+        });
+    } catch (error) {
+        console.error("ADMIN SET COUPON ACTIVE ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật mã giảm giá" });
     }
 });
 
