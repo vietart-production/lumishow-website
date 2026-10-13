@@ -18,6 +18,28 @@ p.sub{color:var(--muted);margin:0 0 30px;font-size:13.5px}
 .card .title{font-weight:700;font-size:14.5px;margin-bottom:4px}
 .card .desc{color:var(--muted);font-size:12px;line-height:1.5}
 .card .tag{display:inline-block;margin-top:8px;font-size:10px;font-weight:700;letter-spacing:.3px;color:var(--gold);background:rgba(251,187,33,.12);border-radius:5px;padding:2px 7px}
+
+/* ---- Nút FiLowG — rất nhỏ, góc dưới phải, mờ nhạt tới khi hover ---- */
+#filowgBtn{position:fixed;right:10px;bottom:8px;font-size:9px;color:rgba(165,177,167,.35);background:none;border:none;cursor:pointer;padding:3px 6px;font-family:inherit;letter-spacing:.3px;z-index:30}
+#filowgBtn:hover{color:var(--muted)}
+#filowgModal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:40}
+#filowgModal .box{width:min(320px,90vw);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
+#filowgModal h3{font-size:15px;margin:0 0 6px}
+#filowgModal p{color:var(--muted);font-size:12px;margin:0 0 14px}
+#filowgModal input{width:100%;padding:10px 11px;border-radius:7px;border:1px solid var(--line);background:#0d1310;color:var(--text);font-size:13.5px;margin-bottom:10px;box-sizing:border-box}
+#filowgModal .row{display:flex;gap:8px}
+#filowgModal button{flex:1;padding:9px;border-radius:7px;border:1px solid var(--line);background:var(--panel2,#0d1310);color:var(--text);font-weight:700;font-size:12.5px;cursor:pointer}
+#filowgModal .confirm{background:var(--green);color:#04140b;border:none}
+#filowgErr{color:#ef6b68;font-size:12px;min-height:14px;margin:-4px 0 8px}
+
+/* ---- Chế độ FiLowG đang mở — mỗi card có thêm switch ẩn/hiện ---- */
+body.filowg-mode .card{position:relative}
+.card-switch{position:absolute;top:10px;right:10px;width:34px;height:19px;border-radius:20px;background:#3a4842;cursor:pointer;z-index:2}
+.card-switch i{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#aab8b1;transition:transform .15s,background .15s}
+.card-switch.on{background:rgba(61,220,132,.35)}
+.card-switch.on i{transform:translateX(15px);background:var(--green)}
+.card.card-hidden{opacity:.4}
+body:not(.filowg-mode) .card.card-hidden{display:none}
 #gate{max-width:360px;margin:14vh auto;padding:28px;background:var(--panel);border:1px solid var(--line);border-radius:14px}
 #gate h2{font-size:17px;margin:0 0 6px}
 #gate p{color:var(--muted);font-size:12.5px;margin:0 0 18px}
@@ -80,6 +102,21 @@ p.sub{color:var(--muted);margin:0 0 30px;font-size:13.5px}
 
 </main>
 
+<button id="filowgBtn" type="button">FiLowG</button>
+
+<div id="filowgModal" hidden>
+  <div class="box">
+    <h3>Chế độ FiLowG</h3>
+    <p>Mật khẩu riêng — bật chế độ ẩn/hiện chức năng cho admin cấp thấp.</p>
+    <input type="password" id="filowgInput" placeholder="Mật khẩu FiLowG" autocomplete="off">
+    <div id="filowgErr"></div>
+    <div class="row">
+      <button type="button" id="filowgCancel">Huỷ</button>
+      <button type="button" id="filowgConfirm" class="confirm">Mở khoá</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API='https://lumishow-website.onrender.com/api';
 // Dùng CHUNG key sessionStorage với partner-orders.html ("Danh sách đơn")
@@ -96,7 +133,7 @@ async function verifyApiKey(apiKey){
   if(!r.ok) throw new Error(d.message||'Lỗi không xác định');
 }
 
-function showApp(){ $('gate').hidden=true; $('app').hidden=false; }
+function showApp(){ $('gate').hidden=true; $('app').hidden=false; loadHubVisibility(); }
 
 $('gateBtn').addEventListener('click', async () => {
   const apiKey=$('gateInput').value.trim();
@@ -121,5 +158,79 @@ $('gateInput').addEventListener('keydown', e => { if(e.key==='Enter') $('gateBtn
   if(!saved) return;
   verifyApiKey(saved).then(showApp).catch(()=>{ try{ sessionStorage.removeItem(KEY_STORAGE); }catch(e){} });
 })();
+
+// ==========================================
+// "FiLowG" — ẩn/hiện card cho admin cấp thấp. Trạng thái lưu Firestore
+// (config/hubVisibility, xem admin.service.js) nên áp dụng cho MỌI người
+// xem hub, không phải chỉ trình duyệt hiện tại. Card vẫn bấm vào dùng bình
+// thường kể cả khi đang mở chế độ FiLowG — switch là control RIÊNG, không
+// chặn click vào card (stopPropagation trên chính switch).
+// ==========================================
+
+function cardIdOf(a){ return a.getAttribute('href').replace('.html',''); }
+
+async function loadHubVisibility(){
+  const apiKey = sessionStorage.getItem(KEY_STORAGE) || '';
+  try{
+    const r = await fetch(API+'/admin/hub/visibility/get',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey})});
+    const d = await r.json();
+    if(!r.ok || !d.success) return;
+    document.querySelectorAll('.card').forEach(a => {
+      const visible = d.visibility[cardIdOf(a)] !== false; // mặc định hiện nếu chưa set
+      a.classList.toggle('card-hidden', !visible);
+      if(filowgMode) ensureSwitch(a, visible);
+    });
+  }catch(e){}
+}
+
+let filowgMode = false;
+let filowgKey = '';
+
+function ensureSwitch(card, visible){
+  let sw = card.querySelector('.card-switch');
+  if(!sw){
+    sw = document.createElement('div');
+    sw.className = 'card-switch';
+    sw.innerHTML = '<i></i>';
+    sw.addEventListener('click', async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const id = cardIdOf(card);
+      const next = !sw.classList.contains('on');
+      sw.classList.toggle('on', next);
+      card.classList.toggle('card-hidden', !next);
+      try{
+        await fetch(API+'/admin/hub/visibility/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filowgKey,cardId:id,visible:next})});
+      }catch(err){}
+    });
+    card.appendChild(sw);
+  }
+  sw.classList.toggle('on', visible);
+}
+
+function enterFilowgMode(){
+  filowgMode = true;
+  document.body.classList.add('filowg-mode');
+  document.querySelectorAll('.card').forEach(a => ensureSwitch(a, !a.classList.contains('card-hidden')));
+}
+
+$('filowgBtn').addEventListener('click', () => { $('filowgModal').hidden=false; $('filowgInput').value=''; $('filowgErr').textContent=''; $('filowgInput').focus(); });
+$('filowgCancel').addEventListener('click', () => { $('filowgModal').hidden=true; });
+$('filowgModal').addEventListener('click', e => { if(e.target.id==='filowgModal') $('filowgModal').hidden=true; });
+$('filowgInput').addEventListener('keydown', e => { if(e.key==='Enter') $('filowgConfirm').click(); });
+$('filowgConfirm').addEventListener('click', async () => {
+  const key=$('filowgInput').value.trim();
+  $('filowgErr').textContent='';
+  if(!key){ $('filowgErr').textContent='Nhập mật khẩu'; return; }
+  try{
+    const r=await fetch(API+'/admin/hub/verify-filowg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filowgKey:key})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok || !d.success) throw new Error(d.message||'Sai mật khẩu');
+    filowgKey=key;
+    $('filowgModal').hidden=true;
+    enterFilowgMode();
+  }catch(err){
+    $('filowgErr').textContent=err.message;
+  }
+});
 </script>
 </body></html>

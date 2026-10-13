@@ -537,6 +537,47 @@ function checkGateKey(key) {
 }
 
 // ==========================================
+// "FiLowG" — khoá riêng "super admin" trên trang hub (admin-lumishow.html),
+// KHÔNG chấp nhận ADMIN_PIN hay bất kỳ key nào khác (khác hẳn checkGateKey/
+// checkPartnerKey — cố tình không nới lỏng, vì đây là lớp kiểm soát ai được
+// ẩn/hiện chức năng cho "admin cấp thấp", nới lỏng sẽ mất hết ý nghĩa kiểm
+// soát). Fail-closed như GATE_API_KEY/PARTNER_API_KEY: thiếu env thì luôn
+// false. Đổi tên biến env viết hoa toàn bộ (FILOWG) theo đúng tên nút trên
+// UI, không có default.
+// ==========================================
+
+const FILOWG_KEY = process.env.FILOWG || "";
+
+function checkFilowgKey(key) {
+    if (!FILOWG_KEY) return false;
+    if (typeof key !== "string") return false;
+    const a = Buffer.from(key);
+    const b = Buffer.from(FILOWG_KEY);
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+}
+
+// Trạng thái ẩn/hiện từng "card" trên hub — 1 doc duy nhất, field = cardId
+// (khớp tên file không đuôi .html, vd "admin-orders") -> boolean. Thiếu
+// field = mặc định HIỆN (true) để card mới thêm sau này không tự nhiên biến
+// mất nếu quên set.
+async function getHubVisibility() {
+    const snap = await db.collection("config").doc("hubVisibility").get();
+    return snap.exists ? snap.data() : {};
+}
+
+async function setHubVisibility({ cardId, visible }) {
+    if (!cardId || typeof cardId !== "string") {
+        throw new Error("Thiếu cardId");
+    }
+    await db.collection("config").doc("hubVisibility").set({
+        [cardId]: !!visible,
+        updatedAt: new Date()
+    }, { merge: true });
+    return { cardId, visible: !!visible };
+}
+
+// ==========================================
 // CHECK-IN VÉ TẠI CỔNG — thay thế hoàn toàn việc app Unity đọc/ghi Firestore
 // "tickets" trực tiếp qua Firebase Client SDK (lỗ hổng C1/C7 trong CLAUDE.md:
 // client tự do đọc PII mọi vé, và logic cũ chỉ kiểm checkedIn chứ không kiểm
@@ -1818,6 +1859,9 @@ async function renameSeat({ showId, showtimeId, oldSeatId, newSeatId }) {
 module.exports = {
     checkPin,
     checkGateKey,
+    checkFilowgKey,
+    getHubVisibility,
+    setHubVisibility,
     lookupTicketByCode,
     checkInTicketByCode,
     checkInOrderByTicketCode,

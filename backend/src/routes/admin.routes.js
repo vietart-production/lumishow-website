@@ -6,6 +6,9 @@ const router = express.Router();
 const {
     checkPin,
     checkGateKey,
+    checkFilowgKey,
+    getHubVisibility,
+    setHubVisibility,
     lookupTicketByCode,
     checkInTicketByCode,
     checkInOrderByTicketCode,
@@ -34,6 +37,7 @@ const {
 const { sendTicketEmail, sendOrderNotificationEmail } = require("../services/email.service");
 const { createNews, updateNews, reorderNews, deleteNews } = require("../services/news.service");
 const { createOrUpdateCoupon, listCoupons, setCouponActive } = require("../services/coupon.service");
+const { checkPartnerKeyStrict } = require("../services/partner.service");
 const { logAdminActivity, listAdminActivity } = require("../services/activityLog.service");
 
 const SHOW_ID = "son-than-thuy-quai";
@@ -911,6 +915,48 @@ router.post("/admin/coupons/set-active", requirePin, async (req, res) => {
     } catch (error) {
         console.error("ADMIN SET COUPON ACTIVE ERROR:", error);
         return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật mã giảm giá" });
+    }
+});
+
+// ==========================================
+// HUB admin-lumishow.html — ẩn/hiện card cho "admin cấp thấp" (chế độ
+// FiLowG). verify-filowg/visibility-set CỐ TÌNH không dùng requirePin —
+// FILOWG là khoá riêng, tách hẳn khỏi ADMIN_PIN, xem checkFilowgKey() trong
+// admin.service.js. visibility/get dùng lại đúng key hub (PARTNER_API_KEY
+// nghiêm ngặt) đã có sẵn trong trình duyệt lúc đó, không cần key mới.
+// ==========================================
+
+router.post("/admin/hub/verify-filowg", (req, res) => {
+    if (!checkFilowgKey(req.body.filowgKey)) {
+        return res.status(401).json({ success: false, message: "Sai mật khẩu FiLowG" });
+    }
+    return res.status(200).json({ success: true });
+});
+
+router.post("/admin/hub/visibility/get", async (req, res) => {
+    if (!checkPartnerKeyStrict(req.body.apiKey)) {
+        return res.status(401).json({ success: false, message: "Sai API key" });
+    }
+    try {
+        const visibility = await getHubVisibility();
+        return res.status(200).json({ success: true, visibility });
+    } catch (error) {
+        console.error("ADMIN HUB VISIBILITY GET ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể tải trạng thái hiển thị" });
+    }
+});
+
+router.post("/admin/hub/visibility/set", async (req, res) => {
+    if (!checkFilowgKey(req.body.filowgKey)) {
+        return res.status(401).json({ success: false, message: "Sai mật khẩu FiLowG" });
+    }
+    try {
+        const { cardId, visible } = req.body;
+        const result = await setHubVisibility({ cardId, visible });
+        return res.status(200).json({ success: true, result });
+    } catch (error) {
+        console.error("ADMIN HUB VISIBILITY SET ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật trạng thái hiển thị" });
     }
 });
 
