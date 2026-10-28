@@ -410,22 +410,35 @@ async function createManualTicket({
 }
 
 // ==========================================
-// TẠO ĐƠN VÉ THỦ CÔNG — NHIỀU GHẾ GỘP 1 ĐƠN (admin-create-order.html) —
-// khác createManualTicket() ở trên (1 ghế = 1 đơn riêng, dùng cho ca bán
-// buôn "Rạp Xiếc Customer" mỗi ghế 1 đơn tách lẻ, xem CLAUDE.md). Đây là
-// cho 1 khách mua NHIỀU ghế cùng lúc — amount tự cộng giá THẬT từ Firestore
-// (không tin số client gửi, giống payment.service.js), và (ở route gọi hàm
-// này) tự gửi lại đúng 2 mail đã dùng cho đơn PayOS thật: sendTicketEmail()
-// cho khách + sendOrderNotificationEmail() báo nội bộ team vận hành.
+// TẠO ĐƠN VÉ THỦ CÔNG — NHIỀU GHẾ GỘP 1 ĐƠN (admin-create-order.html,
+// admin-showtimes.html mode "Đã bán") — khác createManualTicket() ở trên (1
+// ghế = 1 đơn riêng, dùng cho ca bán buôn "Rạp Xiếc Customer" mỗi ghế 1 đơn
+// tách lẻ trước đây, xem CLAUDE.md). Đây là cho N ghế gộp vào 1 đơn duy nhất
+// — amount tự cộng giá THẬT từ Firestore (không tin số client gửi, giống
+// payment.service.js), và (ở route gọi hàm này) tự gửi lại đúng 2 mail đã
+// dùng cho đơn PayOS thật: sendTicketEmail() cho khách (tự bỏ qua nếu đơn
+// không có customerEmail, xem email.service.js) + sendOrderNotificationEmail()
+// báo nội bộ team vận hành (luôn gửi, không phụ thuộc customerEmail).
+//
+// CỐ TÌNH KHÔNG dùng BOOKING_CONFIG.MAX_SEATS_PER_ORDER — giới hạn đó tồn tại
+// để chặn 1 KHÁCH tự đặt quá nhiều ghế ở luồng booking công khai; hàm này chỉ
+// gọi được qua ADMIN_PIN (admin-showtimes.html/admin-create-order.html), nhân
+// viên có thể cần bán buôn hàng trăm ghế 1 lúc (vd ca "Rạp Xiếc Customer" 218
+// ghế). Giới hạn riêng MAX_MANUAL_ORDER_SEATS dưới đây đến từ ràng buộc THẬT
+// của Firestore (transaction tối đa 500 lần ghi) — mỗi ghế tốn 2 lần ghi
+// (update seat + create ticket) + 1 lần ghi order, nên N ghế = 2N+1 lần ghi;
+// 200 để chắc chắn còn dư margin, không phải số tuỳ ý.
 // ==========================================
+
+const MAX_MANUAL_ORDER_SEATS = 200;
 
 async function createManualOrder({ showId, showtimeId, seatIds, customerName, customerPhone, customerEmail }) {
 
     if (!showId || !showtimeId || !Array.isArray(seatIds) || seatIds.length === 0 || !customerName) {
         throw new Error("Thiếu showId/showtimeId/seatIds/customerName");
     }
-    if (seatIds.length > BOOKING_CONFIG.MAX_SEATS_PER_ORDER) {
-        throw new Error(`Số ghế tối đa ${BOOKING_CONFIG.MAX_SEATS_PER_ORDER}`);
+    if (seatIds.length > MAX_MANUAL_ORDER_SEATS) {
+        throw new Error(`Số ghế tối đa ${MAX_MANUAL_ORDER_SEATS} ghế/đơn (giới hạn kỹ thuật của Firestore transaction)`);
     }
     if (new Set(seatIds).size !== seatIds.length || seatIds.some((seatId) => !SEAT_ID_RE.test(seatId))) {
         throw new Error("Danh sách ghế không hợp lệ hoặc bị trùng");
@@ -498,6 +511,7 @@ async function createManualOrder({ showId, showtimeId, seatIds, customerName, cu
 
         return {
             order: {
+                orderId: orderRef.id,
                 customerName,
                 customerPhone: customerPhone || "",
                 customerEmail: customerEmail || "",

@@ -859,7 +859,16 @@ seUndoBtn.addEventListener("click", async () => {
   if (!confirm(`Hoàn tác: ${cmd.label}?`)) return;
 
   try {
-    if (cmd.type === "SOLD") {
+    if (cmd.type === "ORDER") {
+      // Đơn gộp nhiều ghế (xem soldConfirm) — xoá hẳn 1 đơn duy nhất, tự trả
+      // lại đúng trạng thái từng ghế qua releaseStatusFor() phía server (khu
+      // khoá được trả về BLOCKED, không bị ép AVAILABLE).
+      await callAdmin("/admin/orders/delete", { orderId: cmd.orderId });
+      cmd.seatIds.forEach(seatId => {
+        seatStatuses[seatId] = cmd.previousStatuses[seatId] || "AVAILABLE";
+        repaintSeat(seatId);
+      });
+    } else if (cmd.type === "SOLD") {
       const failed = [];
       for (const seatId of cmd.seatIds) {
         try {
@@ -956,10 +965,17 @@ document.getElementById("seSoldBtn").addEventListener("click", () => {
 document.getElementById("soldCancel").addEventListener("click", () => { soldModal.hidden = true; });
 soldModal.addEventListener("click", (e) => { if (e.target === soldModal) soldModal.hidden = true; });
 
+const MAX_MANUAL_ORDER_SEATS = 200; // khớp MAX_MANUAL_ORDER_SEATS trong admin.service.js (giới hạn write/transaction Firestore)
+
 document.getElementById("soldConfirm").addEventListener("click", async () => {
   const seatIds = [...selectedIds];
   soldModal.hidden = true;
   if (seatIds.length === 0) return;
+
+  if (seatIds.length > MAX_MANUAL_ORDER_SEATS) {
+    alert(`Chỉ gộp được tối đa ${MAX_MANUAL_ORDER_SEATS} ghế/đơn (giới hạn kỹ thuật Firestore) — vui lòng chia thành nhiều lượt bán.`);
+    return;
+  }
 
   const mode = document.querySelector('input[name="soldMode"]:checked').value;
   const typedName = document.getElementById("soldName").value.trim();
@@ -974,34 +990,33 @@ document.getElementById("soldConfirm").addEventListener("click", async () => {
   const previousStatuses = {};
   seatIds.forEach(id => { previousStatuses[id] = seatStatuses[id]; });
 
-  const succeeded = [], failed = [];
-  for (const seatId of seatIds) {
-    try {
-      await callAdmin("/admin/tickets/create", { showtimeId: currentEditingShowtimeId, seatId, customerName, customerPhone, customerEmail });
-      seatStatuses[seatId] = "SOLD";
-      repaintSeat(seatId);
-      succeeded.push(seatId);
-    } catch (err) {
-      failed.push(`${seatId} (${err.message})`);
-    }
-  }
-  selectedIds.clear();
-  updateToolbar();
-  updateCounts();
+  // Gộp TOÀN BỘ ghế đã chọn vào ĐÚNG 1 đơn (1 transaction, tất-cả-hoặc-không-
+  // gì) — khác bản cũ (mỗi ghế 1 đơn riêng, lỗi ghế này không chặn ghế khác).
+  // Nếu 1 ghế trong lô vừa bị bán/giữ thì CẢ LÔ fail với lỗi nêu rõ đúng ghế
+  // đó — bỏ chọn đúng ghế lỗi rồi bán lại, không tự "bán phần còn lại" như
+  // trước. Email vé/báo nội bộ do route /admin/orders/create tự gửi (bỏ qua
+  // mail vé nếu customerEmail rỗng, xem email.service.js).
+  try {
+    const res = await callAdmin("/admin/orders/create", { showtimeId: currentEditingShowtimeId, seatIds, customerName, customerPhone, customerEmail });
 
-  if (succeeded.length > 0) {
+    seatIds.forEach(seatId => { seatStatuses[seatId] = "SOLD"; repaintSeat(seatId); });
+    selectedIds.clear();
+    updateToolbar();
+    updateCounts();
+
     saveLastCommand({
-      type: "SOLD",
+      type: "ORDER",
       showtimeId: currentEditingShowtimeId,
-      seatIds: succeeded,
+      orderId: res.result.order.orderId,
+      seatIds,
       previousStatuses,
-      label: `Đánh dấu đã bán ${succeeded.length} ghế (${customerName})`
+      label: `Đơn gộp ${seatIds.length} ghế (${customerName})`
     });
-  }
 
-  toast(failed.length > 0
-    ? `Đã bán ${succeeded.length} ghế, lỗi ${failed.length}: ${failed.join(", ")}`
-    : `Đã bán ${succeeded.length} ghế`);
+    toast(`Đã tạo đơn #${res.result.order.orderCode}, ${seatIds.length} ghế` + (res.ticketEmailSent ? " — đã gửi mail vé" : ""));
+  } catch (err) {
+    alert("Không thể tạo đơn: " + err.message);
+  }
 });
 
 // ---- Zoom (wheel + nút) ----
