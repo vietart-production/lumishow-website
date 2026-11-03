@@ -133,7 +133,7 @@ router.get("/payments/vnpay/ipn", async (req, res) => {
 
     try {
 
-        const result = await handleVnpayIpn(req.query);
+        const result = await handleVnpayIpn(req.query, req.ip);
         return res.status(200).json(result);
 
     } catch (error) {

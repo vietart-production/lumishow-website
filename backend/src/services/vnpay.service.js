@@ -17,6 +17,28 @@ const VNPAY_PAYMENT_URL = process.env.VNPAY_PAYMENT_URL || "https://sandbox.vnpa
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
 
+// IP VNPay gọi IPN về — theo đúng danh sách VNPay cung cấp (sandbox + production
+// gộp chung vì cùng 1 server chạy, chỉ khác bộ TMN_CODE/HASH_SECRET đang cấu hình).
+// Theo yêu cầu bảo mật của VNPay: chặn IPN gọi từ IP lạ.
+const VNPAY_IPN_ALLOWED_IPS = new Set([
+    // sandbox
+    "113.160.92.202",
+    "203.205.17.226",
+    "103.220.84.4",
+    // production
+    "113.52.45.78",
+    "116.97.245.130",
+    "42.118.107.252",
+    "113.20.97.250",
+    "203.171.19.146",
+    "103.220.87.4",
+    "103.220.86.4",
+    "103.220.86.10",
+    "103.220.87.10",
+    "103.220.86.139",
+    "103.220.87.139"
+]);
+
 
 // ==========================================
 // GIỜ GMT+7 dạng yyyyMMddHHmmss (VNPay yêu cầu đúng định dạng này) — tính
@@ -224,9 +246,25 @@ async function createVnpayPaymentForHold({
 // Không tin bất kỳ field nào trước khi xác minh lại chữ ký. Luôn trả HTTP 200
 // kèm RspCode đúng chuẩn VNPay (họ dựa vào RspCode để quyết định có retry
 // IPN hay không, không phải HTTP status).
+//
+// Theo yêu cầu VNPay (kịch bản kiểm thử IPN/Return URL): chặn IP lạ + lưu lại
+// toàn bộ IP + dữ liệu mỗi lần IPN gọi tới (ít nhất 2 tháng) để đối soát khi
+// cần — ghi vào Firestore collection "vnpayIpnLogs", không có cơ chế tự xoá
+// nên log giữ vĩnh viễn (an toàn hơn so với giới hạn 2 tháng yêu cầu).
 // ==========================================
 
-async function handleVnpayIpn(query) {
+async function handleVnpayIpn(query, ip) {
+
+    await db.collection("vnpayIpnLogs").add({
+        ip: ip || null,
+        query,
+        receivedAt: new Date()
+    }).catch((error) => console.error("VNPAY IPN LOG ERROR:", error));
+
+    if (!VNPAY_IPN_ALLOWED_IPS.has(ip)) {
+        console.warn(`VNPAY IPN: chặn IP lạ ngoài whitelist — ${ip}`);
+        return { RspCode: "99", Message: "Unknow error" };
+    }
 
     const received = { ...query };
     const receivedHash = received.vnp_SecureHash;
