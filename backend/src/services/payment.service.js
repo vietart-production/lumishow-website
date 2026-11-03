@@ -585,5 +585,6 @@ async function getPaymentStatus(orderId) {
 module.exports = {
     createPaymentForHold,
     handlePaymentWebhook,
-    getPaymentStatus
+    getPaymentStatus,
+    finalizeOrderAsPaid
 };

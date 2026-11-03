@@ -9,6 +9,12 @@ const {
     getPaymentStatus
 } = require("../services/payment.service");
 
+const {
+    createVnpayPaymentForHold,
+    handleVnpayIpn,
+    getVnpayOrderStatus
+} = require("../services/vnpay.service");
+
 // Giới hạn số lần tạo payment link — mỗi lần tạo là 1 lệnh gọi PayOS thật
 const paymentLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 giờ
@@ -68,6 +74,82 @@ router.post("/payments/create", paymentLimiter, async (req, res) => {
 });
 
 // ==========================================
+// POST /api/payments/vnpay/create
+// Tạo đơn hàng + URL thanh toán VNPay (thẻ Visa/Mastercard/JCB, QR) cho
+// một hold đang ACTIVE — song song với /payments/create (PayOS), không
+// thay thế.
+// ==========================================
+
+router.post("/payments/vnpay/create", paymentLimiter, async (req, res) => {
+
+    try {
+
+        const {
+            holdId,
+            customerName,
+            customerPhone,
+            customerEmail,
+            couponCode
+        } = req.body;
+
+        const result = await createVnpayPaymentForHold({
+            holdId,
+            customerName,
+            customerPhone,
+            customerEmail,
+            couponCode,
+            ipAddr: req.ip
+        });
+
+        return res.status(201).json({
+            success: true,
+            order: result
+        });
+
+    } catch (error) {
+
+        console.error(
+            "CREATE VNPAY PAYMENT ERROR:",
+            error
+        );
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể tạo thanh toán VNPay"
+        });
+
+    }
+
+});
+
+// ==========================================
+// GET /api/payments/vnpay/ipn
+// VNPay gọi ngược GET về server khi có biến động thanh toán. LUÔN trả HTTP
+// 200 kèm RspCode đúng chuẩn — VNPay dựa vào RspCode (không phải HTTP
+// status) để quyết định có retry IPN hay không.
+// ==========================================
+
+router.get("/payments/vnpay/ipn", async (req, res) => {
+
+    try {
+
+        const result = await handleVnpayIpn(req.query);
+        return res.status(200).json(result);
+
+    } catch (error) {
+
+        console.error(
+            "VNPAY IPN ERROR:",
+            error
+        );
+
+        return res.status(200).json({ RspCode: "99", Message: "Unknow error" });
+
+    }
+
+});
+
+// ==========================================
 // POST /api/payments/webhook
 // PayOS gọi endpoint này khi có biến động thanh toán
 // ==========================================
@@ -100,9 +182,11 @@ router.post("/payments/webhook", async (req, res) => {
 });
 
 // ==========================================
-// GET /api/payments/:orderId/status
-// Hỏi trạng thái đơn — dùng để frontend poll trong lúc chưa có domain
-// đăng ký webhook. Hỏi thẳng PayOS, không cần PayOS gọi ngược lại.
+// GET /api/payments/:orderId/status?provider=vnpay
+// Hỏi trạng thái đơn. Mặc định (PayOS): hỏi thẳng PayOS, dùng để frontend
+// poll trong lúc chưa có domain đăng ký webhook. Với đơn VNPay
+// (?provider=vnpay): IPN đã cập nhật thẳng Firestore nên chỉ cần đọc lại,
+// không cần hỏi ngược VNPay.
 // ==========================================
 
 router.get("/payments/:orderId/status", async (req, res) => {
@@ -111,7 +195,9 @@ router.get("/payments/:orderId/status", async (req, res) => {
 
         const { orderId } = req.params;
 
-        const result = await getPaymentStatus(orderId);
+        const result = req.query.provider === "vnpay"
+            ? await getVnpayOrderStatus(orderId)
+            : await getPaymentStatus(orderId);
 
         return res.status(200).json({
             success: true,
