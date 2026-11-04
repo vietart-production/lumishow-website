@@ -269,13 +269,9 @@ async function handleVnpayIpn(query, ip, debugHeaders) {
         receivedAt: new Date()
     }).catch((error) => console.error("VNPAY IPN LOG ERROR:", error));
 
-    // ponytail: tạm TẮT chặn (chỉ còn cảnh báo log) — tool SIT của VNPay gọi
-    // qua Cloudflare, IP đổi liên tục mỗi lần chạy nên whitelist cố định chặn
-    // nhầm cả request thật của chính VNPay. Chữ ký HMAC bên dưới vẫn là lớp
-    // bảo mật thật, không tin dữ liệu nào trước khi verify. Bật lại chặn khi
-    // VNPay xác nhận IP/dải cố định cho tool SIT.
     if (!VNPAY_IPN_ALLOWED_IPS.has(ip)) {
-        console.warn(`VNPAY IPN: IP ngoài whitelist (không chặn) — ${ip}`);
+        console.warn(`VNPAY IPN: chặn IP lạ ngoài whitelist — ${ip}`);
+        return { RspCode: "99", Message: "Unknow error" };
     }
 
     const received = { ...query };
