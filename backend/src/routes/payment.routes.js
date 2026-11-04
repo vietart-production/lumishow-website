@@ -133,7 +133,12 @@ router.get("/payments/vnpay/ipn", async (req, res) => {
 
     try {
 
-        const result = await handleVnpayIpn(req.query, req.ip);
+        const result = await handleVnpayIpn(req.query, req.ip, {
+            xForwardedFor: req.headers["x-forwarded-for"] || null,
+            cfConnectingIp: req.headers["cf-connecting-ip"] || null,
+            xRealIp: req.headers["x-real-ip"] || null,
+            reqIps: req.ips
+        });
         return res.status(200).json(result);
 
     } catch (error) {

@@ -257,10 +257,14 @@ async function createVnpayPaymentForHold({
 // nên log giữ vĩnh viễn (an toàn hơn so với giới hạn 2 tháng yêu cầu).
 // ==========================================
 
-async function handleVnpayIpn(query, ip) {
+async function handleVnpayIpn(query, ip, debugHeaders) {
 
     await db.collection("vnpayIpnLogs").add({
         ip: ip || null,
+        // ponytail: debug tạm thời — xem toàn bộ chuỗi X-Forwarded-For/
+        // CF-Connecting-IP thật để xác định vì sao req.ip lệch khỏi IP VNPay
+        // báo (103.220.84.4). Xoá field này khi đã xác định xong nguyên nhân.
+        debugHeaders: debugHeaders || null,
         query,
         receivedAt: new Date()
     }).catch((error) => console.error("VNPAY IPN LOG ERROR:", error));
