@@ -133,7 +133,12 @@ router.get("/payments/vnpay/ipn", async (req, res) => {
 
     try {
 
-        const result = await handleVnpayIpn(req.query, req.ip, {
+        // Render đứng sau Cloudflare — req.ip (trust proxy) lấy nhầm IP edge
+        // Cloudflare cuối chuỗi X-Forwarded-For thay vì IP gốc thật. Cloudflare
+        // luôn set CF-Connecting-IP = IP gốc thật, ưu tiên header này trước.
+        const realIp = req.headers["cf-connecting-ip"] || req.ip;
+
+        const result = await handleVnpayIpn(req.query, realIp, {
             xForwardedFor: req.headers["x-forwarded-for"] || null,
             cfConnectingIp: req.headers["cf-connecting-ip"] || null,
             xRealIp: req.headers["x-real-ip"] || null,
