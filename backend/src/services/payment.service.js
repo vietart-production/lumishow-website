@@ -463,24 +463,36 @@ async function finalizeOrderAsPaid(orderRef, paidAmount) {
         }
     });
 
+    // Đơn thuộc show test (tester-ticket) — KHÔNG BAO GIỜ gửi mail thật (kể cả
+    // mail giám sát nội bộ ORDER_NOTIFY_EMAIL/TECH_ALERT_EMAIL), tự báo như đã
+    // gửi. Phát hiện 2026-11-04: đơn test VNPay (cũng đi qua đúng hàm chung
+    // này) từng vô tình gửi mail thông báo đơn tới hộp mail giám sát thật.
+    const isTestShowOrder = (order) => order && order.showId === "tester-ticket";
+
     // Đơn trả thiếu tiền — gửi cảnh báo kỹ thuật để xử lý tay, không cấp vé.
     if (underpaidPayload) {
-        sendSeatConflictAlertEmail(
-            underpaidPayload.order,
-            [{ seatId: `TRẢ THIẾU TIỀN: nhận ${underpaidPayload.paidAmount}đ / cần ${underpaidPayload.order.amount}đ`, seatStatus: "UNDERPAID" }]
-        ).catch((error) => {
-            console.error("GỬI MAIL CẢNH BÁO TRẢ THIẾU TIỀN THẤT BẠI:", error);
-        });
+        if (isTestShowOrder(underpaidPayload.order)) {
+            orderRef.update({ emailSent: true, emailSentAt: new Date() }).catch(() => {});
+        } else {
+            sendSeatConflictAlertEmail(
+                underpaidPayload.order,
+                [{ seatId: `TRẢ THIẾU TIỀN: nhận ${underpaidPayload.paidAmount}đ / cần ${underpaidPayload.order.amount}đ`, seatStatus: "UNDERPAID" }]
+            ).catch((error) => {
+                console.error("GỬI MAIL CẢNH BÁO TRẢ THIẾU TIỀN THẤT BẠI:", error);
+            });
+        }
     }
 
     // Gửi mail sau khi transaction đã chốt xong — không gửi trong lúc transaction
     // đang chạy vì Firestore có thể tự retry transaction nếu xung đột ghi.
     if (!alreadyPaid && emailPayload) {
 
-        // Ghế xung đột hết 100% (hiếm, chỉ xảy ra khi đơn 1 ghế) thì không còn
-        // vé "valid" nào để gửi — bỏ qua mail vé/thông báo đơn bình thường,
-        // chỉ gửi cảnh báo xung đột bên dưới.
-        if (emailPayload.tickets.length > 0) {
+        if (isTestShowOrder(emailPayload.order)) {
+            orderRef.update({ emailSent: true, emailSentAt: new Date() }).catch(() => {});
+        } else if (emailPayload.tickets.length > 0) {
+            // Ghế xung đột hết 100% (hiếm, chỉ xảy ra khi đơn 1 ghế) thì không còn
+            // vé "valid" nào để gửi — bỏ qua mail vé/thông báo đơn bình thường,
+            // chỉ gửi cảnh báo xung đột bên dưới.
             // Đánh dấu emailSent để biết đơn nào đã gửi được mail vé (H6): nếu
             // gửi lỗi, ghi emailError để sau này dò và gửi lại, không mất dấu.
             sendTicketEmail(emailPayload.order, emailPayload.tickets)
@@ -494,7 +506,7 @@ async function finalizeOrderAsPaid(orderRef, paidAmount) {
             });
         }
 
-        if (conflictPayload) {
+        if (conflictPayload && !isTestShowOrder(conflictPayload.order)) {
             sendSeatConflictAlertEmail(conflictPayload.order, conflictPayload.conflictSeats).catch((error) => {
                 console.error("GỬI MAIL CẢNH BÁO XUNG ĐỘT GHẾ THẤT BẠI:", error);
             });
