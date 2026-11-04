@@ -36,7 +36,11 @@ const VNPAY_IPN_ALLOWED_IPS = new Set([
     "103.220.86.10",
     "103.220.87.10",
     "103.220.86.139",
-    "103.220.87.139"
+    "103.220.87.139",
+    // tool SIT (vsm-sit-client, portal kiểm thử nghiệm thu) — IP thật quan sát
+    // được qua vnpayIpnLogs ngày 2026-11-04, KHÔNG nằm trong danh sách VNPay gửi
+    // ban đầu (dải Cloudflare, có thể đổi) — cần hỏi lại VNPay IP/dải cố định.
+    "162.158.88.25"
 ]);
 
 
