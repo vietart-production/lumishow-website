@@ -1542,16 +1542,13 @@ const TIER_PRICES = {
     "vua-hung": { name: "Vua Hùng", price: 400000 }
 };
 
-// G1-G58 dành riêng cho staff/lãnh đạo — mặc định SOLD ngay từ lúc seed, y
-// hệt quy ước trong seedSeats.js, để suất diễn thêm qua trang admin cũng tự
-// chặn đúng những ghế này ngay từ đầu.
-const STAFF_ROW = "G";
-const STAFF_SEAT_MAX = 58;
-
-// Seed "sạch" từ seatTiers.json — mọi ghế AVAILABLE (trừ staff-seat) — KHÔNG
-// copy trạng thái từ suất khác. Đây chính là điểm sửa cho lỗi 20-ghế-SOLD-ảo
-// từng xảy ra khi thêm suất 2026-10-04_10:00 bằng script tạm copy nguyên
-// trạng thái từ suất tham chiếu (xem CLAUDE.md/lịch sử phiên làm việc).
+// Seed "sạch" từ seatTiers.json — BLOCKED cho khu "không được thầu bán"
+// (lockedZoneSeats.json, gồm cả G1-G58), còn lại AVAILABLE — KHÔNG copy
+// trạng thái từ suất khác. Dùng chung đúng 1 nguồn sự thật (LOCKED_ZONE_SEATS)
+// với seedSeats.js/releaseStatusFor() để suất tạo qua admin panel tự đúng
+// pattern ngay từ đầu, không lệch khỏi suất tạo bằng script (phát hiện
+// 2026-11-05: buildFreshSeatDocs() từng có bản copy riêng dùng hack cũ
+// "G1-58 luôn SOLD", không hề biết tới lockedZoneSeats.json).
 function buildFreshSeatDocs() {
     return Object.keys(SEAT_TIERS).map((seatCode) => {
         const [, row, numberStr] = seatCode.match(/^([A-Z]+)(\d+)$/);
@@ -1567,7 +1564,10 @@ function buildFreshSeatDocs() {
             tier,
             tierName: TIER_PRICES[tier].name,
             price,
-            status: (row === STAFF_ROW && number <= STAFF_SEAT_MAX) ? "SOLD" : "AVAILABLE",
+            status: LOCKED_ZONE_SEATS.has(seatCode) ? "BLOCKED" : "AVAILABLE",
+            blockNote: LOCKED_ZONE_SEATS.has(seatCode)
+                ? "Khu không được thầu bán — sơ đồ mặc định (xem CLAUDE.md)"
+                : null,
             holdId: null,
             holdExpiresAt: null
         };
