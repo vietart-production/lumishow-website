@@ -1083,7 +1083,12 @@ const PROMO_SHOWTIMES = {
   '2026-11-24_16:30': { 'son-than':240000, 'thuy-quai':200000, 'mi-nuong':160000 }
 };
 const promoPriceFor = tier => {
-  const p = PROMO_SHOWTIMES[currentShowKey()];
+  // currentShowKey() đọc OPEN_SHOWTIME_GROUPS — mảng này còn rỗng ở lần
+  // renderTiers() đầu tiên lúc khởi động trang (trước khi fetch xong lịch
+  // diễn), nên phải an toàn với lỗi thay vì để nó chặn đứng cả script.
+  let showKey;
+  try { showKey = currentShowKey(); } catch (e) { return null; }
+  const p = PROMO_SHOWTIMES[showKey];
   return (p && p[tier] != null) ? p[tier] : null;
 };
 const effectivePrice = (tier, basePrice) => {
