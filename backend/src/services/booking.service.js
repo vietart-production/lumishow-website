@@ -3,6 +3,45 @@ const crypto = require("crypto");
 
 const BOOKING_CONFIG = require("../config/booking.config");
 
+// ==========================================
+// "KHU KHÔNG ĐƯỢC THẦU BÁN" — THAM CHIẾU SỐNG, KHÔNG PHẢI BẢN SAO TĨNH
+// ------------------------------------------
+// lockedZoneSeats.json là NGUỒN SỰ THẬT DUY NHẤT. Trạng thái "BLOCKED" seed
+// sẵn vào từng ghế lúc tạo suất (seedSeats.js/admin.service.js) chỉ là snapshot
+// ban đầu — mọi suất diễn (cũ lẫn mới) đều phải tính lại theo đúng danh sách
+// NÀY tại thời điểm đọc/giữ ghế, để sửa file này tự áp dụng cho MỌI suất ngay,
+// không cần chạy lại script migrate mỗi lần đổi pattern (theo yêu cầu user
+// 2026-11-05: "tham chiếu, not sở hữu"). KHÔNG áp cho show khác (vd
+// tester-ticket) — show đó cố ý không có quy tắc khoá nào.
+const REAL_SHOW_ID = "son-than-thuy-quai";
+const LOCKED_ZONE_SEATS = new Set(require("../../scripts/lockedZoneSeats.json").seatIds);
+const PATTERN_BLOCK_NOTE = "Khu không được thầu bán — sơ đồ mặc định (xem CLAUDE.md)";
+
+function effectiveSeatStatus(showId, seatId, seatData) {
+
+    if (showId !== REAL_SHOW_ID) {
+        return seatData.status;
+    }
+
+    // Không bao giờ ghi đè trạng thái giao dịch thật.
+    if (seatData.status === "SOLD" || seatData.status === "HELD") {
+        return seatData.status;
+    }
+
+    if (LOCKED_ZONE_SEATS.has(seatId)) {
+        return "BLOCKED";
+    }
+
+    // Ghế KHÔNG còn thuộc pattern nữa (đã bị gỡ khỏi lockedZoneSeats.json) —
+    // chỉ tự "mở khoá" nếu nó đang BLOCKED CHÍNH VÌ pattern (đúng blockNote),
+    // không đụng ghế admin tự tay khoá vì lý do khác (note khác/không note).
+    if (seatData.status === "BLOCKED" && seatData.blockNote === PATTERN_BLOCK_NOTE) {
+        return "AVAILABLE";
+    }
+
+    return seatData.status;
+}
+
 
 // ==========================================
 // CACHE NGẮN HẠN CHO TRẠNG THÁI GHẾ
@@ -59,7 +98,7 @@ async function getSeatStates(showId, showtimeId) {
         const data = doc.data();
 
         seats[doc.id] = {
-            status: data.status
+            status: effectiveSeatStatus(showId, doc.id, data)
         };
 
     });
@@ -300,7 +339,7 @@ async function createHold({
             const seatData = seatDoc.data();
 
 
-            if (seatData.status !== "AVAILABLE") {
+            if (effectiveSeatStatus(showId, seatId, seatData) !== "AVAILABLE") {
                 throw new Error(
                     `Ghế ${seatId} không còn trống`
                 );
