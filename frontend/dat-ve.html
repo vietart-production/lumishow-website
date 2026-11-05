@@ -240,6 +240,10 @@
   .sc-where{font-size:12.5px;color:var(--gray);}
   .sc-price{font-family:var(--font-heading);font-size:19px;font-weight:800;margin:11px 0 4px;}
   .sc-price small{font-size:12px;font-weight:600;color:var(--gray);margin-left:3px;}
+  /* Giá khuyến mãi theo suất (xem PROMO_SHOWTIMES) — giá cũ gạch ngang màu
+     xám, giá mới cạnh bên nổi bật hơn. */
+  .price-old{color:var(--gray-dim);text-decoration:line-through;font-weight:500;margin-right:5px;font-size:.88em;}
+  .price-new{color:var(--gold);}
   .sc-state{font-size:12.5px;font-weight:600;color:var(--gray);margin-bottom:11px;}
   .sc-state.ok{color:var(--green);}
   .sc-state.warn{color:var(--danger);}
@@ -1071,6 +1075,29 @@ const TIERS = {
 // Tên hạng ghế theo ngôn ngữ hiện tại (currentLang khai báo cuối file) — dùng ở mọi nơi
 // hiển thị tên hạng thay vì đọc thẳng TIERS[x].name (giờ là object {vi,en}).
 const tierName = key => TIERS[key].name[currentLang] || TIERS[key].name.vi;
+
+// Khuyến mãi giảm giá riêng theo TỪNG SUẤT (showKey) — không đụng TIERS gốc
+// (giá base dùng chung mọi suất khác). Thêm/bớt suất khuyến mãi chỉ sửa object
+// này. Hạng không có trong map con của suất đó giữ nguyên giá gốc.
+const PROMO_SHOWTIMES = {
+  '2026-11-24_16:30': { 'son-than':240000, 'thuy-quai':200000, 'mi-nuong':160000 }
+};
+const promoPriceFor = tier => {
+  const p = PROMO_SHOWTIMES[currentShowKey()];
+  return (p && p[tier] != null) ? p[tier] : null;
+};
+const effectivePrice = (tier, basePrice) => {
+  const promo = promoPriceFor(tier);
+  return promo != null ? promo : basePrice;
+};
+const effectiveSeatPrice = s => effectivePrice(s.tier, s.price);
+// HTML hiển thị giá: có khuyến mãi thì giá cũ gạch ngang + giá mới bên cạnh,
+// không thì hiện giá thường — dùng innerHTML ở mọi chỗ gọi hàm này.
+const priceHtmlFor = (tier, basePrice) => {
+  const promo = promoPriceFor(tier);
+  if (promo == null) return fmtVND(basePrice);
+  return '<s class="price-old">' + fmtVND(basePrice) + '</s><b class="price-new">' + fmtVND(promo) + '</b>';
+};
 
 /* ---------- Hình học khán phòng (bám theo sơ đồ thật của Rạp Xiếc Trung Ương) ----------
    Góc θ tính theo chiều kim đồng hồ, mốc 0° ở hướng 12 giờ (hậu trường).
@@ -1926,7 +1953,7 @@ function syncAll(){
    ========================================================= */
 function totalAmount(){
   return selectedSeats.reduce((sum, id) =>
-    invalidSeats.has(id) ? sum : sum + SEAT_BY_ID.get(id).price, 0);
+    invalidSeats.has(id) ? sum : sum + effectiveSeatPrice(SEAT_BY_ID.get(id)), 0);
 }
 
 function renderSummary(){
@@ -1947,7 +1974,7 @@ function renderSummary(){
     tier.textContent = bad
       ? (seatStates[id] === ST.SOLD ? t('msg.seatSold') : t('msg.seatHeldOther'))
       : t('tier.prefix') + tierName(s.tier);
-    const price = document.createElement('span'); price.className = 'sr-price'; price.textContent = fmtVND(s.price);
+    const price = document.createElement('span'); price.className = 'sr-price'; price.innerHTML = priceHtmlFor(s.tier, s.price);
     row.append(dot, code, tier, price);
 
     // Trong lúc đang giữ ghế, không cho bỏ ghế ở đây — phải hủy giữ ghế trước
@@ -1958,7 +1985,7 @@ function renderSummary(){
       x.addEventListener('click', () => {
         if (bad){ removeSeat(id); return; }            // ghế đã hỏng: gỡ luôn, không cần hỏi
         confirmDialog({
-          title:t('confirm.removeSeatTitle', { id: s.id, tier: tierName(s.tier), price: fmtVND(s.price) }),
+          title:t('confirm.removeSeatTitle', { id: s.id, tier: tierName(s.tier), price: fmtVND(effectiveSeatPrice(s)) }),
           body:t('confirm.removeSeatBody'),
           okText:t('modal.removeSeat'),
           onOk:() => { removeSeat(id); toast(t('msg.seatRemoved', { id: s.id })); }
@@ -2032,7 +2059,7 @@ function updateSeatCard(id){
   document.getElementById('scTier').textContent = t('tier.prefix') + tierName(s.tier);
   document.getElementById('scSeat').textContent = s.id;
   document.getElementById('scWhere').textContent = t('sc.where', { row: s.row, num: s.num });
-  document.getElementById('scPrice').innerHTML = fmtVND(s.price) + '<small>' + t('sc.perTicket') + '</small>';
+  document.getElementById('scPrice').innerHTML = priceHtmlFor(s.tier, s.price) + '<small>' + t('sc.perTicket') + '</small>';
 
   const stateEl = document.getElementById('scState');
   const btn = document.getElementById('scBtn');
@@ -2081,7 +2108,7 @@ document.getElementById('scBtn').addEventListener('click', () => {
   if (seatStates[id] === ST.SELECTED_BY_ME){
     const s = SEAT_BY_ID.get(id);
     confirmDialog({
-      title:t('confirm.removeSeatTitle', { id, tier: tierName(s.tier), price: fmtVND(s.price) }),
+      title:t('confirm.removeSeatTitle', { id, tier: tierName(s.tier), price: fmtVND(effectiveSeatPrice(s)) }),
       body:t('confirm.removeSeatBody'),
       okText:t('modal.removeSeat'),
       onOk:() => { removeSeat(id); toast(t('msg.seatRemoved', { id })); }
@@ -2344,7 +2371,7 @@ function hoverTipContent(id){
   if (st === ST.SOLD) statusHtml = `<span class="ht-status">${t('seat.sold')}</span>`;
   else if (st === ST.HELD_BY_OTHER) statusHtml = `<span class="ht-status">${t('seat.heldOther')}</span>`;
   else if (st === ST.SELECTED_BY_ME || st === ST.HELD_BY_ME) statusHtml = `<span class="ht-price">${t('seat.selected')}</span>`;
-  else statusHtml = `<span class="ht-price">${fmtVND(s.price)}</span>`;
+  else statusHtml = `<span class="ht-price">${priceHtmlFor(s.tier, s.price)}</span>`;
   return `<b>${s.id}</b> — ${tierName(s.tier)}<br>${statusHtml}`;
 }
 
@@ -2395,7 +2422,7 @@ function renderTiers(){
       '<input type="checkbox" value="' + key + '"' + (activeTiers.has(key) ? ' checked' : '') + '>' +
       '<span class="tier-box"><svg viewBox="0 0 24 24" class="icon-stroke" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6.5"/></svg></span>' +
       '<span class="tier-dot"></span><span class="tier-name">' + tierName(key) + '</span>' +
-      '<span class="tier-price">' + fmtVND(t.price) + '</span>';
+      '<span class="tier-price">' + priceHtmlFor(key, t.price) + '</span>';
     label.querySelector('input').addEventListener('change', e => {
       e.target.checked ? activeTiers.add(key) : activeTiers.delete(key);
       applyTierFilter();
@@ -2553,7 +2580,7 @@ function buildOrder(customer){
     customer,
     seats: valid.map(id => {
       const s = SEAT_BY_ID.get(id);
-      return { id:s.id, row:s.row, num:s.num, tier:s.tier, tierName:tierName(s.tier), price:s.price };
+      return { id:s.id, row:s.row, num:s.num, tier:s.tier, tierName:tierName(s.tier), price:effectiveSeatPrice(s) };
     }),
     total: totalAmount(),
     status: 'PENDING_PAYMENT',
@@ -3296,6 +3323,10 @@ async function loadShow() {
 
   const showtimeId = currentShowKey();
 
+  // Giá hạng vé ở chú thích (sidebar) phụ thuộc suất đang chọn (có thể đang
+  // khuyến mãi — xem PROMO_SHOWTIMES), nên vẽ lại mỗi khi đổi suất.
+  renderTiers();
+
   try {
     seatStates = await fetchSeatStates(showtimeId);
 
@@ -3381,6 +3412,7 @@ async function tryResumeHold(){
     return false;
   }
   renderSchedule();
+  renderTiers();
 
   const showtimeId = currentShowKey();
 
