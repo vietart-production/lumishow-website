@@ -4,15 +4,23 @@ const crypto = require("crypto");
 const BOOKING_CONFIG = require("../config/booking.config");
 
 // ==========================================
-// "KHU KHÔNG ĐƯỢC THẦU BÁN" — THAM CHIẾU SỐNG, KHÔNG PHẢI BẢN SAO TĨNH
+// "KHU KHÔNG ĐƯỢC THẦU BÁN" — THAM CHIẾU SỐNG, CHỈ MỘT CHIỀU (THU HẸP)
 // ------------------------------------------
-// lockedZoneSeats.json là NGUỒN SỰ THẬT DUY NHẤT. Trạng thái "BLOCKED" seed
-// sẵn vào từng ghế lúc tạo suất (seedSeats.js/admin.service.js) chỉ là snapshot
-// ban đầu — mọi suất diễn (cũ lẫn mới) đều phải tính lại theo đúng danh sách
-// NÀY tại thời điểm đọc/giữ ghế, để sửa file này tự áp dụng cho MỌI suất ngay,
-// không cần chạy lại script migrate mỗi lần đổi pattern (theo yêu cầu user
-// 2026-11-05: "tham chiếu, not sở hữu"). KHÔNG áp cho show khác (vd
-// tester-ticket) — show đó cố ý không có quy tắc khoá nào.
+// lockedZoneSeats.json là nguồn sự thật cho pattern MẶC ĐỊNH lúc seed. CHỈ tự
+// "mở khoá" sống khi 1 ghế đang BLOCKED CHÍNH VÌ pattern (đúng blockNote) mà
+// sau đó bị gỡ khỏi danh sách — an toàn vì blockNote truy được gốc.
+//
+// KHÔNG (và không được) tự động khoá ngược lại (AVAILABLE -> BLOCKED) chỉ vì
+// seatId nằm trong danh sách: admin có thể đã CHỦ Ý mở riêng ghế đó cho đúng
+// suất này qua /admin/seats/bulk-update (status: AVAILABLE, không kèm dấu vết
+// gì phân biệt được với "chưa ai đụng tới") — ép BLOCKED vô điều kiện sẽ đè
+// mất quyết định đó. Sự cố thật 2026-11-05: bản đầu của hàm này ép BLOCKED
+// không điều kiện, khoá nhầm hàng chục ghế admin đã chủ ý mở trên nhiều suất
+// đang bán thật (xem lumishow_lockedzone_desync_incident_20261105 trong
+// memory). Hệ quả: pattern MỞ RỘNG (thêm ghế mới vào list) chỉ tự áp dụng cho
+// suất tạo MỚI sau đó — suất đã seed từ trước vẫn cần script migrate tay như
+// quy ước cũ nếu muốn khoá thêm ghế. KHÔNG áp cho show khác (vd tester-ticket)
+// — show đó cố ý không có quy tắc khoá nào.
 const REAL_SHOW_ID = "son-than-thuy-quai";
 const LOCKED_ZONE_SEATS = new Set(require("../../scripts/lockedZoneSeats.json").seatIds);
 const PATTERN_BLOCK_NOTE = "Khu không được thầu bán — sơ đồ mặc định (xem CLAUDE.md)";
@@ -23,19 +31,11 @@ function effectiveSeatStatus(showId, seatId, seatData) {
         return seatData.status;
     }
 
-    // Không bao giờ ghi đè trạng thái giao dịch thật.
-    if (seatData.status === "SOLD" || seatData.status === "HELD") {
-        return seatData.status;
-    }
-
-    if (LOCKED_ZONE_SEATS.has(seatId)) {
-        return "BLOCKED";
-    }
-
     // Ghế KHÔNG còn thuộc pattern nữa (đã bị gỡ khỏi lockedZoneSeats.json) —
     // chỉ tự "mở khoá" nếu nó đang BLOCKED CHÍNH VÌ pattern (đúng blockNote),
-    // không đụng ghế admin tự tay khoá vì lý do khác (note khác/không note).
-    if (seatData.status === "BLOCKED" && seatData.blockNote === PATTERN_BLOCK_NOTE) {
+    // không đụng ghế admin tự tay khoá vì lý do khác (note khác/không note),
+    // và không đụng SOLD/HELD.
+    if (seatData.status === "BLOCKED" && !LOCKED_ZONE_SEATS.has(seatId) && seatData.blockNote === PATTERN_BLOCK_NOTE) {
         return "AVAILABLE";
     }
 
