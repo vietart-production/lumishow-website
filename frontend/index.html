@@ -880,7 +880,7 @@
       'footer.ctaBtn':'LIÊN HỆ HỢP TÁC',
       'footer.copyright':'© 2026 LumiShow. All rights reserved.',
       months:['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'],
-      dows:['Thứ 6','Thứ 7','Chủ nhật']
+      dows:['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7']
     },
     en: {
       'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact', 'nav.cta':'BOOK NOW',
@@ -903,7 +903,7 @@
       'footer.ctaBtn':'PARTNER WITH US',
       'footer.copyright':'© 2026 LumiShow. All rights reserved.',
       months:['January','February','March','April','May','June','July','August','September','October','November','December'],
-      dows:['Friday','Saturday','Sunday']
+      dows:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
     }
   };
 
@@ -943,7 +943,6 @@
   // trang — không cần khớp tay 2 file nữa.
   const API_BASE_URL = 'https://lumishow-website.onrender.com/api';
   const SHOW_ID = 'son-than-thuy-quai';
-  const DOW_FRI_SAT_SUN = { 5: 0, 6: 1, 0: 2 }; // JS Date.getDay() -> index trong dict.dows
 
   function fmt(d){ return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0'); }
   function isoDate(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
@@ -983,7 +982,10 @@
     if (current.length) groups.push(current);
 
     runs = groups.map(group => group.map(info => info.date));
-    dowByRunDay = groups.map(group => group.map(info => DOW_FRI_SAT_SUN[info.date.getDay()] ?? 1));
+    // dict.dows giờ là mảng đủ 7 ngày, index thẳng theo getDay() (0=CN..6=T7)
+    // — trước đây chỉ map được Thứ 6/7/CN nên suất rơi vào ngày khác (vd Thứ 3)
+    // bị fallback sai thành "Thứ 7" (xem CLAUDE.md/memory ngày 2026-11-06).
+    dowByRunDay = groups.map(group => group.map(info => info.date.getDay()));
     OPEN_TIMES_BY_DATE = {};
     groups.forEach(group => group.forEach(info => { OPEN_TIMES_BY_DATE[isoDate(info.date)] = info.times; }));
 
