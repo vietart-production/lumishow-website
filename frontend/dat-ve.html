@@ -3117,9 +3117,6 @@ let openRunIndex = 0;
 let openDayIndex = 0;
 let openTimeIndex = 0;
 
-// JS Date.getDay() (0=CN...6=T7) -> index trong DOWS (0=Thứ6,1=Thứ7,2=Chủ nhật,
-// xem mục 14 I18N) — suất diễn chỉ bao giờ rơi vào Thứ 6/7/CN.
-const DOW_FRI_SAT_SUN = { 5: 0, 6: 1, 0: 2 };
 
 /* Gom danh sách showtimeId phẳng (vd "2026-10-03_16:30") từ backend thành
    cấu trúc nhóm(tuần)->ngày->giờ. Các ngày cách nhau <= 2 ngày lịch được coi
@@ -3146,7 +3143,7 @@ function groupOpenShowtimes(showtimeIds){
       groups.push(current);
       current = [];
     }
-    current.push({ y: info.y, m: info.m, d: info.d, dow: DOW_FRI_SAT_SUN[info.date.getDay()] ?? 1, times: info.times });
+    current.push({ y: info.y, m: info.m, d: info.d, dow: info.date.getDay(), times: info.times });
     prevDate = info.date;
   });
   if (current.length) groups.push(current);
@@ -3615,7 +3612,7 @@ const I18N = {
     'btn.changeShow':'Đổi suất',
 
     months:['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'],
-    dows:['Thứ 6','Thứ 7','Chủ nhật']
+    dows:['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7']
   },
   en: {
     'nav.home':'Home', 'nav.about':'About', 'nav.contact':'Contact',
@@ -3740,7 +3737,7 @@ const I18N = {
     'btn.changeShow':'Change',
 
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
-    dows:['Friday','Saturday','Sunday']
+    dows:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
   }
 };
 
