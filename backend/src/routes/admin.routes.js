@@ -14,6 +14,7 @@ const {
     checkInOrderByTicketCode,
     logGateScan,
     listGateScanHistory,
+    listPendingCheckinForShowtime,
     cancelTicketBySeat,
     cancelOrderSeats,
     createManualTicket,
@@ -501,6 +502,37 @@ router.post("/admin/tickets/scan-history", requireGateKey, async (req, res) => {
         return res.status(400).json({
             success: false,
             message: error.message || "Không thể tải lịch sử quét vé"
+        });
+    }
+});
+
+// ==========================================
+// POST /api/admin/tickets/pending-checkin
+// body: { gateKey, showtimeId }
+// Tra danh sách đơn/ghế CHƯA check-in của 1 suất diễn cụ thể — nút "Tra đơn
+// chưa check-in" trên gate-scanner.html (xem listPendingCheckinForShowtime()
+// trong admin.service.js). Cùng khoá gateKey với mọi endpoint khác của trang
+// này, không cần gateLimiter riêng (tần suất tra thấp, không phải quét liên
+// tục như /checkin).
+// ==========================================
+
+router.post("/admin/tickets/pending-checkin", requireGateKey, async (req, res) => {
+
+    try {
+
+        const { showtimeId } = req.body;
+
+        const result = await listPendingCheckinForShowtime({ showtimeId });
+
+        return res.status(200).json({ success: true, ...result });
+
+    } catch (error) {
+
+        console.error("PENDING CHECKIN LOOKUP ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể tra đơn chưa check-in"
         });
     }
 });

@@ -804,6 +804,56 @@ async function checkInOrderByTicketCode({ ticketCode, dryRun }) {
 }
 
 // ==========================================
+// TRA ĐƠN CHƯA CHECK-IN THEO SUẤT — gate-scanner.html, nút "Tra đơn chưa
+// check-in" + picker chọn suất (COPY cơ chế combobox từ partner-orders.html,
+// xem frontend). Cho nhân viên cổng tra nhanh còn bao nhiêu khách/ghế chưa
+// vào mà không phải soát từng mã. Chỉ tính vé ticketStatus=="valid" &&
+// checkedIn==false của ĐÚNG show thật (REAL_SHOW_ID) — showtimeId lấy từ
+// /partner/showtimes/list nên show test ("tester-ticket") không lọt vào
+// picker, không cần lọc thêm ở đây.
+// ==========================================
+async function listPendingCheckinForShowtime({ showtimeId }) {
+
+    if (!showtimeId || typeof showtimeId !== "string") {
+        throw new Error("Thiếu showtimeId");
+    }
+
+    const snap = await db.collection("tickets")
+        .where("showId", "==", REAL_SHOW_ID)
+        .where("showtimeId", "==", showtimeId)
+        .where("ticketStatus", "==", "valid")
+        .where("checkedIn", "==", false)
+        .get();
+
+    const byOrder = new Map();
+    snap.docs.forEach((doc) => {
+        const t = doc.data();
+        const orderId = t.orderId || doc.id;
+        if (!byOrder.has(orderId)) {
+            byOrder.set(orderId, {
+                orderId,
+                customerName: t.customerName || "",
+                customerPhone: t.customerPhone || "",
+                seats: [],
+                ticketCodes: []
+            });
+        }
+        const entry = byOrder.get(orderId);
+        if (t.seatId) entry.seats.push(t.seatId);
+        if (t.ticketCode) entry.ticketCodes.push(t.ticketCode);
+    });
+
+    const orders = [...byOrder.values()].sort((a, b) => a.customerName.localeCompare(b.customerName, "vi"));
+
+    return {
+        showtimeId,
+        totalTickets: snap.size,
+        totalOrders: orders.length,
+        orders
+    };
+}
+
+// ==========================================
 // LỊCH SỬ QUÉT VÉ TẠI CỔNG (gate-scanner.html) — ghi lại MỌI lượt quét (kể
 // cả không ready/lỗi, và cả lượt TestScan dryRun, đánh dấu testMode riêng)
 // để xem lại khi cần đối chiếu/troubleshoot, KHÔNG phải audit log thao tác
@@ -1881,6 +1931,7 @@ module.exports = {
     checkInOrderByTicketCode,
     logGateScan,
     listGateScanHistory,
+    listPendingCheckinForShowtime,
     cancelTicketBySeat,
     cancelOrderSeats,
     createManualTicket,

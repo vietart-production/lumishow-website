@@ -37,6 +37,59 @@
   .history-link{position:fixed;top:12px;right:14px;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text);z-index:10;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 12px;text-decoration:none;}
   .history-link:hover{border-color:var(--green);color:var(--green);}
 
+  .pending-btn{position:fixed;top:12px;right:150px;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text);z-index:10;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:inherit;}
+  .pending-btn:hover{border-color:var(--green);color:var(--green);}
+
+  /* ---- Modal "Tra đơn chưa check-in" — picker chọn suất COPY nguyên cơ chế
+     từ partner-orders.html/admin-create-order.html (combobox nhóm theo
+     tháng, mỗi ngày 1 hàng, mỗi suất giờ 1 pill), KHÔNG có hàng "Mọi suất
+     diễn" vì ở đây luôn cần chọn đúng 1 suất (giống admin-create-order.html). ---- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal-box{background:var(--panel);border:1px solid var(--border);border-radius:14px;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);flex:0 0 auto;}
+  .modal-head h3{margin:0;font-size:15.5px;}
+  .modal-close{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;line-height:1;padding:4px;}
+  .modal-close:hover{color:var(--text);}
+  .modal-body{padding:16px 18px;overflow-y:auto;}
+
+  .st-picker{position:relative;min-width:240px;}
+  .st-btn{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:#0d1310;
+    color:var(--text);font-size:13.5px;cursor:pointer;text-align:left;
+  }
+  .st-btn:hover{border-color:rgba(255,255,255,.22);}
+  .st-btn .chev{width:14px;height:14px;flex-shrink:0;color:var(--dim);transition:transform .15s;}
+  .st-picker.open .st-btn .chev{transform:rotate(180deg);}
+  .st-btn .st-btn-label.placeholder{color:var(--dim);}
+  .st-panel{
+    position:absolute;top:calc(100% + 6px);left:0;width:100%;max-height:min(360px,60vh);
+    background:#0d1310;border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 16px 40px rgba(0,0,0,.5);overflow:hidden;display:flex;flex-direction:column;z-index:5;
+  }
+  .st-search-row{padding:10px;border-bottom:1px solid var(--border);flex:0 0 auto;}
+  .st-search{width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
+  .st-search:focus{outline:none;border-color:var(--green);}
+  .st-list{overflow-y:auto;padding:6px 0;}
+  .st-month{padding:12px 14px 6px;font-size:12px;font-weight:700;color:var(--dim);border-top:1px solid var(--border);margin-top:4px;}
+  .st-month:first-of-type{border-top:none;margin-top:0;}
+  .st-date-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 14px;}
+  .st-date-label{font-size:12.5px;color:var(--text);white-space:nowrap;}
+  .st-date-label .dow{color:var(--dim);margin-right:5px;}
+  .st-pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+  .st-pill{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;white-space:nowrap;}
+  .st-pill.st-open{background:rgba(61,220,132,.14);color:var(--green);}
+  .st-pill.st-open:hover{background:rgba(61,220,132,.26);}
+  .st-pill.st-closed{background:transparent;color:var(--dim);border-color:var(--border);opacity:.6;}
+  .st-pill.st-closed:hover{opacity:1;}
+  .st-no-match{padding:24px 14px;text-align:center;color:var(--dim);font-size:13px;}
+
+  .pending-summary{font-size:13px;color:var(--dim);margin:14px 0 10px;}
+  .pending-order{background:#0d1310;border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:8px;}
+  .pending-order .po-name{font-size:13.5px;font-weight:700;}
+  .pending-order .po-sub{font-size:12px;color:var(--dim);margin-top:2px;}
+  .pending-empty{color:var(--dim);font-size:13px;text-align:center;padding:18px 0;}
+
   .head{text-align:center;margin-bottom:18px;}
   .head .icon{font-size:46px;line-height:1;margin-bottom:6px;}
   .head .title{font-size:21px;font-weight:800;margin:0 0 4px;}
@@ -153,6 +206,7 @@
     <label for="testScanToggle">TestScan</label>
   </div>
   <a class="history-link" href="gate-scan-history.html">📜 Lịch sử</a>
+  <button type="button" class="pending-btn" id="pendingBtn">📋 Chưa check-in</button>
   <div class="wrap">
 
     <div class="head">
@@ -188,6 +242,30 @@
       <p class="feed-empty" id="feedEmpty">Đang tải lịch sử...</p>
     </div>
 
+  </div>
+</div>
+
+<div class="modal-overlay" id="pendingModalOverlay" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Tra đơn chưa check-in</h3>
+      <button type="button" class="modal-close" id="pendingModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="st-picker" id="stPicker">
+        <button type="button" class="st-btn" id="stBtn">
+          <span class="st-btn-label placeholder" id="stBtnLabel">Chọn suất diễn...</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="st-panel" id="stPanel" hidden>
+          <div class="st-search-row">
+            <input type="text" class="st-search" id="stSearch" placeholder="Tìm theo ngày, thứ hoặc giờ...">
+          </div>
+          <div class="st-list" id="stList"></div>
+        </div>
+      </div>
+      <div id="pendingResults"></div>
+    </div>
   </div>
 </div>
 
@@ -726,8 +804,11 @@ function escapeHtml(s){
 
 // Máy quét cứng gõ vào field đang có focus — nếu staff lỡ bấm/chạm ra
 // ngoài làm mất focus, tự lấy lại ngay (field luôn phải sẵn sàng nhận quét).
+// Bỏ qua khi modal "Tra đơn chưa check-in" đang mở — nếu không, mọi click
+// trong modal (vd gõ ô tìm kiếm suất diễn) sẽ liên tục bị cướp focus về
+// scanInput, không thao tác được với modal.
 document.addEventListener("click", (e) => {
-  if (!$("app").hidden) focusScanInput();
+  if (!$("app").hidden && $("pendingModalOverlay").hidden) focusScanInput();
 });
 
 // Phòng trường hợp focus bị lệch (lỡ click vào checkbox/vùng khác) mà
@@ -735,12 +816,15 @@ document.addEventListener("click", (e) => {
 // thuộc mã vé ([A-Za-z0-9_-]) ở MỨC DOCUMENT, không phụ thuộc field nào
 // đang focus, rồi tự chuyển thẳng vào scanInput. Bỏ qua khi: đang đúng
 // scanInput (để luồng debounce riêng của nó xử lý, tránh gõ đúp), đang ở
-// field nhập khoá gate (gõ khoá bình thường), hoặc có phím tổ hợp
-// (Ctrl/Alt/Meta — có thể là shortcut trình duyệt, không phải máy quét).
+// field nhập khoá gate (gõ khoá bình thường), có phím tổ hợp (Ctrl/Alt/Meta
+// — có thể là shortcut trình duyệt, không phải máy quét), hoặc modal "Tra
+// đơn chưa check-in" đang mở (gõ tìm kiếm suất diễn trong ô stSearch bình
+// thường, không phải máy quét QR).
 const TICKET_CHAR_PATTERN = /^[A-Za-z0-9_-]$/;
 
 document.addEventListener("keydown", (e) => {
   if ($("app").hidden) return;
+  if (!$("pendingModalOverlay").hidden) return;
   if (document.activeElement === scanInput) return;
   if (document.activeElement === $("gateInput")) return;
   if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -756,6 +840,145 @@ document.addEventListener("keydown", (e) => {
     clearTimeout(debounceTimer);
     submitScan(scanInput.value);
   }
+});
+
+// ---------------------------------------------------------------
+// MODAL "TRA ĐƠN CHƯA CHECK-IN" — picker chọn suất diễn COPY nguyên cơ chế
+// combobox từ partner-orders.html (nhóm theo tháng, mỗi ngày 1 hàng, mỗi
+// suất giờ 1 pill), bỏ hàng "Mọi suất diễn" vì ở đây luôn cần đúng 1 suất
+// (giống admin-create-order.html). Tái dùng thẳng /partner/showtimes/list để
+// lấy danh sách suất — endpoint này đã chấp nhận PIN admin qua
+// checkPartnerKey(), và GATE_KEY ở trang này trong thực tế luôn LÀ PIN admin
+// (màn hình gate chỉ hỏi "PIN admin", xem comment verifyGateKey() ở trên).
+// ---------------------------------------------------------------
+const DOW_SHORT = ["CN","T2","T3","T4","T5","T6","T7"];
+let allShowtimes = [];
+let showtimesLoaded = false;
+
+const pendingBtn = $("pendingBtn");
+const pendingModalOverlay = $("pendingModalOverlay");
+const pendingModalClose = $("pendingModalClose");
+const pendingResults = $("pendingResults");
+const stPicker = $("stPicker"), stBtn = $("stBtn"), stBtnLabel = $("stBtnLabel");
+const stPanel = $("stPanel"), stSearch = $("stSearch"), stList = $("stList");
+
+async function loadShowtimesList(){
+  try {
+    const res = await fetch(API + "/partner/showtimes/list", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey: GATE_KEY })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) return;
+    allShowtimes = data.showtimes;
+    showtimesLoaded = true;
+    renderShowtimePicker(allShowtimes);
+  } catch (e) {}
+}
+
+function fmtShowtimeLabel(showtimeId){
+  const [datePart, timePart] = showtimeId.split("_");
+  const [y, m, d] = datePart.split("-").map(Number);
+  return `${DOW_SHORT[new Date(y, m - 1, d).getDay()]}, ${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y} · ${timePart}`;
+}
+
+function renderShowtimePicker(showtimes){
+  const byMonth = new Map();
+  showtimes.forEach(st => {
+    const [datePart] = st.showtimeId.split("_");
+    const [y, m] = datePart.split("-").map(Number);
+    const monthKey = `${y}-${String(m).padStart(2,"0")}`;
+    if (!byMonth.has(monthKey)) byMonth.set(monthKey, new Map());
+    const byDate = byMonth.get(monthKey);
+    if (!byDate.has(datePart)) byDate.set(datePart, []);
+    byDate.get(datePart).push(st);
+  });
+
+  const monthKeys = [...byMonth.keys()].sort().reverse();
+  let html = "";
+  if (monthKeys.length === 0) html = `<div class="st-no-match">Không có suất diễn nào khớp tìm kiếm.</div>`;
+
+  monthKeys.forEach(monthKey => {
+    const [y, m] = monthKey.split("-").map(Number);
+    html += `<div class="st-month">Tháng ${m}, ${y}</div>`;
+    const byDate = byMonth.get(monthKey);
+    const dateKeys = [...byDate.keys()].sort().reverse();
+    dateKeys.forEach(datePart => {
+      const [dy, dm, dd] = datePart.split("-").map(Number);
+      const dow = DOW_SHORT[new Date(dy, dm - 1, dd).getDay()];
+      const pills = byDate.get(datePart)
+        .sort((a, b) => a.showtimeId.localeCompare(b.showtimeId))
+        .map(st => {
+          const time = st.showtimeId.split("_")[1];
+          const cls = st.status === "OPEN" ? "st-open" : "st-closed";
+          return `<button type="button" class="st-pill ${cls}" data-showtime="${st.showtimeId}">${time}</button>`;
+        }).join("");
+      html += `<div class="st-date-row">
+        <span class="st-date-label"><span class="dow">${dow}</span>${String(dd).padStart(2,"0")}/${String(dm).padStart(2,"0")}</span>
+        <span class="st-pills">${pills}</span>
+      </div>`;
+    });
+  });
+
+  stList.innerHTML = html;
+}
+
+function openStPanel(){ stPanel.hidden = false; stPicker.classList.add("open"); stSearch.value = ""; renderShowtimePicker(allShowtimes); stSearch.focus(); }
+function closeStPanel(){ stPanel.hidden = true; stPicker.classList.remove("open"); }
+
+stBtn.addEventListener("click", () => { stPanel.hidden ? openStPanel() : closeStPanel(); });
+document.addEventListener("click", (e) => { if (!$("pendingModalOverlay").hidden && !stPicker.contains(e.target)) closeStPanel(); });
+
+stSearch.addEventListener("input", () => {
+  const q = stSearch.value.trim().toLowerCase();
+  if (!q) { renderShowtimePicker(allShowtimes); return; }
+  renderShowtimePicker(allShowtimes.filter(st => fmtShowtimeLabel(st.showtimeId).toLowerCase().includes(q) || st.showtimeId.toLowerCase().includes(q)));
+});
+
+stList.addEventListener("click", (e) => {
+  const pill = e.target.closest(".st-pill");
+  if (!pill) return;
+  closeStPanel();
+  stBtnLabel.textContent = fmtShowtimeLabel(pill.dataset.showtime);
+  stBtnLabel.classList.remove("placeholder");
+  fetchPendingCheckin(pill.dataset.showtime);
+});
+
+async function fetchPendingCheckin(showtimeId){
+  pendingResults.innerHTML = '<p class="pending-empty">Đang tra...</p>';
+  try {
+    const data = await callGateApi("/admin/tickets/pending-checkin", { showtimeId });
+    if (!data.orders || !data.orders.length) {
+      pendingResults.innerHTML = `<p class="pending-summary">${data.totalTickets} vé chưa check-in</p><p class="pending-empty">Không còn đơn nào chưa check-in cho suất này 🎉</p>`;
+      return;
+    }
+    const rows = data.orders.map(o => {
+      const seatsLabel = (o.seats || []).map(displaySeatId).join(", ");
+      const sub = [o.customerPhone, seatsLabel ? "Ghế " + seatsLabel : ""].filter(Boolean).join(" · ");
+      return `<div class="pending-order"><div class="po-name">${escapeHtml(o.customerName || "—")}</div><div class="po-sub">${escapeHtml(sub)}</div></div>`;
+    }).join("");
+    pendingResults.innerHTML = `<p class="pending-summary">${data.totalTickets} vé / ${data.totalOrders} đơn chưa check-in</p>${rows}`;
+  } catch (err) {
+    pendingResults.innerHTML = `<p class="pending-empty">Lỗi: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+pendingBtn.addEventListener("click", () => {
+  pendingModalOverlay.hidden = false;
+  pendingResults.innerHTML = '<p class="pending-empty">Chọn 1 suất diễn ở trên để xem đơn chưa check-in.</p>';
+  stBtnLabel.textContent = "Chọn suất diễn...";
+  stBtnLabel.classList.add("placeholder");
+  closeStPanel();
+  if (!showtimesLoaded) loadShowtimesList();
+});
+
+function closePendingModal(){
+  pendingModalOverlay.hidden = true;
+  closeStPanel();
+}
+pendingModalClose.addEventListener("click", closePendingModal);
+pendingModalOverlay.addEventListener("click", (e) => { if (e.target === pendingModalOverlay) closePendingModal(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !pendingModalOverlay.hidden) closePendingModal();
 });
 </script>
 </body>
