@@ -1080,7 +1080,8 @@ const tierName = key => TIERS[key].name[currentLang] || TIERS[key].name.vi;
 // (giá base dùng chung mọi suất khác). Thêm/bớt suất khuyến mãi chỉ sửa object
 // này. Hạng không có trong map con của suất đó giữ nguyên giá gốc.
 const PROMO_SHOWTIMES = {
-  '2026-11-24_16:30': { 'son-than':240000, 'thuy-quai':200000, 'mi-nuong':160000 }
+  '2026-11-24_16:30': { 'son-than':240000, 'thuy-quai':200000, 'mi-nuong':160000 },
+  '2026-11-24_10:00': { 'son-than':240000, 'thuy-quai':200000, 'mi-nuong':160000 }
 };
 const promoPriceFor = tier => {
   // currentShowKey() đọc OPEN_SHOWTIME_GROUPS — mảng này còn rỗng ở lần
