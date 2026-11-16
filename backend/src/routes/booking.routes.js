@@ -79,11 +79,12 @@ router.get("/shows/:showId/showtimes/open", async (req, res) => {
     try {
 
         const { showId } = req.params;
-        const showtimeIds = await listOpenShowtimes({ showId });
+        const { showtimeIds, promoByShowtime } = await listOpenShowtimes({ showId });
 
         return res.status(200).json({
             success: true,
-            showtimeIds
+            showtimeIds,
+            promoByShowtime
         });
 
     } catch (error) {

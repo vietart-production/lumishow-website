@@ -615,10 +615,24 @@ async function listOpenShowtimes({ showId }) {
         .where("status", "==", "OPEN")
         .get();
 
-    return snap.docs
-        .map((doc) => doc.id)
-        .filter((showtimeId) => showtimeId.split("_")[0] >= todayKey)
-        .sort();
+    const docs = snap.docs.filter((doc) => doc.id.split("_")[0] >= todayKey);
+
+    const showtimeIds = docs.map((doc) => doc.id).sort();
+
+    // promoByShowtime: { [showtimeId]: {tier: giáMới} } — chỉ liệt kê suất
+    // đang có khuyến mãi (xem setShowtimePromoPricing() trong admin.service.js).
+    // dat-ve.html đọc field này để hiện giá gạch ngang thay vì hardcode
+    // PROMO_SHOWTIMES trong code — đổi/gỡ khuyến mãi qua admin không cần
+    // deploy lại frontend nữa.
+    const promoByShowtime = {};
+    docs.forEach((doc) => {
+        const promo = doc.data().promoPricing;
+        if (promo && Object.keys(promo).length > 0) {
+            promoByShowtime[doc.id] = promo;
+        }
+    });
+
+    return { showtimeIds, promoByShowtime };
 }
 
 module.exports = {

@@ -1077,19 +1077,20 @@ const TIERS = {
 const tierName = key => TIERS[key].name[currentLang] || TIERS[key].name.vi;
 
 // Khuyến mãi giảm giá riêng theo TỪNG SUẤT (showKey) — không đụng TIERS gốc
-// (giá base dùng chung mọi suất khác). Thêm/bớt suất khuyến mãi chỉ sửa object
-// này. Hạng không có trong map con của suất đó giữ nguyên giá gốc.
-const PROMO_SHOWTIMES = {
-  '2026-11-24_16:30': { 'son-than':240000, 'thuy-quai':200000, 'mi-nuong':160000 },
-  '2026-11-24_10:00': { 'son-than':240000, 'thuy-quai':200000, 'mi-nuong':160000 }
-};
+// (giá base dùng chung mọi suất khác), hạng không có trong map con của suất
+// đó giữ nguyên giá gốc. ĐỌC SỐNG từ backend (PROMO_BY_SHOWTIME, set bởi
+// fetchOpenShowtimeGroups() — xem mục 15) thay vì hardcode object ở đây như
+// trước (từng phải sửa code + deploy lại mỗi lần đổi khuyến mãi, xem
+// admin-showtimes.html / setShowtimePromoPricing() ở backend — giờ admin tự
+// bật/tắt khuyến mãi qua UI, không cần đụng tới file này nữa).
+let PROMO_BY_SHOWTIME = {};
 const promoPriceFor = tier => {
   // currentShowKey() đọc OPEN_SHOWTIME_GROUPS — mảng này còn rỗng ở lần
   // renderTiers() đầu tiên lúc khởi động trang (trước khi fetch xong lịch
   // diễn), nên phải an toàn với lỗi thay vì để nó chặn đứng cả script.
   let showKey;
   try { showKey = currentShowKey(); } catch (e) { return null; }
-  const p = PROMO_SHOWTIMES[showKey];
+  const p = PROMO_BY_SHOWTIME[showKey];
   return (p && p[tier] != null) ? p[tier] : null;
 };
 const effectivePrice = (tier, basePrice) => {
@@ -3165,6 +3166,8 @@ async function fetchOpenShowtimeGroups(){
   if (!data.success || !Array.isArray(data.showtimeIds)){
     throw new Error('Dữ liệu suất diễn không hợp lệ');
   }
+
+  PROMO_BY_SHOWTIME = data.promoByShowtime || {};
 
   return groupOpenShowtimes(data.showtimeIds);
 }

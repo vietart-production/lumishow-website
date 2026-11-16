@@ -103,9 +103,13 @@
   .editor-toolbar #seSoldBtn{color:var(--blue);border-color:rgba(79,176,255,.4);}
   #seUndoBtn{padding:7px 14px;border-radius:7px;border:1px solid rgba(251,187,33,.4);background:var(--panel2);color:var(--gold);font-size:12.5px;flex-shrink:0;}
   .modal label{display:block;font-size:12px;color:var(--dim);margin:12px 0 5px;}
-  .modal input[type=text]{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:13.5px;box-sizing:border-box;font-family:inherit;}
+  .modal input[type=text],.modal input[type=number]{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:#0d1310;color:var(--text);font-size:13.5px;box-sizing:border-box;font-family:inherit;}
   .modal .radio-row{display:flex;gap:14px;font-size:13px;margin-top:6px;}
   .modal .radio-row label{display:inline-flex;align-items:center;gap:6px;margin:0;color:var(--text);}
+  .promo-row{display:flex;align-items:center;gap:10px;margin:10px 0 0;}
+  .promo-row label{flex:0 0 90px;margin:0;font-size:12.5px;color:var(--dim);}
+  .promo-row .promo-std{flex-shrink:0;font-size:11.5px;color:var(--dim);white-space:nowrap;}
+  .badge-promo{font-size:11px;background:rgba(251,187,33,.15);color:var(--gold);padding:2px 8px;border-radius:20px;font-weight:700;}
   .editor-canvas-wrap{flex:1;position:relative;overflow:hidden;background:#050a07;}
   #seatSvg{width:100%;height:100%;display:block;}
   .seat{cursor:pointer;stroke:#000;stroke-width:1;}
@@ -195,6 +199,34 @@
     <div class="modal-actions">
       <button type="button" class="modal-cancel" id="soldCancel">Huỷ</button>
       <button type="button" class="modal-save" id="soldConfirm">Xác nhận bán</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="promoModal" hidden>
+  <div class="modal">
+    <h3>Giảm giá suất diễn</h3>
+    <p class="modal-sub" id="promoShowtimeLabel">—</p>
+    <p class="modal-sub" style="margin-top:-10px;">Để trống hạng nào = giữ nguyên giá gốc hạng đó. Ghế đã bán/đang giữ không bị đổi giá.</p>
+    <div class="promo-row">
+      <label for="promoSonThan">Sơn Thần</label>
+      <input type="number" id="promoSonThan" placeholder="Giá gốc" min="1">
+      <span class="promo-std" id="promoStdSonThan"></span>
+    </div>
+    <div class="promo-row">
+      <label for="promoThuyQuai">Thủy Quái</label>
+      <input type="number" id="promoThuyQuai" placeholder="Giá gốc" min="1">
+      <span class="promo-std" id="promoStdThuyQuai"></span>
+    </div>
+    <div class="promo-row">
+      <label for="promoMiNuong">Mị Nương</label>
+      <input type="number" id="promoMiNuong" placeholder="Giá gốc" min="1">
+      <span class="promo-std" id="promoStdMiNuong"></span>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="modal-cancel" id="promoClear">Bỏ khuyến mãi</button>
+      <button type="button" class="modal-cancel" id="promoCancel">Huỷ</button>
+      <button type="button" class="modal-save" id="promoConfirm">Áp dụng</button>
     </div>
   </div>
 </div>
@@ -378,12 +410,15 @@ function renderSidebar(){
   } else {
     sbList.innerHTML = list.map(st => {
       const time = st.showtimeId.split("_")[1];
+      const hasPromo = st.promoPricing && Object.keys(st.promoPricing).length > 0;
       return `<div class="st-row" data-id="${st.showtimeId}">
         <span class="st-time">${time}</span>
         <span class="pill ${st.status}">${st.status === "OPEN" ? "Đang mở" : "Đã khoá"}</span>
         ${st.hasOrders ? '<span class="badge-orders" title="Đã có đơn hàng thật">🔒</span>' : ""}
+        ${hasPromo ? '<span class="badge-promo" title="Đang có khuyến mãi">🏷️ Giảm giá</span>' : ""}
         <span class="spacer"></span>
         <button class="btn-seat" data-id="${st.showtimeId}">Sơ đồ ghế</button>
+        <button class="btn-promo" data-id="${st.showtimeId}">Giảm giá</button>
         <button class="btn-toggle" data-id="${st.showtimeId}" data-status="${st.status}">${st.status === "OPEN" ? "Khoá" : "Mở"}</button>
         <button class="btn-del delete-btn" data-id="${st.showtimeId}" ${st.hasOrders ? "disabled title='Đã có đơn hàng thật, không thể xoá'" : ""}>Xoá</button>
       </div>`;
@@ -400,6 +435,9 @@ document.getElementById("sbClose").addEventListener("click", () => {
 document.getElementById("sbList").addEventListener("click", async (e) => {
   const seatBtn = e.target.closest(".btn-seat");
   if (seatBtn) { openSeatEditor(seatBtn.dataset.id); return; }
+
+  const promoBtn = e.target.closest(".btn-promo");
+  if (promoBtn) { openPromoModal(promoBtn.dataset.id); return; }
 
   const toggleBtn = e.target.closest(".btn-toggle");
   if (toggleBtn) {
@@ -437,6 +475,67 @@ async function bulkDayStatus(status){
     await loadCalendar(calYear, calMonth);
   } catch (err) { alert(err.message); }
 }
+
+// ==========================================
+// GIẢM GIÁ TOÀN SUẤT — xem setShowtimePromoPricing() ở backend. Chỉ 3 hạng
+// Sơn Thần/Thủy Quái/Mị Nương được giảm (Vua Hùng/VIP chưa từng giảm trong
+// thực tế, theo đúng 2 lần đã làm tay cho suất 2026-11-24), giá gốc lấy
+// thẳng từ TIER_STD_PRICE bên dưới — khớp TIER_PRICES ở admin.service.js.
+// ==========================================
+const TIER_STD_PRICE = { "son-than": 300000, "thuy-quai": 250000, "mi-nuong": 200000 };
+const PROMO_TIER_INPUT = { "son-than": "promoSonThan", "thuy-quai": "promoThuyQuai", "mi-nuong": "promoMiNuong" };
+let promoEditingShowtimeId = null;
+
+function openPromoModal(showtimeId){
+  promoEditingShowtimeId = showtimeId;
+  const st = (showtimesByDate.get(selectedDateStr) || []).find(s => s.showtimeId === showtimeId);
+  const current = (st && st.promoPricing) || {};
+
+  document.getElementById("promoShowtimeLabel").textContent = showtimeId;
+  for (const [tier, inputId] of Object.entries(PROMO_TIER_INPUT)) {
+    document.getElementById(inputId).value = current[tier] != null ? current[tier] : "";
+    document.getElementById("promoStd" + tier.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join("")).textContent =
+      `Giá gốc ${TIER_STD_PRICE[tier].toLocaleString("vi-VN")}đ`;
+  }
+  document.getElementById("promoModal").hidden = false;
+}
+
+function closePromoModal(){
+  document.getElementById("promoModal").hidden = true;
+  promoEditingShowtimeId = null;
+}
+
+document.getElementById("promoCancel").addEventListener("click", closePromoModal);
+
+document.getElementById("promoClear").addEventListener("click", async () => {
+  if (!promoEditingShowtimeId) return;
+  try {
+    await callAdmin("/admin/showtimes/set-promo", { showtimeId: promoEditingShowtimeId, promoPricing: {} });
+    toast("Đã bỏ khuyến mãi, trả về giá gốc");
+    closePromoModal();
+    await loadCalendar(calYear, calMonth);
+  } catch (err) { alert(err.message); }
+});
+
+document.getElementById("promoConfirm").addEventListener("click", async () => {
+  if (!promoEditingShowtimeId) return;
+
+  const promoPricing = {};
+  for (const [tier, inputId] of Object.entries(PROMO_TIER_INPUT)) {
+    const raw = document.getElementById(inputId).value.trim();
+    if (raw === "") continue;
+    const price = Number(raw);
+    if (!Number.isFinite(price) || price <= 0) { alert("Giá nhập vào không hợp lệ"); return; }
+    promoPricing[tier] = price;
+  }
+
+  try {
+    const result = await callAdmin("/admin/showtimes/set-promo", { showtimeId: promoEditingShowtimeId, promoPricing });
+    toast(`Đã cập nhật khuyến mãi (${result.updated} ghế)`);
+    closePromoModal();
+    await loadCalendar(calYear, calMonth);
+  } catch (err) { alert(err.message); }
+});
 
 document.getElementById("sbDeleteDay").addEventListener("click", async () => {
   const list = showtimesByDate.get(selectedDateStr) || [];

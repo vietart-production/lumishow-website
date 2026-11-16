@@ -31,6 +31,7 @@ const {
     getShowtimesCalendar,
     createShowtime,
     setShowtimesStatus,
+    setShowtimePromoPricing,
     deleteShowtime,
     bulkUpdateSeats,
     renameSeat
@@ -801,6 +802,27 @@ router.post("/admin/showtimes/set-status", requirePin, async (req, res) => {
     } catch (error) {
         console.error("ADMIN SET STATUS ERROR:", error);
         return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật trạng thái" });
+    }
+});
+
+// ==========================================
+// POST /api/admin/showtimes/set-promo
+// body: { password, showtimeId, promoPricing }
+// Giảm giá toàn suất qua UI (admin-showtimes.html) — xem
+// setShowtimePromoPricing() trong admin.service.js cho toàn bộ logic (vừa
+// sửa giá ghế thật vừa lưu promoPricing lên doc suất diễn để dat-ve.html
+// đọc sống qua /shows/.../showtimes/open, không cần sửa code/deploy lại).
+// promoPricing truyền {} hoặc null để xoá khuyến mãi, trả về giá gốc.
+// ==========================================
+
+router.post("/admin/showtimes/set-promo", requirePin, async (req, res) => {
+    try {
+        const { showtimeId, promoPricing } = req.body;
+        const result = await setShowtimePromoPricing({ showId: SHOW_ID, showtimeId, promoPricing });
+        return res.status(200).json({ success: true, message: "Đã cập nhật khuyến mãi suất diễn", ...result });
+    } catch (error) {
+        console.error("ADMIN SET PROMO ERROR:", error);
+        return res.status(400).json({ success: false, message: error.message || "Không thể cập nhật khuyến mãi" });
     }
 });
 

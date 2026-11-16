@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const { db } = require("../config/firebase");
-const { FieldPath } = require("firebase-admin/firestore");
+const { FieldPath, FieldValue } = require("firebase-admin/firestore");
 const BOOKING_CONFIG = require("../config/booking.config");
 const { sendTicketEmail } = require("./email.service");
 const SEAT_TIERS = require("../../scripts/seatTiers.json");
@@ -1657,7 +1657,8 @@ async function getShowtimesCalendar({ showId, year, month }) {
             showtimeId: doc.id,
             status: data.status,
             seatCount: data.seatCount || 0,
-            seatsSeeded: data.seatsSeeded === true
+            seatsSeeded: data.seatsSeeded === true,
+            promoPricing: data.promoPricing || null
         };
     });
 
@@ -1752,6 +1753,93 @@ async function setShowtimesStatus({ showId, showtimeIds, status }) {
     await batch.commit();
 
     return { updated: showtimeIds.length, status };
+}
+
+// ==========================================
+// GIẢM GIÁ TOÀN SUẤT — admin-showtimes.html, nút "Giảm giá suất diễn".
+// Thay cho quy trình tay (script tmp_*.js sửa thẳng Firestore + sửa code
+// PROMO_SHOWTIMES trong dat-ve.html rồi deploy lại, đã làm 2 lần cho suất
+// 2026-11-24_16:30/_10:00) — giờ chỉ 1 lần gọi API là xong CẢ 2 việc:
+//   1. Giá thật từng ghế (Firestore) — nguồn tính tiền khi thanh toán.
+//   2. promoPricing lưu trên doc showtime — dat-ve.html đọc field này qua
+//      GET /shows/.../showtimes/open (xem listOpenShowtimes() bên dưới) để
+//      hiện giá gạch ngang, KHÔNG còn hardcode PROMO_SHOWTIMES ở frontend
+//      nữa nên không cần redeploy mỗi lần đổi khuyến mãi.
+//
+// promoPricing: { [tier]: giáMới } — chỉ liệt kê hạng ĐANG giảm; hạng không
+// có trong object coi là giá gốc. Truyền {} hoặc null để XOÁ khuyến mãi,
+// trả hết các hạng đã giảm trước đó về đúng giá gốc TIER_PRICES.
+// ==========================================
+
+async function setShowtimePromoPricing({ showId, showtimeId, promoPricing }) {
+
+    if (!showtimeId) {
+        throw new Error("Thiếu showtimeId");
+    }
+
+    const newPromo = promoPricing || {};
+
+    for (const [tier, price] of Object.entries(newPromo)) {
+        if (!TIER_PRICES[tier]) {
+            throw new Error(`Hạng ghế không hợp lệ: ${tier}`);
+        }
+        if (!(Number.isFinite(price) && price > 0)) {
+            throw new Error(`Giá không hợp lệ cho hạng ${TIER_PRICES[tier].name}`);
+        }
+        if (price >= TIER_PRICES[tier].price) {
+            throw new Error(`Giá khuyến mãi hạng ${TIER_PRICES[tier].name} phải thấp hơn giá gốc (${TIER_PRICES[tier].price.toLocaleString("vi-VN")}đ)`);
+        }
+    }
+
+    const showtimeRef = db.collection("shows").doc(showId).collection("showtimes").doc(showtimeId);
+    const showtimeSnap = await showtimeRef.get();
+
+    if (!showtimeSnap.exists) {
+        throw new Error("Không tìm thấy suất diễn");
+    }
+
+    const oldPromo = showtimeSnap.data().promoPricing || {};
+
+    // Hạng nào cần đụng tới giá ghế thật: đang được giảm MỚI, hoặc từng giảm
+    // ở lần trước nhưng lần này không còn trong danh sách nữa (phải trả về
+    // giá gốc, không để treo mãi ở giá cũ).
+    const tiersToTouch = new Set([...Object.keys(oldPromo), ...Object.keys(newPromo)]);
+
+    const seatsCollection = showtimeRef.collection("seats");
+    let updated = 0, skipped = 0;
+    const now = new Date();
+
+    for (const tier of tiersToTouch) {
+        const targetPrice = newPromo[tier] != null ? newPromo[tier] : TIER_PRICES[tier].price;
+
+        const snap = await seatsCollection.where("tier", "==", tier).get();
+        let batch = db.batch();
+        let batchCount = 0;
+
+        for (const doc of snap.docs) {
+            const seat = doc.data();
+            if (seat.status === "SOLD" || seat.status === "HELD") {
+                skipped++;
+                continue;
+            }
+            batch.update(doc.ref, { price: targetPrice, updatedAt: now });
+            updated++;
+            batchCount++;
+            if (batchCount >= 400) {
+                await batch.commit();
+                batch = db.batch();
+                batchCount = 0;
+            }
+        }
+        if (batchCount > 0) await batch.commit();
+    }
+
+    await showtimeRef.update({
+        promoPricing: Object.keys(newPromo).length > 0 ? newPromo : FieldValue.delete(),
+        updatedAt: now
+    });
+
+    return { updated, skipped, tiersTouched: [...tiersToTouch], promoPricing: newPromo };
 }
 
 // ==========================================
@@ -1948,6 +2036,7 @@ module.exports = {
     getShowtimesCalendar,
     createShowtime,
     setShowtimesStatus,
+    setShowtimePromoPricing,
     deleteShowtime,
     bulkUpdateSeats,
     renameSeat
