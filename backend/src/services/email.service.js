@@ -59,6 +59,30 @@ const VENUE_NAME = "Rạp Xiếc Trung Ương";
 const VENUE_ADDRESS = "67-69 Trần Nhân Tông, Hai Bà Trưng, Hà Nội";
 const SUPPORT_HOTLINE = "0869 512 246 (Ms. Chi)";
 
+// Tên/địa điểm hiển thị trong mail theo showId — show mới (Tinh Hoa Bắc Bộ,
+// nhánh extend_ShowTHBB) KHÔNG dùng chung tên/venue rạp xiếc. venueAddress
+// Tinh Hoa Bắc Bộ còn là placeholder, chưa có địa chỉ thật — xem
+// lively-inventing-frog.md. KHÔNG đổi HERO_IMG/TITLE_IMG theo show (ảnh KV
+// Tinh Hoa Bắc Bộ chỉ có trên nhánh chưa deploy, mail không load được từ
+// localhost) — mọi show tạm dùng chung ảnh rạp xiếc.
+const SHOW_DISPLAY = {
+    "son-than-thuy-quai": {
+        name: "Sơn Thần Thủy Quái",
+        tagline: "Show xiếc kết hợp 3D Mapping Panorama 360°",
+        venueName: VENUE_NAME,
+        venueAddress: VENUE_ADDRESS
+    },
+    "tinh-hoa-bac-bo": {
+        name: "Tinh Hoa Bắc Bộ",
+        tagline: "Vở diễn thực cảnh tái hiện văn hoá Bắc Bộ",
+        venueName: "[Địa điểm Tinh Hoa Bắc Bộ — cần xác nhận]",
+        venueAddress: ""
+    }
+};
+function showDisplayFor(showId) {
+    return SHOW_DISPLAY[showId] || SHOW_DISPLAY["son-than-thuy-quai"];
+}
+
 // Ảnh thật đã có sẵn trên site — dùng thẳng URL công khai, không nhúng base64
 // (các file này nặng vài trăm KB tới hơn 1MB, nhúng vào mail sẽ làm mail quá khổ).
 const ASSET_BASE = "https://lumishow.vn/image";
@@ -140,6 +164,8 @@ function qrBlockHtml(ticket, index, total) {
 
 async function buildTicketEmailHtml(order, tickets) {
 
+    const showInfo = showDisplayFor(order.showId);
+
     const { time, date } = splitShowtime(order.showtimeId);
 
     const tierSummary = [...new Set(tickets.map((t) => t.tierName))].join(", ");
@@ -157,7 +183,7 @@ async function buildTicketEmailHtml(order, tickets) {
         <!-- HERO -->
         <tr>
             <td>
-                <img src="${HERO_IMG}" width="560" alt="Sơn Thần Thủy Quái" style="display:block;width:100%;max-width:560px;height:auto;">
+                <img src="${HERO_IMG}" width="560" alt="${showInfo.name}" style="display:block;width:100%;max-width:560px;height:auto;">
             </td>
         </tr>
 
@@ -165,9 +191,9 @@ async function buildTicketEmailHtml(order, tickets) {
         <tr>
             <td style="background:#0d1117;text-align:center;padding:24px 24px 20px;">
                 <img src="${LOGO_IMG}" width="200" alt="LumiShow" style="display:block;width:200px;max-width:60%;height:auto;margin:0 auto 18px;">
-                <img src="${TITLE_IMG}" width="320" alt="Sơn Thần Thủy Quái" style="display:block;width:100%;max-width:320px;height:auto;margin:0 auto 10px;">
-                <div style="color:#98a29b;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Show xiếc kết hợp 3D Mapping Panorama 360°</div>
-                <div style="color:#7CFF5A;font-size:11.5px;font-weight:700;margin-top:8px;">◆ &nbsp;LumiShow kết hợp cùng Rạp Xiếc Trung Ương&nbsp; ◆</div>
+                <img src="${TITLE_IMG}" width="320" alt="${showInfo.name}" style="display:block;width:100%;max-width:320px;height:auto;margin:0 auto 10px;">
+                <div style="color:#98a29b;font-size:11px;letter-spacing:1px;text-transform:uppercase;">${showInfo.tagline}</div>
+                <div style="color:#7CFF5A;font-size:11.5px;font-weight:700;margin-top:8px;">◆ &nbsp;LumiShow kết hợp cùng ${showInfo.venueName}&nbsp; ◆</div>
             </td>
         </tr>
 
@@ -178,7 +204,7 @@ async function buildTicketEmailHtml(order, tickets) {
                      @font-face khai báo, tránh trình duyệt phải tự giả đậm (synthetic bold)
                      khi không tìm thấy đúng mặt chữ, nguyên nhân từng gây vỡ dấu tiếng Việt. -->
                 <div style="font-family:'Oswald','Arial Narrow',sans-serif;color:#FFD15A;font-size:21px;font-weight:700;letter-spacing:.5px;">XÁC NHẬN ĐẶT VÉ THÀNH CÔNG</div>
-                <div style="color:#98a29b;font-size:12.5px;margin-top:6px;">Sơn Thần Thủy Quái&nbsp; | &nbsp;Mã vé #${order.orderCode}</div>
+                <div style="color:#98a29b;font-size:12.5px;margin-top:6px;">${showInfo.name}&nbsp; | &nbsp;Mã vé #${order.orderCode}</div>
             </td>
         </tr>
 
@@ -188,8 +214,8 @@ async function buildTicketEmailHtml(order, tickets) {
                 <p style="margin:0 0 14px;font-size:15px;">Chào <b>${order.customerName}</b>,</p>
 
                 <p style="margin:0 0 24px;font-size:14px;line-height:1.7;color:#c9d1cb;">
-                    Cảm ơn bạn đã đặt vé xem <b style="color:#FFD15A;">Sơn Thần Thủy Quái</b> — show xiếc kết hợp 3D Mapping
-                    Panorama 360° do LumiShow kết hợp cùng Rạp Xiếc Trung Ương thực hiện.
+                    Cảm ơn bạn đã đặt vé xem <b style="color:#FFD15A;">${showInfo.name}</b> — ${showInfo.tagline}
+                    do LumiShow kết hợp cùng ${showInfo.venueName} thực hiện.
                     Đơn hàng của bạn đã được thanh toán và xác nhận thành công.
                 </p>
 
@@ -201,9 +227,9 @@ async function buildTicketEmailHtml(order, tickets) {
                             <div style="color:#FFD15A;font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;">🎫&nbsp; Thông tin vé</div>
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                                 ${infoRow("🔖", "Mã đặt chỗ", `#${order.orderCode}`)}
-                                ${infoRow("🎪", "Tên chương trình", "Sơn Thần Thủy Quái")}
+                                ${infoRow("🎪", "Tên chương trình", showInfo.name)}
                                 ${infoRow("🕐", "Thời gian", `${time}, ${date}`)}
-                                ${infoRow("📍", "Địa điểm", `${VENUE_NAME}<br>${VENUE_ADDRESS}`)}
+                                ${infoRow("📍", "Địa điểm", `${showInfo.venueName}${showInfo.venueAddress ? "<br>" + showInfo.venueAddress : ""}`)}
                                 ${infoRow("👥", "Số lượng vé", `${tickets.length} vé`)}
                                 ${infoRow("💺", "Loại vé / Ghế", `${tierSummary} — ${seatSummary}`)}
                                 ${infoRow("💰", "Tổng tiền", `<span style="color:#7CFF5A;">${fmtVND(order.amount)}</span>`)}
@@ -269,7 +295,7 @@ async function buildTicketEmailHtml(order, tickets) {
                         <td style="padding:18px 20px;">
                             <p style="font-size:13px;color:#c9d1cb;margin:0 0 4px;">🎧&nbsp; Nếu cần hỗ trợ, vui lòng liên hệ</p>
                             <p style="font-size:14px;color:#FFD15A;font-weight:800;margin:0 0 16px;">HOTLINE: ${SUPPORT_HOTLINE}</p>
-                            <p style="font-size:13px;color:#c9d1cb;margin:0 0 18px;">Chúc bạn có một trải nghiệm đáng nhớ cùng Sơn Thần Thủy Quái.</p>
+                            <p style="font-size:13px;color:#c9d1cb;margin:0 0 18px;">Chúc bạn có một trải nghiệm đáng nhớ cùng ${showInfo.name}.</p>
                             <p style="font-size:13px;color:#c9d1cb;margin:0;">Trân trọng,</p>
                             <p style="font-style:italic;font-weight:700;color:#FFD15A;font-size:20px;margin:2px 0 0;">Lumishow</p>
                         </td>
@@ -305,6 +331,7 @@ async function sendTicketEmail(order, tickets) {
     }
 
     const html = await buildTicketEmailHtml(order, tickets);
+    const showInfo = showDisplayFor(order.showId);
 
     const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -315,7 +342,7 @@ async function sendTicketEmail(order, tickets) {
         body: JSON.stringify({
             from: EMAIL_FROM,
             to: order.customerEmail,
-            subject: `Xác nhận đặt vé thành công - Sơn thần thủy quái | Mã vé #${order.orderCode}`,
+            subject: `Xác nhận đặt vé thành công - ${showInfo.name} | Mã vé #${order.orderCode}`,
             html
         })
     });
@@ -335,6 +362,7 @@ function buildOrderNotificationHtml(order, tickets) {
     const { time, date } = splitShowtime(order.showtimeId);
     const seatList = tickets.map((t) => displaySeatId(t.seatId)).join(", ");
     const tierSummary = [...new Set(tickets.map((t) => t.tierName))].join(", ");
+    const showInfo = showDisplayFor(order.showId);
 
     return `
     <div style="background:#04060a;padding:24px;">
@@ -343,7 +371,7 @@ function buildOrderNotificationHtml(order, tickets) {
         <tr>
             <td style="padding:22px 24px;">
                 <div style="font-family:'Oswald','Arial Narrow',sans-serif;color:#FFD15A;font-size:17px;font-weight:700;letter-spacing:.5px;margin-bottom:2px;">🎟️&nbsp; ĐƠN VÉ MỚI</div>
-                <div style="color:#98a29b;font-size:12px;margin-bottom:16px;">Mã đơn #${order.orderCode} — Sơn Thần Thủy Quái</div>
+                <div style="color:#98a29b;font-size:12px;margin-bottom:16px;">Mã đơn #${order.orderCode} — ${showInfo.name}</div>
 
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#10151c;">
                     <tr><td style="padding:16px 18px;">

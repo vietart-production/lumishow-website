@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đặt vé — Tinh Hoa Bắc Bộ</title>
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#121815; --panel2:#0d1310; --border:rgba(255,255,255,.1);
+    --text:#e6f1ea; --dim:#8fa196; --green:#3ddc84; --red:#ff6b6b; --gold:#fbbb21;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  .wrap{max-width:720px;margin:0 auto;padding:0 20px 80px;}
+  [hidden]{display:none!important;}
+
+  .hero{position:relative;aspect-ratio:1280/728;margin-bottom:24px;}
+  .hero img{width:100%;height:100%;object-fit:cover;display:block;}
+
+  h1{font-size:22px;margin:0 0 4px;}
+  .sub{color:var(--dim);font-size:13.5px;margin:0 0 28px;}
+
+  .date-row{display:flex;gap:10px;overflow-x:auto;padding:4px 0 10px;margin-bottom:28px;}
+  .date-pill{
+    flex:0 0 auto;padding:10px 16px;border-radius:12px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);font-size:13px;text-align:center;cursor:pointer;white-space:nowrap;
+  }
+  .date-pill .dow{display:block;color:var(--dim);font-size:11px;margin-bottom:2px;}
+  .date-pill.active{border-color:var(--gold);color:var(--gold);background:rgba(251,187,33,.1);}
+  .date-empty{color:var(--dim);font-size:13.5px;padding:10px 0;}
+
+  .tier-card{display:flex;align-items:center;gap:14px;border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;background:var(--panel);}
+  .tier-card.sold-out{opacity:.5;}
+  .tier-main{flex:1;min-width:0;}
+  .tier-name{font-size:15px;font-weight:700;}
+  .tier-desc{color:var(--dim);font-size:12px;margin-top:2px;}
+  .tier-price{color:var(--gold);font-weight:700;font-size:14px;margin-top:6px;}
+  .tier-left{color:var(--dim);font-size:11.5px;margin-top:2px;}
+  .stepper{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
+  .stepper button{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:16px;cursor:pointer;}
+  .stepper button:disabled{opacity:.3;cursor:not-allowed;}
+  .stepper .qty{width:24px;text-align:center;font-size:15px;font-weight:700;}
+
+  .total-bar{position:sticky;bottom:0;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+  .total-label{color:var(--dim);font-size:12px;}
+  .total-amount{font-size:19px;font-weight:800;color:var(--gold);}
+  .btn-primary{padding:12px 22px;border-radius:999px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:13.5px;cursor:pointer;}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-ghost{padding:10px 18px;border-radius:999px;border:1px solid var(--border);background:none;color:var(--text);font-size:13px;cursor:pointer;}
+
+  .panel{border:1px solid var(--border);border-radius:14px;padding:20px;background:var(--panel);margin-top:20px;}
+  .hold-timer{display:flex;align-items:center;gap:8px;color:var(--gold);font-weight:700;font-size:13.5px;margin-bottom:16px;}
+  label{display:block;font-size:12px;color:var(--dim);margin:12px 0 5px;}
+  label:first-child{margin-top:0;}
+  input[type=text],input[type=email],input[type=tel]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13.5px;box-sizing:border-box;font-family:inherit;}
+  .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+  .err-msg{color:var(--red);font-size:12.5px;margin-top:10px;min-height:16px;}
+
+  .pay-box{text-align:center;}
+  .pay-box img{width:220px;height:220px;border-radius:10px;background:#fff;padding:8px;}
+  .pay-amount{font-size:20px;font-weight:800;color:var(--gold);margin:14px 0;}
+  .pay-note{color:var(--dim);font-size:12.5px;}
+
+  .done-box{text-align:center;padding:30px 10px;}
+  .done-box .icon{font-size:46px;margin-bottom:10px;}
+  .done-box h2{color:var(--green);margin:0 0 10px;}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1c2620;border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hero"><img src="image/TinhHoaBacBo.png" alt="Tinh Hoa Bắc Bộ"></div>
+  <h1>Đặt vé — Tinh Hoa Bắc Bộ</h1>
+  <p class="sub">Chọn suất diễn và số lượng vé theo hạng bên dưới.</p>
+
+  <div id="dateRow" class="date-row"><span class="date-empty">Đang tải lịch diễn...</span></div>
+
+  <div id="tierCards"></div>
+  <p class="sub" style="margin-top:-6px;">Trẻ em dưới 90cm: miễn phí, ngồi cùng ghế người lớn đi kèm — không cần mua vé. Trẻ em từ 1m3 trở lên tính vé Người lớn.</p>
+
+  <div class="total-bar">
+    <div><div class="total-label">Tổng tiền (<span id="totalQty">0</span> vé)</div><div class="total-amount" id="totalAmount">0đ</div></div>
+    <button class="btn-primary" id="holdBtn" disabled>Giữ chỗ &amp; thanh toán</button>
+  </div>
+
+  <!-- Bước 1: giữ chỗ + thông tin khách -->
+  <div class="panel" id="customerPanel" hidden>
+    <div class="hold-timer">⏱ Ghế đang được giữ — còn lại <span id="holdTime">10:00</span></div>
+    <label for="custName">Họ và tên</label>
+    <input type="text" id="custName" placeholder="Nguyễn Văn A">
+    <label for="custPhone">Số điện thoại</label>
+    <input type="tel" id="custPhone" placeholder="09xx xxx xxx">
+    <label for="custEmail">Email (vé điện tử sẽ gửi về đây)</label>
+    <input type="email" id="custEmail" placeholder="ban@example.com">
+    <div class="err-msg" id="customerErr"></div>
+    <div class="form-actions">
+      <button class="btn-ghost" id="cancelHoldBtn">Huỷ giữ chỗ</button>
+      <button class="btn-primary" id="submitCustomerBtn">Tiếp tục thanh toán</button>
+    </div>
+  </div>
+
+  <!-- Bước 2: thanh toán PayOS -->
+  <div class="panel pay-box" id="payPanel" hidden>
+    <div id="payQrWrap"></div>
+    <div class="pay-amount" id="payAmount">0đ</div>
+    <p class="pay-note">Quét mã QR bằng app ngân hàng để thanh toán. Trang sẽ tự chuyển bước khi nhận được tiền.</p>
+    <div id="payLinkWrap"></div>
+  </div>
+
+  <!-- Bước 3: hoàn tất -->
+  <div class="panel done-box" id="donePanel" hidden>
+    <div class="icon">✓</div>
+    <h2>Đặt vé thành công</h2>
+    <p>Mã đơn <b id="doneCode">—</b></p>
+    <p id="doneBody" style="color:var(--dim);font-size:13.5px;"></p>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+const API_BASE_URL = "https://lumishow-website.onrender.com/api";
+const SHOW_ID = "tinh-hoa-bac-bo";
+
+// Hiển thị hạng vé ở client — CHỈ dùng để vẽ giao diện (tên/mô tả/giá tham
+// khảo trước khi giữ chỗ). Số tiền THẬT luôn tính lại từ giá vé ảo thật lưu
+// trên Firestore ở bước tạo thanh toán (createPaymentOnServer), đúng nguyên
+// tắc "server luôn là nguồn sự thật" đã áp dụng cho dat-ve.html — xem
+// CLAUDE.md mục "Payment/pricing money flow".
+//
+// Giá đổi theo NGÀY DIỄN: suất Thứ 4 rẻ hơn suất Thứ 7/Chủ Nhật (xem
+// dayTypeOfShowtime() bên dưới) — khớp đúng cách seedTinhHoaBacBo.js seed
+// giá cho từng suất. Giá trẻ em (90cm-dưới 1m3) luôn đúng 50% giá người lớn
+// CÙNG hạng + CÙNG loại ngày.
+const TIER_ORDER = ["platinum", "gold", "silver"];
+const TIER_PRICE_TABLE = {
+  platinum: { name: "Platinum (Bạch Kim)", desc: "3 khoang riêng tầng cao, có mái che, bao quát toàn bộ sân khấu", weekdayAdult: 810000, weekendAdult: 900000 },
+  gold:     { name: "Gold (Vàng)",          desc: "Khu trung tâm, đối diện trực tiếp mặt nước sân khấu",          weekdayAdult: 540000, weekendAdult: 600000 },
+  silver:   { name: "Silver (Bạc)",         desc: "Hai cánh trái/phải khán đài",                                  weekdayAdult: 450000, weekendAdult: 500000 }
+};
+const AGE_TYPES = [
+  { key: "adult", label: "Người lớn" },
+  { key: "child", label: "Trẻ em (90cm - dưới 1m3)" }
+];
+
+// Thứ 4 (dow=3) = giá rẻ hơn; Thứ 7(6)/CN(0) = giá cuối tuần — khớp
+// dayTypeOf() trong seedTinhHoaBacBo.js.
+function dayTypeOfShowtime(showtimeId){
+  if (!showtimeId) return "weekend";
+  const [datePart] = showtimeId.split("_");
+  const [y, m, d] = datePart.split("-").map(Number);
+  return new Date(y, m - 1, d).getDay() === 3 ? "weekday" : "weekend";
+}
+
+function priceFor(tier, ageType, dayType){
+  const adult = dayType === "weekday" ? TIER_PRICE_TABLE[tier].weekdayAdult : TIER_PRICE_TABLE[tier].weekendAdult;
+  return ageType === "child" ? Math.round(adult / 2) : adult;
+}
+
+function $(id){ return document.getElementById(id); }
+function fmtVND(n){ return n.toLocaleString("vi-VN") + "đ"; }
+
+function toast(msg){
+  const el = $("toastEl");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("show"), 3200);
+}
+
+function getBookingSessionId(){
+  const KEY = "lumishow-booking-session-id";
+  try {
+    let id = sessionStorage.getItem(KEY);
+    if (!id) {
+      id = "bsess_" + (crypto.randomUUID ? crypto.randomUUID() : (Date.now() + "_" + Math.random().toString(36).slice(2)));
+      sessionStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch (e) {
+    return "bsess_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+  }
+}
+
+// ---------------------------------------------------------------
+// GỌI API — y hệt shape request/response của dat-ve.html (bookings/hold,
+// payments/create, payments/:orderId/status đã tổng quát theo showId/holdId,
+// không cần sửa backend).
+// ---------------------------------------------------------------
+async function createHoldOnServer(showtimeId, seatIds){
+  const res = await fetch(`${API_BASE_URL}/bookings/hold`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ showId: SHOW_ID, showtimeId, seatIds, bookingSessionId: getBookingSessionId() })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.message || "Không giữ được chỗ, vui lòng thử lại");
+  return data.hold;
+}
+
+async function createPaymentOnServer(holdId, customer){
+  const res = await fetch(`${API_BASE_URL}/payments/create`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ holdId, customerName: customer.name, customerPhone: customer.phone, customerEmail: customer.email })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.message || "Không tạo được thanh toán");
+  return data.order;
+}
+
+async function fetchPaymentStatus(orderId){
+  const res = await fetch(`${API_BASE_URL}/payments/${encodeURIComponent(orderId)}/status`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.message || "Không kiểm tra được trạng thái thanh toán");
+  return data;
+}
+
+// ---------------------------------------------------------------
+// LỊCH DIỄN — tái dùng thẳng GET /shows/:showId/showtimes/open (đã tổng
+// quát showId từ phiên làm việc trước, không cần sửa backend).
+// ---------------------------------------------------------------
+const DOW_NAMES = ["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"];
+let OPEN_SHOWTIMES = []; // [{showtimeId, y, m, d, time}]
+let selectedShowtimeId = null;
+let seatStates = {}; // seatId -> {status}
+// key "{tier}_{ageType}" (vd "platinum_adult") -> số lượng đang chọn
+let quantities = {};
+function resetQuantities(){
+  quantities = {};
+  TIER_ORDER.forEach((tier) => AGE_TYPES.forEach(({ key }) => { quantities[`${tier}_${key}`] = 0; }));
+}
+resetQuantities();
+
+async function fetchOpenShowtimes(){
+  const res = await fetch(`${API_BASE_URL}/shows/${encodeURIComponent(SHOW_ID)}/showtimes/open`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success || !Array.isArray(data.showtimeIds)) throw new Error("Không tải được lịch diễn");
+
+  OPEN_SHOWTIMES = data.showtimeIds.map((id) => {
+    const [datePart, time] = id.split("_");
+    const [y, m, d] = datePart.split("-").map(Number);
+    return { showtimeId: id, y, m, d, time };
+  }).sort((a, b) => a.showtimeId.localeCompare(b.showtimeId));
+}
+
+function renderDateRow(){
+  const row = $("dateRow");
+  if (OPEN_SHOWTIMES.length === 0) {
+    row.innerHTML = '<span class="date-empty">Hiện chưa mở bán suất diễn nào.</span>';
+    return;
+  }
+  row.innerHTML = OPEN_SHOWTIMES.map((st) => {
+    const dow = DOW_NAMES[new Date(st.y, st.m - 1, st.d).getDay()];
+    const active = st.showtimeId === selectedShowtimeId ? " active" : "";
+    return `<button type="button" class="date-pill${active}" data-id="${st.showtimeId}">
+      <span class="dow">${dow}</span>${String(st.d).padStart(2,"0")}/${String(st.m).padStart(2,"0")}
+    </button>`;
+  }).join("");
+}
+
+$("dateRow").addEventListener("click", (e) => {
+  const pill = e.target.closest(".date-pill");
+  if (!pill) return;
+  selectShowtime(pill.dataset.id);
+});
+
+async function selectShowtime(showtimeId){
+  selectedShowtimeId = showtimeId;
+  resetQuantities();
+  renderDateRow();
+  try {
+    const res = await fetch(`${API_BASE_URL}/shows/${encodeURIComponent(SHOW_ID)}/showtimes/${encodeURIComponent(showtimeId)}/seats`);
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Không tải được tồn vé");
+    seatStates = data.seats;
+  } catch (err) {
+    toast("Lỗi tải tồn vé: " + err.message);
+    seatStates = {};
+  }
+  renderTierCards();
+  updateTotal();
+}
+
+// ---------------------------------------------------------------
+// THẺ HẠNG VÉ — đếm chỗ trống bằng cách lọc seatId đúng hạng+loại vé
+// (vd "PLATINUM-007" cho người lớn, "PLATINUM-CHILD-003" cho trẻ em) và
+// status AVAILABLE. Regex chặt (không chỉ startsWith) vì "SILVER-" vốn là
+// tiền tố của cả "SILVER-001" (người lớn) LẪN "SILVER-CHILD-001" (trẻ em)
+// — dùng startsWith đơn thuần sẽ đếm lẫn 2 loại vào nhau. KHÔNG click từng
+// ghế như dat-ve.html vì show này chỉ bán số lượng theo khu (không có sơ đồ
+// ghế theo toạ độ).
+// ---------------------------------------------------------------
+function seatIdPattern(tier, ageType){
+  return ageType === "child"
+    ? new RegExp(`^${tier.toUpperCase()}-CHILD-\\d+$`)
+    : new RegExp(`^${tier.toUpperCase()}-\\d+$`);
+}
+function availableSeatIdsFor(tier, ageType){
+  const re = seatIdPattern(tier, ageType);
+  return Object.keys(seatStates).filter((id) => re.test(id) && seatStates[id].status === "AVAILABLE");
+}
+
+function renderTierCards(){
+  const dayType = dayTypeOfShowtime(selectedShowtimeId);
+  const wrap = $("tierCards");
+
+  wrap.innerHTML = TIER_ORDER.map((tier) => {
+    const info = TIER_PRICE_TABLE[tier];
+    const rows = AGE_TYPES.map(({ key: ageType, label }) => {
+      const qKey = `${tier}_${ageType}`;
+      const availCount = selectedShowtimeId ? availableSeatIdsFor(tier, ageType).length : 0;
+      const soldOut = selectedShowtimeId && availCount === 0;
+      const price = priceFor(tier, ageType, dayType);
+      return `<div class="tier-card${soldOut ? " sold-out" : ""}" data-qkey="${qKey}">
+        <div class="tier-main">
+          <div class="tier-name">${info.name} — ${label}</div>
+          <div class="tier-price">${fmtVND(price)}</div>
+          <div class="tier-left">${selectedShowtimeId ? (soldOut ? "Đã hết vé" : availCount + " vé còn trống") : "Chọn ngày diễn trước"}</div>
+        </div>
+        <div class="stepper">
+          <button type="button" class="qty-minus" data-qkey="${qKey}" ${quantities[qKey] <= 0 ? "disabled" : ""}>−</button>
+          <span class="qty">${quantities[qKey]}</span>
+          <button type="button" class="qty-plus" data-qkey="${qKey}" ${!selectedShowtimeId || quantities[qKey] >= availCount ? "disabled" : ""}>+</button>
+        </div>
+      </div>`;
+    }).join("");
+    return `<div class="tier-desc" style="margin:18px 0 6px;font-size:13px;color:var(--dim);">${info.desc}</div>${rows}`;
+  }).join("");
+}
+
+$("tierCards").addEventListener("click", (e) => {
+  const minus = e.target.closest(".qty-minus");
+  const plus = e.target.closest(".qty-plus");
+  if (minus) { quantities[minus.dataset.qkey] = Math.max(0, quantities[minus.dataset.qkey] - 1); }
+  if (plus) {
+    const qKey = plus.dataset.qkey;
+    const [tier, ageType] = qKey.split("_");
+    const avail = availableSeatIdsFor(tier, ageType).length;
+    if (quantities[qKey] < avail) quantities[qKey]++;
+  }
+  if (minus || plus) { renderTierCards(); updateTotal(); }
+});
+
+function updateTotal(){
+  const dayType = dayTypeOfShowtime(selectedShowtimeId);
+  let qty = 0, amount = 0;
+  TIER_ORDER.forEach((tier) => AGE_TYPES.forEach(({ key: ageType }) => {
+    const qKey = `${tier}_${ageType}`;
+    qty += quantities[qKey];
+    amount += quantities[qKey] * priceFor(tier, ageType, dayType);
+  }));
+  $("totalQty").textContent = qty;
+  $("totalAmount").textContent = fmtVND(amount);
+  $("holdBtn").disabled = qty === 0 || !selectedShowtimeId;
+}
+
+// ---------------------------------------------------------------
+// GIỮ CHỖ — gộp N mã ghế ảo AVAILABLE đầu tiên của mỗi hạng có số lượng > 0
+// thành 1 mảng seatIds, gọi /bookings/hold y hệt luồng ghế thật.
+// ---------------------------------------------------------------
+let holdSession = null; // { holdId, expiresAt, timerId }
+
+$("holdBtn").addEventListener("click", async () => {
+  const seatIds = [];
+  for (const tier of TIER_ORDER) {
+    for (const { key: ageType, label } of AGE_TYPES) {
+      const qKey = `${tier}_${ageType}`;
+      if (quantities[qKey] <= 0) continue;
+      const avail = availableSeatIdsFor(tier, ageType);
+      if (avail.length < quantities[qKey]) { toast(`${TIER_PRICE_TABLE[tier].name} — ${label} không còn đủ vé, vui lòng chọn lại`); return; }
+      seatIds.push(...avail.slice(0, quantities[qKey]));
+    }
+  }
+  if (seatIds.length === 0) return;
+
+  $("holdBtn").disabled = true;
+  try {
+    const hold = await createHoldOnServer(selectedShowtimeId, seatIds);
+    startHoldSession(hold);
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    $("holdBtn").disabled = false;
+  }
+});
+
+function startHoldSession(hold){
+  if (holdSession) clearInterval(holdSession.timerId);
+
+  const expiresAt = new Date(hold.expiresAt).getTime();
+  holdSession = { holdId: hold.holdId, expiresAt, timerId: null };
+
+  function tick(){
+    const msLeft = expiresAt - Date.now();
+    if (msLeft <= 0) {
+      clearInterval(holdSession.timerId);
+      toast("Hết thời gian giữ chỗ, vui lòng chọn lại");
+      cancelHoldUI();
+      return;
+    }
+    const totalSec = Math.floor(msLeft / 1000);
+    $("holdTime").textContent = String(Math.floor(totalSec / 60)).padStart(2, "0") + ":" + String(totalSec % 60).padStart(2, "0");
+  }
+  tick();
+  holdSession.timerId = setInterval(tick, 1000);
+
+  $("customerPanel").hidden = false;
+  $("customerPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelHoldUI(){
+  if (holdSession) clearInterval(holdSession.timerId);
+  holdSession = null;
+  $("customerPanel").hidden = true;
+}
+
+$("cancelHoldBtn").addEventListener("click", () => {
+  cancelHoldUI();
+  // Không gọi API huỷ hold riêng — hold tự hết hạn theo HOLD_DURATION_MS
+  // ở backend (cleanupExpiredHoldsThrottled), giống hành vi "đóng tab" của
+  // dat-ve.html khi khách bỏ dở giữa chừng.
+});
+
+// ---------------------------------------------------------------
+// THÔNG TIN KHÁCH -> TẠO THANH TOÁN
+// ---------------------------------------------------------------
+$("submitCustomerBtn").addEventListener("click", async () => {
+  const name = $("custName").value.trim();
+  const phone = $("custPhone").value.trim();
+  const email = $("custEmail").value.trim();
+  const errEl = $("customerErr");
+  errEl.textContent = "";
+
+  if (!name || !phone || !email) { errEl.textContent = "Vui lòng điền đủ họ tên, SĐT và email."; return; }
+  if (!holdSession) { errEl.textContent = "Phiên giữ chỗ đã hết hạn, vui lòng chọn lại."; return; }
+
+  $("submitCustomerBtn").disabled = true;
+  try {
+    const order = await createPaymentOnServer(holdSession.holdId, { name, phone, email });
+    showPaymentStep(order);
+  } catch (err) {
+    errEl.textContent = err.message;
+  } finally {
+    $("submitCustomerBtn").disabled = false;
+  }
+});
+
+let currentOrder = null;
+let paymentPollTimer = null;
+
+function showPaymentStep(order){
+  currentOrder = order;
+  $("customerPanel").hidden = true;
+  $("payPanel").hidden = false;
+  $("payAmount").textContent = fmtVND(order.amount);
+  $("payQrWrap").innerHTML = order.qrCodeDataUrl ? `<img src="${order.qrCodeDataUrl}" alt="QR thanh toán">` : "";
+  $("payLinkWrap").innerHTML = (order.checkoutUrl && order.checkoutUrl !== "#")
+    ? `<a class="btn-primary" href="${order.checkoutUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:14px;text-decoration:none;">Mở trang thanh toán PayOS</a>`
+    : "";
+  $("payPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  startPaymentPolling();
+}
+
+function startPaymentPolling(){
+  stopPaymentPolling();
+  if (!currentOrder) return;
+  paymentPollTimer = setInterval(async () => {
+    if (!currentOrder) { stopPaymentPolling(); return; }
+    try {
+      const result = await fetchPaymentStatus(currentOrder.orderId);
+      if (result.orderStatus === "PAID") { stopPaymentPolling(); finishPaidOrder(); }
+    } catch (e) { /* lỗi mạng tạm thời, poll lại ở lần sau */ }
+  }, 4000);
+}
+function stopPaymentPolling(){
+  if (paymentPollTimer) { clearInterval(paymentPollTimer); paymentPollTimer = null; }
+}
+
+function finishPaidOrder(){
+  if (holdSession) clearInterval(holdSession.timerId);
+  holdSession = null;
+  $("payPanel").hidden = true;
+  $("donePanel").hidden = false;
+  $("doneCode").textContent = "#" + currentOrder.orderCode;
+  $("doneBody").textContent = "Vé điện tử đã được gửi tới email bạn đã nhập.";
+  $("donePanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  resetQuantities();
+}
+
+// ---------------------------------------------------------------
+// KHỞI ĐỘNG
+// ---------------------------------------------------------------
+(async function init(){
+  try {
+    await fetchOpenShowtimes();
+    renderDateRow();
+    if (OPEN_SHOWTIMES.length > 0) await selectShowtime(OPEN_SHOWTIMES[0].showtimeId);
+  } catch (err) {
+    $("dateRow").innerHTML = `<span class="date-empty">${err.message}</span>`;
+  }
+})();
+</script>
+</body>
+</html>
