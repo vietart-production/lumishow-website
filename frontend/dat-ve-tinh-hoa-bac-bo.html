@@ -60,15 +60,10 @@
 
   /* ---- Sơ đồ khu vực minh hoạ — KHÔNG phải sơ đồ ghế bấm từng chỗ (show
      này bán theo SỐ LƯỢNG/hạng, khách tự tìm chỗ trống trong khu vực đã
-     mua, đúng yêu cầu), chỉ là hình minh hoạ bố trí 3 hạng quanh sân khấu
+     mua, đúng yêu cầu), chỉ là ảnh minh hoạ bố trí 3 hạng quanh sân khấu
      cho khách dễ hình dung trước khi chọn số lượng bên dưới. ---- */
-  .venue-map{max-width:420px;margin:0 auto 32px;}
-  .vm-band{border-radius:999px 999px 0 0;text-align:center;font-family:var(--font-heading);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#04140b;}
-  .vm-platinum{background:linear-gradient(180deg,#FBBB21,#C98A12);padding:10px 0;font-size:11px;margin:0 18%;border-radius:999px 999px 0 0;}
-  .vm-gold{background:linear-gradient(180deg,#F2C14E,#D9A62C);padding:22px 0;font-size:12px;margin:6px 8%;border-radius:999px 999px 0 0;}
-  .vm-wings{display:flex;justify-content:space-between;margin:6px 0 0;gap:8px;}
-  .vm-silver{flex:1;background:linear-gradient(180deg,#C7CDD3,#9AA3AC);border-radius:16px 16px 0 0;padding:20px 0;font-size:11px;}
-  .vm-stage{margin-top:10px;background:#05100d;border:1px solid var(--line-2);border-radius:10px;padding:10px 0;text-align:center;font-family:var(--font-heading);font-weight:700;letter-spacing:2px;color:var(--gray);font-size:11px;text-transform:uppercase;}
+  .venue-map{max-width:560px;margin:0 auto 24px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line-2);}
+  .venue-map img{width:100%;height:auto;display:block;}
 
   .tier-card{display:flex;align-items:center;gap:14px;border:1px solid var(--line-2);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px;background:var(--card-bg);transition:border-color .15s;}
   .tier-card:not(.sold-out):hover{border-color:rgba(251,187,33,.4);}
@@ -148,14 +143,8 @@
 
   <div id="dateRow" class="date-row"><span class="date-empty">Đang tải lịch diễn...</span></div>
 
-  <div class="venue-map" aria-hidden="true">
-    <div class="vm-band vm-platinum">Platinum</div>
-    <div class="vm-band vm-gold">Gold</div>
-    <div class="vm-wings">
-      <div class="vm-silver">Silver</div>
-      <div class="vm-silver">Silver</div>
-    </div>
-    <div class="vm-stage">Sân khấu</div>
+  <div class="venue-map">
+    <img src="image/SoDoTinhHoaBacBo.png" alt="Sơ đồ khu vực chỗ ngồi: Platinum, Gold, Silver, Sân khấu">
   </div>
   <p class="sub" style="text-align:center;margin-top:-22px;">Vé bán theo khu vực, không chỉ định chỗ ngồi cụ thể — quý khách tự chọn chỗ trống trong đúng khu vực hạng vé đã mua.</p>
 
