@@ -1,6 +1,7 @@
 const { db } = require("../src/config/firebase");
 const { FieldValue } = require("firebase-admin/firestore");
 const SEAT_TIERS = require("./seatTiers.json");
+const LOCKED_ZONE = require("./lockedZoneSeats.json");
 
 
 // ==========================================
@@ -64,12 +65,12 @@ const TIERS = {
 
 const SEAT_CODE_RE = /^([A-Z]+)(\d+)$/;
 
-// G1-G58 (khối ghế "Sơn Thần" đầu hàng G) dành riêng cho staff/lãnh đạo,
-// không mở bán công khai — seed thẳng SOLD ngay từ đầu để mọi suất diễn
-// thêm sau này (mở rộng mùa diễn, chạy lại script) cũng tự chặn ghế đúng
-// như suất diễn hiện tại (đã chặn thủ công bằng blockStaffSeats.js).
-const STAFF_ROW = "G";
-const STAFF_SEAT_MAX = 58;
+// Khu "không được thầu bán" (VIP + O + P + range lẻ/chẵn 13 hàng + G1-G58
+// đặt trước nguyên suất) — nguồn sự thật là lockedZoneSeats.json, seed
+// thẳng BLOCKED ngay từ đầu để mọi suất diễn mới (mở rộng mùa diễn, chạy
+// lại script) tự chặn đúng như các suất hiện tại, không seed AVAILABLE
+// rồi phải khoá tay sau. Xem CLAUDE.md mục áp sơ đồ mặc định 2026-10-03.
+const LOCKED_ZONE_SEATS = new Set(LOCKED_ZONE.seatIds);
 
 function buildSeats() {
     const seats = [];
@@ -96,7 +97,10 @@ function buildSeats() {
 
             price,
 
-            status: (row === STAFF_ROW && number <= STAFF_SEAT_MAX) ? "SOLD" : "AVAILABLE",
+            status: LOCKED_ZONE_SEATS.has(seatCode) ? "BLOCKED" : "AVAILABLE",
+            blockNote: LOCKED_ZONE_SEATS.has(seatCode)
+                ? "Khu không được thầu bán — sơ đồ mặc định (xem CLAUDE.md)"
+                : null,
 
             holdId: null,
             holdExpiresAt: null

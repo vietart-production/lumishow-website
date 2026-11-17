@@ -333,3 +333,54 @@ Suất `2026-10-03_16:30` đã bị khoá bằng cách **2** (bulk-block hết t
 **Sửa đúng:** gọi `setShowtimesStatus()` đổi `status` suất `2026-10-03_16:30` → `"CLOSED"` cho khớp đúng ý định admin, giữ `listOpenShowtimes()` CHỈ lọc theo `status` như thiết kế gốc.
 
 **Quy tắc vận hành rút ra — áp dụng cho mọi lần "khoá suất" sau này:** muốn đóng **nguyên 1 suất diễn**, luôn dùng nút "Khoá"/"Mở" theo suất (đổi `status`) — KHÔNG dùng nút "Khoá (Blocked)" trong trình sửa sơ đồ ghế để bulk-block hết toàn bộ ghế như cách thay thế, dù kết quả nhìn bề ngoài giống nhau (không đặt được ghế nào). Nút khoá-từng-ghế chỉ nên dùng cho khoá **một phần** sơ đồ (giữ VIP, khu không-được-thầu-bán...), không phải để đóng cả suất.
+
+## `frontend/preview-so-do-ghe.html` cắt đứt hoàn toàn khỏi API/Firestore thật (2026-10-03/04)
+
+Trong lúc dùng file preview để audit/visualize khu BLOCKED của suất `2026-10-10_16:30`, đã có 1 sự cố: thêm nhầm 1 hàm gọi `fetch()` thẳng tới backend thật bên trong file này (để "xem trước" dữ liệu thật), và từng thực thi thật 1 lệnh ghi Firestore (khoá tạm hàng G trên suất `2026-10-03_20:00`) khi ý định ban đầu của user chỉ là mô phỏng trong preview — đã revert đầy đủ ngay sau đó. User chốt "quy tắc thép": **file này chỉ là bản phác thảo local, KHÔNG được có bất kỳ đường nào chạm tới API/Firestore thật**, áp sơ đồ vào suất diễn thật là quyết định làm riêng, ngoài file này.
+
+Đã sửa triệt để: xoá hẳn `API_BASE_URL`, `SHOW_ID`, `TEST_MODE`, `getBookingSessionId()` và mọi nhánh `if/else` gọi mạng trong 6 hàm (`createHoldOnServer`, `fetchHoldStatus`, `createPaymentOnServer`, `validateCouponOnServer`, `fetchPaymentStatus`, `fetchSeatStates`) — mỗi hàm giờ chỉ còn ĐÚNG 1 đường, luôn trả dữ liệu giả lập dựng sẵn ở client, không có cách nào (dù sửa flag nào) khiến file gọi ra ngoài. `PREVIEW_BLOCKED_SNAPSHOT` (mảng mã ghế coi là BLOCKED trên sơ đồ nháp) giờ là dữ liệu local thuần, sửa tay để thử bố cục, không gắn mác "đọc từ Firestore thật" nữa.
+
+**Bài học áp dụng cho các lần sau:** nếu cần xem dữ liệu thật để đối chiếu khi làm việc với file preview này, đọc bằng 1 script `tmp_*.js` riêng (Node, chạy ngoài trình duyệt) rồi dán kết quả làm hằng số local vào preview — KHÔNG bao giờ thêm `fetch()` gọi thẳng backend thật vào chính file preview, dù chỉ để đọc.
+
+## Chốt sơ đồ mặc định cho suất diễn CLOSED/chưa mở (2026-10-04)
+
+Từ việc audit khu BLOCKED ở suất `2026-10-10_16:30` (đang OPEN) phát hiện: khu "không được thầu bán" thật tế **lớn hơn** 350 ghế đã ghi nhận trước đó (xem mục "Lỗi ghế trong khu khoá bị thả về AVAILABLE...") — thật ra là **838 ghế**: toàn bộ VIP (43) + toàn bộ O,P (90+90) + phần lớn N (67/91) + 13 hàng B→M theo đúng pattern lẻ/chẵn cũ + G1-G58 ("đặt trước nguyên suất ngoài hệ thống vé"). VIP/O/P bị khoá **vĩnh viễn** dù suất đang OPEN — venue chỉ được thầu bán các khu còn lại (355 ghế/suất).
+
+**Đã chốt làm nguồn sự thật mới:**
+- `backend/scripts/lockedZoneSeats.json`: cập nhật từ 350 → **838 ghế** (đọc trực tiếp từ suất OPEN `2026-10-10_16:30` + G1-58). `admin.service.js` (`releaseStatusFor()`) tự động dùng ngay, không cần sửa code.
+- `backend/scripts/seedSeats.js`: bỏ hack cũ "G1-58 luôn SOLD", seed thẳng **BLOCKED** cho đúng 838 mã trong `lockedZoneSeats.json`, còn lại AVAILABLE — mọi suất diễn tạo mới từ giờ tự đúng pattern, không cần khoá tay sau khi seed.
+
+**Phạm vi áp dụng — CHỈ suất chưa mở, KHÔNG đụng suất đang OPEN hay đã diễn:** áp pattern 838/355 này cho **45 suất** đang `CLOSED`, chỉ Thứ 7/Chủ nhật, từ `2026-10-11` đến hết `2026-12-27` (loại hẳn suất Thứ 6 20h00 — không thuộc diện áp dụng theo yêu cầu user, và loại các suất đã qua/đang OPEN). Trước khi ghi đã quét an toàn toàn bộ 45 suất — chỉ phát hiện G1-58 đang SOLD (không có order/ticket thật đi kèm, đúng pattern biết trước), không có ghế SOLD/HELD lạ nào khác → an toàn ghi đè. Đã áp thành công (script tạm `backend/scripts/applyDefault45.js`, xoá sau khi chạy theo quy ước).
+
+**Nếu mở thêm suất Thứ 6 hoặc suất trước 11/10 sau này:** chưa có quyết định — hỏi lại user trước khi áp pattern 838/355 cho các suất đó, đừng tự suy ra từ các suất đã làm.
+
+### Phát hiện phụ: I46/I48 thiếu doc ở phần lớn suất diễn — đã backfill (2026-10-04)
+
+Trong lúc đối chiếu 1 bảng ghế user cung cấp, phát hiện 2 ghế **I46, I48** không tồn tại trong Firestore ở hầu hết suất diễn (seed từ bản `seatTiers.json` cũ, lúc đó tổng 1218 mã và chưa coi I46/I48 là ghế hợp lệ). Chỉ 4 suất đang OPEN (`10-04_10:00`, `10-04_16:30`, `10-10_16:30`, `10-11_16:30`) + suất `10-03_16:30` có đủ, vì được seed/sửa riêng ở thời điểm `seatTiers.json` đã cập nhật (1193 mã, có I46/I48). Hậu quả: frontend fallback coi ghế không tồn tại = `SOLD` (`if (!serverSeat) states[id] = ST.SOLD`), khiến I46/I48 nhìn như "đã bán" dù thực ra chỉ là thiếu seed — không liên quan gì tới việc khoá/mở suất tối nay.
+
+Đã xác minh trước khi sửa: ở 2 suất `10-04_16:30`/`10-11_16:30` nơi I46/I48 đang `SOLD` thật, có vé/order thật hợp lệ đứng sau (`ticketStatus: "valid"`) — không phải dữ liệu ma, không đụng vào 2 suất này.
+
+**Đã sửa bằng cách chạy lại `node scripts/seedSeats.js` cho toàn mùa** — hàm có sẵn tự dò `missingSeats` và CHỈ tạo thêm ghế còn thiếu (`batch.create()`), không đụng ghế đã tồn tại. Kết quả: mọi suất (kể cả suất tháng 9 đã diễn) đều có đủ I46/I48, mặc định `AVAILABLE` (không thuộc khu khoá trong `lockedZoneSeats.json`). Không ảnh hưởng ghế đã SOLD/HELD/BLOCKED nào.
+
+**Lưu ý cho lần sau nếu phát hiện ghế "lạ" khác thiếu seed:** luôn kiểm tra `seatCount` lưu trên doc showtime so với tổng `seatTiers.json` hiện tại — lệch số là dấu hiệu rõ nhất, rồi dùng đúng `seedSeats.js` (không viết script tạm riêng) vì nó đã có sẵn cơ chế diff an toàn.
+
+## Trang "Tester Ticket" — đặt vé ảo để test app soát vé/quét mã (2026-10-04)
+
+Thêm `frontend/tester-ticket.html` (nội bộ, không gắn nav) cho tester đặt vé ảo lấy QR **thật** (cùng format `LS-...`, cùng đi qua đúng endpoint check-in/lookup tại cổng) để quét thử app soát vé, mà không đụng show thật. Yêu cầu gốc: suất ảo không hiện trên web thật, nút reset toàn bộ ghế, suất khởi tạo full ghế trống, field email (tuỳ chọn) + checkbox hiển thị vé trên web, sidebar lịch sử mã QR test, và **tuyệt đối không gửi mail cho các mail giám sát**.
+
+**Cách ly khỏi web thật — không sửa 1 dòng code nào của luồng thật:**
+- Show riêng `TEST_SHOW_ID = "tester-ticket"` (khác hẳn `son-than-thuy-quai`) — mọi endpoint admin/partner/booking thật đều hardcode show ID thật của họ (`SHOW_ID` trong `admin.routes.js`/`booking.routes.js`, tương tự trong `partner.service.js`), nên show test tự động **vô hình** với mọi báo cáo/doanh thu/lịch thật, không cần thêm điều kiện lọc nào.
+- `showtimeId` luôn là `{hôm nay}_TESTER` (tự tạo lại mỗi ngày qua `ensureTestShowtime()`) — để `classifyTicketForGate()` (admin.service.js, dùng chung bởi cả `lookupTicketByCode`/`checkInTicketByCode` thật) chấm đúng "vé của suất diễn hôm nay" mà KHÔNG cần sửa gì ở logic check-in/gate thật. Đã verify thật: tạo vé test rồi gọi thẳng `/api/admin/tickets/lookup` (endpoint app Unity cổng dùng) → trả `ready:true` ngay, không cần đổi gì ở admin.service.js.
+- Vé/đơn test vẫn là document thật trong collection top-level `tickets`/`orders` (để lookup/check-in tại cổng hoạt động được, không cần nhánh code riêng) nhưng `showId:"tester-ticket"` nên không lẫn với dữ liệu show thật; `ticketCode` có prefix riêng `LS-TEST-` để luôn nhận ra ngay cả khi nhìn thấy ở nơi khác (console Firestore, log...).
+- Toàn bộ logic nằm trong 2 file MỚI — `backend/src/services/testerTicket.service.js` + `backend/src/routes/testerTicket.routes.js` — không sửa `admin.service.js`/`admin.routes.js`/`booking.service.js` nào cả. Chỉ thêm đúng 2 dòng mount router vào `backend/src/index.js`. Route đọc sơ đồ ghế tái dùng thẳng `getSeatStates()` (generic theo showId/showtimeId, có sẵn trong `booking.service.js`) và PIN tái dùng `checkPin()` (ADMIN_PIN, có sẵn trong `admin.service.js`) — không thêm secret mới.
+- Router mới **không dùng chung** `adminLimiter`/`adminActivityLog` của `admin.routes.js` (2 router Express mount cùng `/api` không tự chia sẻ `.use()` của nhau) — tự khai 1 rate limiter riêng nhẹ hơn, và KHÔNG ghi vào `adminActivityLog` để tránh noise test lẫn vào log thao tác admin thật (`admin-activity-log.html`).
+
+**"Full ghế" + reset:** `buildFreshTestSeats()` seed thẳng từ `seatTiers.json` (đúng layout/giá venue thật) nhưng mọi ghế `AVAILABLE` — KHÔNG áp bất kỳ quy tắc khoá nào của show thật (không G1-58, không khu locked-zone) vì đây là sơ đồ giả lập thuần kỹ thuật. Nút Reset (`resetTestShowtime()`) ghi đè lại TOÀN BỘ ghế của suất test hôm nay về `AVAILABLE` bất kể trạng thái hiện tại (khác `bulkUpdateSeats()` thật — ở đây không có khách thật đứng sau ghế nên không cần né SOLD/HELD) — chỉ reset ghế, KHÔNG xoá lịch sử vé/ticket (đó là log để xem lại).
+
+**Tạo vé:** `createTestTicket()` bỏ qua hẳn luồng giữ-ghế/thanh toán thật (không cần cho mục đích test quét mã) — mô phỏng trực tiếp kết quả cuối (ghế SOLD + order/ticket PAID) trong 1 transaction, y hệt format vé thật.
+
+**Email — chỉ gửi đúng mail đã điền, KHÔNG BAO GIỜ đụng mail giám sát:** chỉ gọi `sendTicketEmail(order, tickets)` (vốn chỉ gửi tới đúng 1 địa chỉ `order.customerEmail`, xem `email.service.js`) khi tester có điền email. KHÔNG bao giờ gọi `sendOrderNotificationEmail()` (mail nội bộ báo đơn mới, đi tới `ORDER_NOTIFY_EMAIL`) hay `sendSeatConflictAlertEmail()` (đi tới `TECH_ALERT_EMAIL`) ở luồng này — nên 2 hộp mail giám sát chắc chắn không bao giờ nhận được gì từ công cụ test.
+
+**Lịch sử mã QR test:** `listTestTicketHistory()` chỉ lọc `tickets` theo `showId=="tester-ticket"` (equality đơn, không cần composite index Firestore mới) rồi sắp xếp mới nhất trước trong bộ nhớ — khối lượng vé test luôn nhỏ (công cụ nội bộ) nên không cần index/infra gì thêm.
+
+Đã smoke-test đủ 5 endpoint (`verify-pin`, `seats`, `create`, `history`, `reset`) bằng server local trỏ Firestore thật (có sẵn `serviceAccountKey.json`/`.env` local) — xác nhận seed full-AVAILABLE đúng, tạo vé + lookup gate thật trả `ready:true`, reset trả ghế về đúng `AVAILABLE`. Đã dừng server sau khi test; 2 vé test (`P2`/`VIP3`, suất `2026-10-04_TESTER`) còn lại trong lịch sử — vô hại, đúng hành vi mong đợi của công cụ, không cần dọn.
