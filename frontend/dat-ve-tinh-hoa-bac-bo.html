@@ -5,75 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Đặt vé — Tinh Hoa Bắc Bộ</title>
 <style>
+  /* Token màu/font dùng CHUNG với dat-ve.html — giữ đồng bộ thương hiệu
+     LumiShow giữa 2 show, không tự chế theme riêng. */
   :root{
-    --bg:#0b0f0d; --panel:#121815; --panel2:#0d1310; --border:rgba(255,255,255,.1);
-    --text:#e6f1ea; --dim:#8fa196; --green:#3ddc84; --red:#ff6b6b; --gold:#fbbb21;
+    --bg:#0B1E1B; --bg-soft:#0F2622; --card-bg:#0D211E;
+    --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.15);
+    --white:#EDF3EF; --gray:#9AACA5; --gray-dim:#5E6E68;
+    --green:#F2790C; --gold:#FBBB21; --danger:#ff5a5a;
+    --grad-btn:linear-gradient(100deg,#9A3412 0%,#F2790C 55%,#FBBB21 100%);
+    --font-heading:'Oswald','Arial Narrow',sans-serif;
+    --font-body:'Montserrat','Be Vietnam Pro',sans-serif;
+    --r-lg:20px; --r-md:14px; --r-sm:10px; --r-pill:100px;
+    --container:1240px; --gutter:clamp(20px,4vw,48px);
+    --page-bg:#020509; --nav-bg:rgba(6,10,15,.72);
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
-  .wrap{max-width:720px;margin:0 auto;padding:0 20px 80px;}
+  body{margin:0;background:var(--page-bg);color:var(--white);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .page-shell{background:var(--bg);}
+  .container{max-width:var(--container);margin:0 auto;padding:0 var(--gutter);}
   [hidden]{display:none!important;}
+  .icon{width:18px;height:18px;flex-shrink:0;}
 
-  .hero{position:relative;aspect-ratio:1280/728;margin-bottom:24px;}
-  .hero img{width:100%;height:100%;object-fit:cover;display:block;}
+  /* ---- Navbar (y hệt dat-ve.html, tĩnh — không cần toggle ngôn ngữ/menu cho bản này) ---- */
+  .navbar{position:sticky;top:0;z-index:100;padding:13px var(--gutter);background:var(--nav-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+  .nav-inner{max-width:var(--container);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;}
+  .logo-lumishow{height:48px;width:auto;display:block;}
+  .nav-links{display:flex;gap:28px;}
+  .nav-links a{font-size:14px;color:var(--gray);font-weight:500;text-decoration:none;}
+  .nav-links a:hover{color:var(--white);}
 
-  h1{font-size:22px;margin:0 0 4px;}
-  .sub{color:var(--dim);font-size:13.5px;margin:0 0 28px;}
+  /* ---- Show bar (poster + tên show, y hệt dat-ve.html) ---- */
+  .show-bar{border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(242,121,12,.06),transparent 90%);padding:18px var(--gutter);}
+  .show-inner{max-width:var(--container);margin:0 auto;display:flex;align-items:center;gap:16px;}
+  .show-poster{width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid var(--line-2);flex-shrink:0;background:var(--card-bg);}
+  .show-name{font-family:var(--font-heading);font-size:clamp(17px,3.4vw,22px);font-weight:800;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;margin:0;}
+  .show-sub{color:var(--gray);font-size:13px;margin-top:3px;}
+
+  .wrap{max-width:760px;margin:0 auto;padding:36px 20px 90px;}
+  h1.page-title{font-family:var(--font-heading);font-size:20px;font-weight:700;letter-spacing:.3px;margin:0 0 4px;text-transform:uppercase;color:var(--white);}
+  .sub{color:var(--gray);font-size:13.5px;margin:0 0 28px;}
 
   .date-row{display:flex;gap:10px;overflow-x:auto;padding:4px 0 10px;margin-bottom:28px;}
   .date-pill{
-    flex:0 0 auto;padding:10px 16px;border-radius:12px;border:1px solid var(--border);
-    background:var(--panel);color:var(--text);font-size:13px;text-align:center;cursor:pointer;white-space:nowrap;
+    flex:0 0 auto;padding:10px 18px;border-radius:var(--r-pill);border:1px solid var(--line-2);
+    background:var(--card-bg);color:var(--white);font-size:13px;font-weight:600;text-align:center;cursor:pointer;white-space:nowrap;transition:border-color .15s,color .15s,background .15s;
   }
-  .date-pill .dow{display:block;color:var(--dim);font-size:11px;margin-bottom:2px;}
+  .date-pill .dow{display:block;color:var(--gray);font-size:10.5px;font-weight:500;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;}
   .date-pill.active{border-color:var(--gold);color:var(--gold);background:rgba(251,187,33,.1);}
-  .date-empty{color:var(--dim);font-size:13.5px;padding:10px 0;}
+  .date-pill.active .dow{color:var(--gold);}
+  .date-empty{color:var(--gray);font-size:13.5px;padding:10px 0;}
 
-  .tier-card{display:flex;align-items:center;gap:14px;border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;background:var(--panel);}
-  .tier-card.sold-out{opacity:.5;}
+  .tier-card{display:flex;align-items:center;gap:14px;border:1px solid var(--line-2);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px;background:var(--card-bg);transition:border-color .15s;}
+  .tier-card:not(.sold-out):hover{border-color:rgba(251,187,33,.4);}
+  .tier-card.sold-out{opacity:.45;}
   .tier-main{flex:1;min-width:0;}
-  .tier-name{font-size:15px;font-weight:700;}
-  .tier-desc{color:var(--dim);font-size:12px;margin-top:2px;}
+  .tier-name{font-family:var(--font-heading);font-size:15px;font-weight:700;letter-spacing:.2px;color:var(--white);}
   .tier-price{color:var(--gold);font-weight:700;font-size:14px;margin-top:6px;}
-  .tier-left{color:var(--dim);font-size:11.5px;margin-top:2px;}
-  .stepper{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
-  .stepper button{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:16px;cursor:pointer;}
+  .tier-left{color:var(--gray);font-size:11.5px;margin-top:2px;}
+  .stepper{display:flex;align-items:center;gap:12px;flex:0 0 auto;}
+  .stepper button{width:32px;height:32px;border-radius:50%;border:1px solid var(--line-2);background:var(--bg-soft);color:var(--white);font-size:17px;cursor:pointer;line-height:1;transition:border-color .15s,color .15s;}
+  .stepper button:not(:disabled):hover{border-color:var(--gold);color:var(--gold);}
   .stepper button:disabled{opacity:.3;cursor:not-allowed;}
-  .stepper .qty{width:24px;text-align:center;font-size:15px;font-weight:700;}
+  .stepper .qty{width:22px;text-align:center;font-size:15px;font-weight:700;color:var(--white);}
 
-  .total-bar{position:sticky;bottom:0;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
-  .total-label{color:var(--dim);font-size:12px;}
+  .total-bar{position:sticky;bottom:16px;background:var(--card-bg);border:1px solid var(--line-2);border-radius:var(--r-md);padding:16px 20px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);}
+  .total-label{color:var(--gray);font-size:12px;}
   .total-amount{font-size:19px;font-weight:800;color:var(--gold);}
-  .btn-primary{padding:12px 22px;border-radius:999px;border:none;background:var(--green);color:#04140b;font-weight:700;font-size:13.5px;cursor:pointer;}
-  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
-  .btn-ghost{padding:10px 18px;border-radius:999px;border:1px solid var(--border);background:none;color:var(--text);font-size:13px;cursor:pointer;}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:var(--r-pill);border:none;background:var(--grad-btn);color:#fff;font-weight:700;font-size:14px;cursor:pointer;transition:transform .2s,box-shadow .2s,opacity .2s;}
+  .btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 26px rgba(242,121,12,.32);}
+  .btn-primary:disabled{opacity:.32;cursor:not-allowed;}
+  .btn-ghost{padding:10px 18px;border-radius:var(--r-pill);border:1px solid var(--line-2);background:none;color:var(--gray);font-size:13px;cursor:pointer;}
+  .btn-ghost:hover{color:var(--white);border-color:var(--white);}
 
-  .panel{border:1px solid var(--border);border-radius:14px;padding:20px;background:var(--panel);margin-top:20px;}
-  .hold-timer{display:flex;align-items:center;gap:8px;color:var(--gold);font-weight:700;font-size:13.5px;margin-bottom:16px;}
-  label{display:block;font-size:12px;color:var(--dim);margin:12px 0 5px;}
-  label:first-child{margin-top:0;}
-  input[type=text],input[type=email],input[type=tel]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13.5px;box-sizing:border-box;font-family:inherit;}
-  .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
-  .err-msg{color:var(--red);font-size:12.5px;margin-top:10px;min-height:16px;}
+  .panel{border:1px solid var(--line-2);border-radius:var(--r-lg);padding:24px;background:var(--card-bg);margin-top:20px;}
+  .hold-timer{display:flex;align-items:center;gap:8px;color:var(--gold);font-weight:700;font-size:13.5px;margin-bottom:18px;}
+  label{display:block;font-size:12px;color:var(--gray);margin:14px 0 6px;}
+  label:first-of-type{margin-top:0;}
+  input[type=text],input[type=email],input[type=tel]{width:100%;padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:var(--bg-soft);color:var(--white);font-size:14px;box-sizing:border-box;font-family:inherit;}
+  input[type=text]:focus,input[type=email]:focus,input[type=tel]:focus{outline:none;border-color:var(--gold);}
+  .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;}
+  .err-msg{color:var(--danger);font-size:12.5px;margin-top:10px;min-height:16px;}
 
   .pay-box{text-align:center;}
-  .pay-box img{width:220px;height:220px;border-radius:10px;background:#fff;padding:8px;}
-  .pay-amount{font-size:20px;font-weight:800;color:var(--gold);margin:14px 0;}
-  .pay-note{color:var(--dim);font-size:12.5px;}
+  .pay-box img{width:220px;height:220px;border-radius:var(--r-sm);background:#fff;padding:8px;}
+  .pay-amount{font-size:22px;font-weight:800;color:var(--gold);margin:16px 0;font-family:var(--font-heading);}
+  .pay-note{color:var(--gray);font-size:12.5px;}
 
-  .done-box{text-align:center;padding:30px 10px;}
-  .done-box .icon{font-size:46px;margin-bottom:10px;}
-  .done-box h2{color:var(--green);margin:0 0 10px;}
-  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1c2620;border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .done-box{text-align:center;padding:36px 10px;}
+  .done-box .icon{font-size:48px;margin-bottom:12px;}
+  .done-box h2{color:var(--green);margin:0 0 10px;font-family:var(--font-heading);}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--card-bg);border:1px solid var(--line-2);color:var(--white);padding:11px 20px;border-radius:var(--r-sm);font-size:13px;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.4);}
   .toast.show{opacity:1;}
+
+  /* ---- Footer tối giản, đồng bộ màu/kiểu với trang chính ---- */
+  footer.site-footer{border-top:1px solid var(--line);padding:28px var(--gutter);text-align:center;color:var(--gray-dim);font-size:12px;}
+  footer.site-footer a{color:var(--gray);}
 </style>
 </head>
 <body>
 
+<div class="page-shell">
+
+<header class="navbar">
+  <div class="nav-inner">
+    <a href="index.html"><img class="logo-lumishow" src="image/logo-lumishow.png" alt="LumiShow"></a>
+    <nav class="nav-links">
+      <a href="index.html">Trang chủ</a>
+      <a href="gioi-thieu.html">Giới thiệu</a>
+      <a href="lien-he.html">Liên hệ</a>
+    </nav>
+  </div>
+</header>
+
+<section class="show-bar">
+  <div class="show-inner">
+    <img class="show-poster" src="image/TinhHoaBacBo.png" alt="Tinh Hoa Bắc Bộ">
+    <div>
+      <h1 class="show-name">Tinh Hoa Bắc Bộ</h1>
+      <div class="show-sub">Vở diễn thực cảnh — đặt vé trực tuyến</div>
+    </div>
+  </div>
+</section>
+
 <div class="wrap">
-  <div class="hero"><img src="image/TinhHoaBacBo.png" alt="Tinh Hoa Bắc Bộ"></div>
-  <h1>Đặt vé — Tinh Hoa Bắc Bộ</h1>
-  <p class="sub">Chọn suất diễn và số lượng vé theo hạng bên dưới.</p>
+  <h2 class="page-title">Chọn suất diễn &amp; số lượng vé</h2>
+  <p class="sub">Chọn ngày diễn và số lượng vé theo từng hạng bên dưới.</p>
 
   <div id="dateRow" class="date-row"><span class="date-empty">Đang tải lịch diễn...</span></div>
 
@@ -87,7 +143,7 @@
 
   <!-- Bước 1: giữ chỗ + thông tin khách -->
   <div class="panel" id="customerPanel" hidden>
-    <div class="hold-timer">⏱ Ghế đang được giữ — còn lại <span id="holdTime">10:00</span></div>
+    <div class="hold-timer">⏱ Vé đang được giữ — còn lại <span id="holdTime">10:00</span></div>
     <label for="custName">Họ và tên</label>
     <input type="text" id="custName" placeholder="Nguyễn Văn A">
     <label for="custPhone">Số điện thoại</label>
@@ -114,8 +170,14 @@
     <div class="icon">✓</div>
     <h2>Đặt vé thành công</h2>
     <p>Mã đơn <b id="doneCode">—</b></p>
-    <p id="doneBody" style="color:var(--dim);font-size:13.5px;"></p>
+    <p id="doneBody" style="color:var(--gray);font-size:13.5px;"></p>
   </div>
+</div>
+
+<footer class="site-footer">
+  © 2026 LumiShow · <a href="lien-he.html">Liên hệ</a>
+</footer>
+
 </div>
 
 <div class="toast" id="toastEl"></div>
