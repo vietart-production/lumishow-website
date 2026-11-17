@@ -65,13 +65,18 @@
   .venue-map{max-width:560px;margin:0 auto 24px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line-2);}
   .venue-map img{width:100%;height:auto;display:block;}
 
-  .tier-card{display:flex;align-items:center;gap:14px;border:1px solid var(--line-2);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px;background:var(--card-bg);transition:border-color .15s;}
-  .tier-card:not(.sold-out):hover{border-color:rgba(251,187,33,.4);}
-  .tier-card.sold-out{opacity:.45;}
-  .tier-main{flex:1;min-width:0;}
-  .tier-name{font-family:var(--font-heading);font-size:15px;font-weight:700;letter-spacing:.2px;color:var(--white);}
-  .tier-price{color:var(--gold);font-weight:700;font-size:14px;margin-top:6px;}
-  .tier-left{color:var(--gray);font-size:11.5px;margin-top:2px;}
+  /* Gộp 3 lựa chọn (Platinum/Gold/Silver) — mỗi lựa chọn 1 thẻ, bên trong
+     2 dòng Người lớn/Trẻ em, thay vì 6 thẻ rời rạc nhìn rối. */
+  .tier-group{border:1px solid var(--line-2);border-radius:var(--r-md);padding:18px 20px;margin-bottom:14px;background:var(--card-bg);}
+  .tier-group-head{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+  .tier-name{font-family:var(--font-heading);font-size:16px;font-weight:700;letter-spacing:.3px;color:var(--gold);}
+  .tier-desc{color:var(--gray);font-size:12px;margin-top:3px;}
+  .tier-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 0;}
+  .tier-row + .tier-row{border-top:1px solid var(--line);}
+  .tier-row.sold-out{opacity:.4;}
+  .tier-row-main{min-width:0;}
+  .tier-row-label{font-size:14px;font-weight:600;color:var(--white);}
+  .tier-row-sub{color:var(--gray);font-size:11.5px;margin-top:2px;}
   .stepper{display:flex;align-items:center;gap:12px;flex:0 0 auto;}
   .stepper button{width:32px;height:32px;border-radius:50%;border:1px solid var(--line-2);background:var(--bg-soft);color:var(--white);font-size:17px;cursor:pointer;line-height:1;transition:border-color .15s,color .15s;}
   .stepper button:not(:disabled):hover{border-color:var(--gold);color:var(--gold);}
@@ -129,7 +134,7 @@
 
 <section class="show-bar">
   <div class="show-inner">
-    <img class="show-poster" src="image/TinhHoaBacBo.png" alt="Tinh Hoa Bắc Bộ">
+    <img class="show-poster" src="image/TinhHoaBacBo.jpg" alt="Tinh Hoa Bắc Bộ">
     <div>
       <h1 class="show-name">Tinh Hoa Bắc Bộ</h1>
       <div class="show-sub">Vở diễn thực cảnh — đặt vé trực tuyến</div>
@@ -382,6 +387,8 @@ function renderTierCards(){
   const dayType = dayTypeOfShowtime(selectedShowtimeId);
   const wrap = $("tierCards");
 
+  // Gộp 3 lựa chọn (Platinum/Gold/Silver) — mỗi lựa chọn 1 thẻ DUY NHẤT,
+  // bên trong 2 dòng Người lớn/Trẻ em, thay vì 6 thẻ rời rạc (nhìn rối).
   wrap.innerHTML = TIER_ORDER.map((tier) => {
     const info = TIER_PRICE_TABLE[tier];
     const rows = AGE_TYPES.map(({ key: ageType, label }) => {
@@ -389,11 +396,10 @@ function renderTierCards(){
       const availCount = selectedShowtimeId ? availableSeatIdsFor(tier, ageType).length : 0;
       const soldOut = selectedShowtimeId && availCount === 0;
       const price = priceFor(tier, ageType, dayType);
-      return `<div class="tier-card${soldOut ? " sold-out" : ""}" data-qkey="${qKey}">
-        <div class="tier-main">
-          <div class="tier-name">${info.name} — ${label}</div>
-          <div class="tier-price">${fmtVND(price)}</div>
-          <div class="tier-left">${selectedShowtimeId ? (soldOut ? "Đã hết vé" : availCount + " vé còn trống") : "Chọn ngày diễn trước"}</div>
+      return `<div class="tier-row${soldOut ? " sold-out" : ""}">
+        <div class="tier-row-main">
+          <div class="tier-row-label">${label}</div>
+          <div class="tier-row-sub">${fmtVND(price)} ${selectedShowtimeId ? "· " + (soldOut ? "Đã hết vé" : availCount + " còn trống") : ""}</div>
         </div>
         <div class="stepper">
           <button type="button" class="qty-minus" data-qkey="${qKey}" ${quantities[qKey] <= 0 ? "disabled" : ""}>−</button>
@@ -402,7 +408,13 @@ function renderTierCards(){
         </div>
       </div>`;
     }).join("");
-    return `<div class="tier-desc" style="margin:18px 0 6px;font-size:13px;color:var(--dim);">${info.desc}</div>${rows}`;
+    return `<div class="tier-group">
+      <div class="tier-group-head">
+        <div class="tier-name">${info.name}</div>
+        <div class="tier-desc">${info.desc}</div>
+      </div>
+      ${rows}
+    </div>`;
   }).join("");
 }
 
