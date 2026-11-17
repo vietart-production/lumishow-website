@@ -422,12 +422,10 @@
   .section2-teaser .container{position:relative;z-index:1;}
   .s2-desc{max-width:560px;margin:14px auto 32px;color:var(--gray);font-size:15px;line-height:1.6;}
   .s2-visual{
-    max-width:760px;aspect-ratio:16/7;margin:0 auto 28px;border-radius:16px;
-    border:1px solid var(--line-2);
-    background:radial-gradient(ellipse at center,#1c2b26 0%,#0b1e1b 72%);
-    display:flex;align-items:center;justify-content:center;
+    max-width:760px;aspect-ratio:1280/728;margin:0 auto 28px;border-radius:16px;
+    border:1px solid var(--line-2);overflow:hidden;
   }
-  .s2-visual span{color:rgba(255,255,255,.35);font-size:13px;letter-spacing:.3px;}
+  .s2-visual img{width:100%;height:100%;object-fit:cover;display:block;}
   .s2-badge{
     display:inline-flex;padding:10px 22px;border-radius:999px;border:1px solid var(--gold);
     color:var(--gold);font-weight:700;font-size:13px;letter-spacing:.5px;
@@ -770,7 +768,7 @@
     <span class="eyebrow" data-i18n="s2.eyebrow">SẮP RA MẮT</span>
     <h2 class="text-sttq" data-i18n="s2.title">Tinh Hoa Bắc Bộ</h2>
     <p class="s2-desc" data-i18n="s2.desc">Hành trình khám phá văn hoá đồng bằng Bắc Bộ qua ngôn ngữ trình diễn đương đại — dự án tiếp theo của LumiShow.</p>
-    <div class="s2-visual" aria-hidden="true"><span data-i18n="s2.visualLabel">Hình ảnh minh hoạ — đang cập nhật</span></div>
+    <div class="s2-visual"><img src="image/TinhHoaBacBo.png" alt="Tinh Hoa Bắc Bộ"></div>
     <span class="s2-badge" data-i18n="s2.badge">Sắp mở bán</span>
   </div>
 </section>
@@ -903,7 +901,7 @@
       'show.name':'Sơn Thần Thủy Quái',
       's2.eyebrow':'SẮP RA MẮT', 's2.title':'Tinh Hoa Bắc Bộ',
       's2.desc':'Hành trình khám phá văn hoá đồng bằng Bắc Bộ qua ngôn ngữ trình diễn đương đại — dự án tiếp theo của LumiShow.',
-      's2.visualLabel':'Hình ảnh minh hoạ — đang cập nhật', 's2.badge':'Sắp mở bán',
+      's2.badge':'Sắp mở bán',
       'news.kicker':'TIN TỨC', 'news.title':'NHỮNG GÌ ĐANG DIỄN RA', 'news.all':'XEM TẤT CẢ', 'news.watchBtn':'Xem ngay',
       'contact.address':'Địa chỉ', 'contact.hotline':'Hotline', 'contact.email':'Email',
       'contact.website':'Website',
@@ -929,7 +927,7 @@
       'show.name':'Son Than Thuy Quai',
       's2.eyebrow':'COMING SOON', 's2.title':'Tinh Hoa Bac Bo',
       's2.desc':'A journey through Northern Vietnam\'s heritage, told through contemporary performance — LumiShow\'s next production.',
-      's2.visualLabel':'Visual coming soon', 's2.badge':'Tickets coming soon',
+      's2.badge':'Tickets coming soon',
       'news.kicker':'NEWS', 'news.title':"WHAT'S HAPPENING", 'news.all':'VIEW ALL', 'news.watchBtn':'Watch now',
       'contact.address':'Address', 'contact.hotline':'Hotline', 'contact.email':'Email',
       'contact.website':'Website',
