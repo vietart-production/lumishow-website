@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Đặt vé — Tinh Hoa Bắc Bộ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,600&display=swap" rel="stylesheet">
 <style>
   /* Token màu/font dùng CHUNG với dat-ve.html — giữ đồng bộ thương hiệu
      LumiShow giữa 2 show, không tự chế theme riêng. */
@@ -54,6 +57,18 @@
   .date-pill.active{border-color:var(--gold);color:var(--gold);background:rgba(251,187,33,.1);}
   .date-pill.active .dow{color:var(--gold);}
   .date-empty{color:var(--gray);font-size:13.5px;padding:10px 0;}
+
+  /* ---- Sơ đồ khu vực minh hoạ — KHÔNG phải sơ đồ ghế bấm từng chỗ (show
+     này bán theo SỐ LƯỢNG/hạng, khách tự tìm chỗ trống trong khu vực đã
+     mua, đúng yêu cầu), chỉ là hình minh hoạ bố trí 3 hạng quanh sân khấu
+     cho khách dễ hình dung trước khi chọn số lượng bên dưới. ---- */
+  .venue-map{max-width:420px;margin:0 auto 32px;}
+  .vm-band{border-radius:999px 999px 0 0;text-align:center;font-family:var(--font-heading);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#04140b;}
+  .vm-platinum{background:linear-gradient(180deg,#FBBB21,#C98A12);padding:10px 0;font-size:11px;margin:0 18%;border-radius:999px 999px 0 0;}
+  .vm-gold{background:linear-gradient(180deg,#F2C14E,#D9A62C);padding:22px 0;font-size:12px;margin:6px 8%;border-radius:999px 999px 0 0;}
+  .vm-wings{display:flex;justify-content:space-between;margin:6px 0 0;gap:8px;}
+  .vm-silver{flex:1;background:linear-gradient(180deg,#C7CDD3,#9AA3AC);border-radius:16px 16px 0 0;padding:20px 0;font-size:11px;}
+  .vm-stage{margin-top:10px;background:#05100d;border:1px solid var(--line-2);border-radius:10px;padding:10px 0;text-align:center;font-family:var(--font-heading);font-weight:700;letter-spacing:2px;color:var(--gray);font-size:11px;text-transform:uppercase;}
 
   .tier-card{display:flex;align-items:center;gap:14px;border:1px solid var(--line-2);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px;background:var(--card-bg);transition:border-color .15s;}
   .tier-card:not(.sold-out):hover{border-color:rgba(251,187,33,.4);}
@@ -132,6 +147,17 @@
   <p class="sub">Chọn ngày diễn và số lượng vé theo từng hạng bên dưới.</p>
 
   <div id="dateRow" class="date-row"><span class="date-empty">Đang tải lịch diễn...</span></div>
+
+  <div class="venue-map" aria-hidden="true">
+    <div class="vm-band vm-platinum">Platinum</div>
+    <div class="vm-band vm-gold">Gold</div>
+    <div class="vm-wings">
+      <div class="vm-silver">Silver</div>
+      <div class="vm-silver">Silver</div>
+    </div>
+    <div class="vm-stage">Sân khấu</div>
+  </div>
+  <p class="sub" style="text-align:center;margin-top:-22px;">Vé bán theo khu vực, không chỉ định chỗ ngồi cụ thể — quý khách tự chọn chỗ trống trong đúng khu vực hạng vé đã mua.</p>
 
   <div id="tierCards"></div>
   <p class="sub" style="margin-top:-6px;">Trẻ em dưới 90cm: miễn phí, ngồi cùng ghế người lớn đi kèm — không cần mua vé. Trẻ em từ 1m3 trở lên tính vé Người lớn.</p>
