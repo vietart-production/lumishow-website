@@ -158,6 +158,11 @@ async function createPaymentForHold({
             buyerName: customerName,
             buyerPhone: customerPhone,
             buyerEmail: customerEmail,
+            // Link/QR hết hạn ĐÚNG lúc hold hết hạn (giây Unix). Trước đây link
+            // không có hạn nên khách vẫn chuyển được rất lâu sau khi hold hết,
+            // ghế đã bán cho người khác → tiền vào nhưng vé xung đột
+            // (conflict_needs_review), vd đơn 1795051401639596 trả sau 52 phút.
+            expiredAt: Math.floor(new Date(hold.expiresAt).getTime() / 1000),
             cancelUrl: `${FRONTEND_URL}/BookingTicket.html`,
             returnUrl: `${FRONTEND_URL}/BookingTicket.html`
         });
