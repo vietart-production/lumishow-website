@@ -1449,6 +1449,52 @@ async function fetchHoldStatus(holdId) {
   return result; // { status: 'ACTIVE'|'EXPIRED'|'NOT_FOUND', ... }
 }
 
+/* Nhả ghế THẬT trên server khi khách chủ động hủy giữ ghế (nút "Hủy giữ ghế",
+   đổi suất). Trước đây hủy chỉ xoá trạng thái ở trình duyệt — ghế vẫn HELD
+   trên Firestore tới khi hết 10 phút, đơn PayOS vẫn trả được. Server huỷ link
+   PayOS + đơn chờ rồi mới nhả ghế; nếu đơn thực ra ĐÃ thanh toán thì trả
+   { paid:true } và KHÔNG nhả. Throw khi lỗi — nơi gọi giữ nguyên phiên giữ ghế. */
+async function releaseHoldOnServer(holdId) {
+  if (TEST_MODE || !holdId) return { released: true };
+
+  const response = await fetch(`${API_BASE_URL}/bookings/hold/${encodeURIComponent(holdId)}/release`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bookingSessionId: getBookingSessionId() })
+  });
+
+  let result;
+  try {
+    result = await response.json();
+  } catch (e) {
+    throw new Error(t('err.connBookingRetry'));
+  }
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || t('err.releaseFail'));
+  }
+
+  return result; // { released } | { paid:true }
+}
+
+/* Hủy phiên giữ ghế hiện tại trên server. true = đã nhả xong, cứ dọn client;
+   false = không hủy được (lỗi mạng/server, hoặc đơn đã thanh toán) — giữ nguyên. */
+async function releaseCurrentHold(){
+  let result;
+  try {
+    result = await releaseHoldOnServer(currentOrder && currentOrder.holdId);
+  } catch (error) {
+    toast(error.message || t('err.releaseFail'), 'warn');
+    return false;
+  }
+  if (result.paid){
+    toast(t('msg.cancelAlreadyPaid'), 'warn');
+    openCheckout(2);
+    return false;
+  }
+  return true;
+}
+
 /* Tạo đơn hàng + payment link PayOS thật cho hold đang giữ. Server tự tính
    lại tiền từ giá ghế thật (và validate lại coupon nếu có), không tin số
    client gửi lên. */
@@ -2520,7 +2566,8 @@ cancelHoldBtn.addEventListener('click', () => {
     title:t('confirm.cancelHoldTitle'),
     body:t('confirm.cancelHoldBody'),
     okText:t('btn.cancelHold'),
-    onOk:() => {
+    onOk:async () => {
+      if (!(await releaseCurrentHold())) return;
       if (currentOrder){ currentOrder.status = 'CANCELLED'; currentOrder = null; }
       endHold(true);
       closeCheckout();
@@ -3290,7 +3337,7 @@ function switchShow(mutate){
       title:t('confirm.changeShowTitle'),
       body:t('confirm.changeShowBodyHold'),
       okText:t('btn.changeShow'),
-      onOk:() => { endHold(true); go(); }
+      onOk:async () => { if (!(await releaseCurrentHold())) return; endHold(true); go(); }
     });
   } else if (selectedSeats.length){
     confirmDialog({
@@ -3586,6 +3633,8 @@ const I18N = {
     'confirm.cancelHoldBody':'Toàn bộ ghế đang giữ sẽ được trả lại cho người khác đặt.',
     'btn.cancelHold':'Hủy giữ ghế',
     'msg.holdCancelled':'Đã hủy phiên giữ ghế.',
+    'msg.cancelAlreadyPaid':'Đơn này đã được thanh toán nên không thể hủy. Đang xác nhận vé của bạn.',
+    'err.releaseFail':'Không thể hủy giữ ghế lúc này. Vui lòng thử lại.',
     'msg.removeInvalid':'Hãy gỡ ghế không còn hợp lệ khỏi danh sách.',
     'msg.noSeatsSelected':'Bạn chưa chọn ghế nào.',
     'msg.checkInfo':'Vui lòng kiểm tra lại thông tin đã nhập.',
@@ -3711,6 +3760,8 @@ const I18N = {
     'confirm.cancelHoldBody':'All held seats will be released for others to book.',
     'btn.cancelHold':'Cancel hold',
     'msg.holdCancelled':'Hold session cancelled.',
+    'msg.cancelAlreadyPaid':'This order has already been paid, so it cannot be cancelled. Confirming your tickets.',
+    'err.releaseFail':'Could not cancel the hold right now. Please try again.',
     'msg.removeInvalid':'Please remove the no-longer-valid seats from your list.',
     'msg.noSeatsSelected':'You haven’t selected any seats yet.',
     'msg.checkInfo':'Please check the information you entered.',

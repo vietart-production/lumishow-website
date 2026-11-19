@@ -397,9 +397,14 @@ async function createHold({
 
 // ==========================================
 // GIẢI PHÓNG MỘT HOLD ĐÃ HẾT HẠN
+// ------------------------------------------
+// force=true: khách CHỦ ĐỘNG hủy giữ ghế (nút "Hủy giữ ghế") — nhả ngay dù
+// hold chưa hết hạn và đánh dấu hold "CANCELLED" thay vì "EXPIRED". Trước đây
+// nút hủy chỉ xoá trạng thái ở trình duyệt, ghế trên Firestore vẫn HELD tới
+// khi hết 10 phút (xem payment.service.js → cancelCheckoutForHold).
 // ==========================================
 
-async function releaseExpiredHold(holdId) {
+async function releaseExpiredHold(holdId, { force = false } = {}) {
 
     const holdRef = db
         .collection("holds")
@@ -431,8 +436,8 @@ async function releaseExpiredHold(holdId) {
         const expiresAt = holdData.expiresAt?.toDate();
 
 
-        // Chưa hết hạn thì không làm gì
-        if (!expiresAt || expiresAt > now) {
+        // Chưa hết hạn thì không làm gì (trừ khi khách chủ động hủy)
+        if (!force && (!expiresAt || expiresAt > now)) {
             return;
         }
 
@@ -500,9 +505,9 @@ async function releaseExpiredHold(holdId) {
         }
 
 
-        // Đánh dấu hold đã hết hạn
+        // Đánh dấu hold đã hết hạn / đã bị khách hủy
         transaction.update(holdRef, {
-            status: "EXPIRED",
+            status: force ? "CANCELLED" : "EXPIRED",
 
             updatedAt: now
         });

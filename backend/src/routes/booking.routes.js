@@ -9,6 +9,7 @@ const {
     createHold,
     listOpenShowtimes
 } = require("../services/booking.service");
+const { cancelCheckoutForHold } = require("../services/payment.service");
 
 // Giới hạn riêng, chặt hơn rate-limit chung của /api — chống 1 IP gọi
 // giữ ghế liên tục để ôm nhiều lượt ghế (mỗi lượt đã giới hạn tối đa
@@ -180,6 +181,46 @@ router.get("/bookings/hold/:holdId", async (req, res) => {
 
     }
 
+});
+
+// ==========================================
+// POST /api/bookings/hold/:holdId/release
+// Khách chủ động hủy giữ ghế: huỷ đơn/link thanh toán đang chờ + nhả ghế
+// ngay trên server. Trả { released:true } khi xong, { paid:true } nếu đơn
+// thực ra đã được thanh toán (client phải chuyển sang chốt vé, không hủy).
+// ==========================================
+
+const releaseLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Bạn thao tác quá nhiều lần. Vui lòng thử lại sau."
+    }
+});
+
+router.post("/bookings/hold/:holdId/release", releaseLimiter, async (req, res) => {
+
+    try {
+
+        const result = await cancelCheckoutForHold({
+            holdId: req.params.holdId,
+            bookingSessionId: req.body && req.body.bookingSessionId
+        });
+
+        return res.status(200).json({ success: true, ...result });
+
+    } catch (error) {
+
+        console.error("RELEASE HOLD ERROR:", error);
+
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Không thể hủy giữ ghế"
+        });
+    }
 });
 
 module.exports = router;

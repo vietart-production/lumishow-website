@@ -9,7 +9,7 @@ const crypto = require("crypto");
 const QRCode = require("qrcode");
 
 const { db } = require("../config/firebase");
-const { getHoldStatus } = require("./booking.service");
+const { getHoldStatus, releaseExpiredHold } = require("./booking.service");
 const { sendTicketEmail, sendOrderNotificationEmail, sendSeatConflictAlertEmail } = require("./email.service");
 const { reserveCouponToAmount, releaseCouponUse } = require("./coupon.service");
 
@@ -594,8 +594,113 @@ async function getPaymentStatus(orderId) {
     return { orderStatus: order.orderStatus, paymentStatus: paymentLink.status };
 }
 
+// ==========================================
+// KHÁCH HỦY GIỮ GHẾ (nút "Hủy giữ ghế" ở trang đặt vé)
+// ------------------------------------------
+// Trước đây nút này chỉ xoá trạng thái trên trình duyệt: ghế vẫn HELD trên
+// Firestore tới khi hết 10 phút, đơn vẫn PENDING_PAYMENT và link PayOS vẫn
+// trả được (khách chuyển khoản xong vẫn được xuất vé dù đã bấm hủy).
+//
+// Thứ tự an toàn tiền-trước-ghế: (1) huỷ link PayOS — nếu PayOS báo ĐÃ TRẢ
+// thì KHÔNG nhả ghế, chốt đơn luôn và báo client "đã thanh toán"; (2) đơn →
+// CANCELLED (+ hoàn lượt coupon); (3) mới nhả ghế. Lỗi ở bước nào thì ném ra,
+// client giữ nguyên phiên giữ ghế chứ không tự coi là đã hủy.
+// bookingSessionId phải khớp phiên đã tạo hold (holdId chỉ là UUID khó đoán,
+// kiểm tra thêm để người khác có holdId cũng không hủy được).
+// ==========================================
+
+async function cancelCheckoutForHold({ holdId, bookingSessionId }) {
+
+    if (!holdId || !bookingSessionId) {
+        throw new Error("Thiếu thông tin hủy giữ ghế");
+    }
+
+    const holdSnap = await db.collection("holds").doc(holdId).get();
+
+    if (!holdSnap.exists) {
+        return { released: false, status: "NOT_FOUND" };
+    }
+
+    if (holdSnap.data().bookingSessionId !== bookingSessionId) {
+        throw new Error("Bạn không có quyền hủy phiên giữ ghế này");
+    }
+
+    const ordersSnap = await db.collection("orders").where("holdId", "==", holdId).get();
+
+    for (const orderDoc of ordersSnap.docs) {
+
+        const order = orderDoc.data();
+
+        if (order.orderStatus === "PAID") {
+            return { released: false, paid: true };
+        }
+
+        if (order.orderStatus !== "PENDING_PAYMENT") {
+            continue;
+        }
+
+        // Đơn PayOS: huỷ link để khách không trả được nữa. Huỷ lỗi (vd link đã
+        // huỷ/hết hạn/đã trả) thì hỏi lại PayOS để biết đúng trạng thái; hỏi
+        // cũng lỗi → ném ra, không nhả ghế khi chưa chắc tiền chưa vào.
+        if (order.paymentLinkId) {
+            try {
+                await payos.paymentRequests.cancel(order.orderCode, "Khách hủy giữ ghế");
+            } catch (cancelError) {
+                const link = await payos.paymentRequests.get(order.orderCode);
+
+                if (link.status === "PAID") {
+                    await finalizeOrderAsPaid(orderDoc.ref, link.amountPaid);
+                    return { released: false, paid: true };
+                }
+
+                if (link.status !== "CANCELLED" && link.status !== "EXPIRED") {
+                    throw cancelError;
+                }
+            }
+        }
+
+        let cancelled = false;
+        let paidMeanwhile = false;
+
+        await db.runTransaction(async (transaction) => {
+            const snap = await transaction.get(orderDoc.ref);
+            const status = snap.data().orderStatus;
+
+            if (status === "PAID") {
+                paidMeanwhile = true;
+                return;
+            }
+
+            if (status !== "PENDING_PAYMENT") {
+                return;
+            }
+
+            transaction.update(orderDoc.ref, {
+                orderStatus: "CANCELLED",
+                paymentStatus: "CANCELLED",
+                cancelledAt: new Date(),
+                updatedAt: new Date()
+            });
+            cancelled = true;
+        });
+
+        if (paidMeanwhile) {
+            return { released: false, paid: true };
+        }
+
+        if (cancelled && order.coupon && order.coupon.code) {
+            await releaseCouponUse(order.coupon.code).catch(() => {});
+        }
+    }
+
+    await releaseExpiredHold(holdId, { force: true });
+
+    return { released: true };
+}
+
 module.exports = {
     createPaymentForHold,
+    cancelCheckoutForHold,
     handlePaymentWebhook,
     getPaymentStatus,
     finalizeOrderAsPaid
