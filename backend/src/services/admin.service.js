@@ -27,10 +27,26 @@ const DOW_NAMES = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "
 // suất 2026-10-04_16:30 sau khi đổi vé cho khách Võ Thị Minh Nguyệt
 // (2026-10-03). Dùng hàm này ở MỌI chỗ "trả ghế lại" (huỷ vé theo ghế, xoá
 // đơn, đổi vé) thay vì set cứng "AVAILABLE".
+//
+// (2026-11-19) CHỈ khoá lại ghế bán TRƯỚC mốc LOCK_POLICY_MS (lúc khu khoá được
+// áp dụng đầy đủ, 2026-10-04): đó mới là ghế "lỡ bán trước khi khoá". Ghế trong
+// khu khoá nhưng bán SAU mốc đó chỉ bán được vì admin đã mở riêng cho suất đó
+// (bulk-update AVAILABLE) — khoá lại sẽ phá việc mở bán của admin (xảy ra thật:
+// ghế M120 suất 2026-11-22_10:00 bị khoá lại sau khi xoá đơn test). Không rõ
+// thời điểm bán (soldAt thiếu) thì giữ hành vi cũ: khoá lại, thận trọng.
 // ==========================================
 
-function releaseStatusFor(seatId) {
-    return LOCKED_ZONE_SEATS.has(seatId) ? "BLOCKED" : "AVAILABLE";
+const LOCK_POLICY_MS = Date.parse("2026-10-04T00:00:00+07:00");
+
+function releaseStatusFor(seatId, soldAt) {
+    if (!LOCKED_ZONE_SEATS.has(seatId)) return "AVAILABLE";
+
+    const t = soldAt && soldAt.toDate ? soldAt.toDate().getTime()
+        : soldAt ? new Date(soldAt).getTime() : NaN;
+
+    if (!Number.isFinite(t)) return "BLOCKED";
+
+    return t < LOCK_POLICY_MS ? "BLOCKED" : "AVAILABLE";
 }
 
 const RELEASE_BLOCK_NOTE = "Khoá lại tự động — ghế thuộc khu không-được-thầu-bán, " +
@@ -122,7 +138,7 @@ async function cancelTicketBySeat({ showId, showtimeId, seatId }) {
         });
 
         if (seatSnap.exists) {
-            const releaseStatus = releaseStatusFor(seatId);
+            const releaseStatus = releaseStatusFor(seatId, ticketSnap.data().createdAt);
             transaction.update(seatRef, {
                 status: releaseStatus,
                 blockNote: releaseStatus === "BLOCKED" ? RELEASE_BLOCK_NOTE : null,
@@ -260,7 +276,7 @@ async function cancelOrderSeats({ showId, orderId, seatIdsToCancel }) {
         uniqueSeatIds.forEach((seatId, i) => {
             const seatSnap = seatSnaps[i];
             if (seatSnap.exists) {
-                const releaseStatus = releaseStatusFor(seatId);
+                const releaseStatus = releaseStatusFor(seatId, order.createdAt);
                 transaction.update(seatSnap.ref, {
                     status: releaseStatus,
                     blockNote: releaseStatus === "BLOCKED" ? RELEASE_BLOCK_NOTE : null,
@@ -1093,7 +1109,7 @@ async function deleteOrder({ showId, orderId }) {
             }
 
             releasedSeats++;
-            const releaseStatus = releaseStatusFor(seatId);
+            const releaseStatus = releaseStatusFor(seatId, order.createdAt);
             batch.update(seatsRef.doc(seatId), {
                 status: releaseStatus,
                 blockNote: releaseStatus === "BLOCKED" ? RELEASE_BLOCK_NOTE : null,
@@ -1346,7 +1362,7 @@ async function exchangePaidOrderTickets({ showId, orderId, toShowtimeId, toSeatI
         });
 
         sourceSeatRefs.forEach((ref, i) => {
-            const releaseStatus = releaseStatusFor(fromSeatIds[i]);
+            const releaseStatus = releaseStatusFor(fromSeatIds[i], order.createdAt);
             transaction.update(ref, {
                 status: releaseStatus,
                 blockNote: releaseStatus === "BLOCKED" ? RELEASE_BLOCK_NOTE : null,
@@ -2009,6 +2025,7 @@ async function renameSeat({ showId, showtimeId, oldSeatId, newSeatId }) {
 }
 
 module.exports = {
+    releaseStatusFor,
     checkPin,
     checkGateKey,
     checkFilowgKey,
