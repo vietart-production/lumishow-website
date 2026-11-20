@@ -168,6 +168,8 @@
   #viewport{will-change:transform;}
   #seatLabels{pointer-events:none;display:none;}
   #seatMap.close-up #seatLabels{display:block;}
+  /* Đang kéo/chụm/lăn thì ẩn số ghế (display:none = không tốn paint), dừng tay mới hiện lại */
+  #seatMap.moving #seatLabels{display:none;}
 
   /* filter:drop-shadow() TỪNG áp riêng cho mỗi <rect> ghế (.seat) — tới ~1218
      ghế/suất, tức 1218 lần blur riêng biệt mỗi khi lớp #viewport cần vẽ lại.
@@ -2359,7 +2361,10 @@ let labelTimer = null;
 function scheduleLabelUpdate(immediate){
   clearTimeout(labelTimer);
   if (immediate) updateVisibleLabels();
-  else labelTimer = setTimeout(updateVisibleLabels, 90);
+  else {
+    svg.classList.add('moving');
+    labelTimer = setTimeout(() => { updateVisibleLabels(); svg.classList.remove('moving'); }, 90);
+  }
 }
 
 /* Gọi mỗi khi khung nhìn đổi — chỉ làm việc nhẹ, không đụng tới trạng thái ghế */
