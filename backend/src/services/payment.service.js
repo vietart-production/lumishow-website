@@ -664,6 +664,20 @@ async function cancelCheckoutForHold({ holdId, bookingSessionId }) {
             }
         }
 
+        // Đơn thẻ OnePay: không có API huỷ phiên — chỉ hỏi QueryDR xem khách đã trả
+        // chưa. Đã trả thì chốt đơn, không nhả ghế; hỏi lỗi thì ném ra (chưa chắc
+        // tiền chưa vào). Chưa trả mà khách vẫn trả muộn ở tab cũ → đơn CANCELLED
+        // nên processOnepayResult sẽ báo mail hoàn tiền tay.
+        if (order.paymentProvider === "onepay") {
+            const { syncOnepayOrder } = require("./onepay.service"); // lazy: onepay.service cũng require file này
+
+            const r = await syncOnepayOrder(order);
+
+            if (r.state === "PAID") {
+                return { released: false, paid: true };
+            }
+        }
+
         let cancelled = false;
         let paidMeanwhile = false;
 

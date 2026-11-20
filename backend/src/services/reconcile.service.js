@@ -3,6 +3,7 @@ const { db } = require("../config/firebase");
 const { getPaymentStatus } = require("./payment.service");
 const { releaseExpiredHold } = require("./booking.service");
 const { releaseCouponUse } = require("./coupon.service");
+const { syncOnepayOrder, getOnepayOrderStatus } = require("./onepay.service");
 
 // ==========================================
 // ĐỐI SOÁT ĐƠN TREO — LƯỚI AN TOÀN CHO C6
@@ -68,14 +69,27 @@ async function reconcilePendingOrders({ commit = false, log = () => {} } = {}) {
         const tag = `${doc.id} | orderCode ${o.orderCode} | ${o.customerName || "?"} | ${o.amount}đ`;
 
         try {
-            const pl = await payos.paymentRequests.get(o.orderCode);
+            let pl;
+
+            if (o.paymentProvider === "onepay") {
+                // Đơn thẻ OnePay: hỏi QueryDR (đã áp kết quả vào đơn nếu có kết quả cuối).
+                // PENDING/NOT_FOUND (khách chưa/không trả) rơi xuống nhánh hết hạn bên dưới.
+                const r = await syncOnepayOrder(o);
+                pl = r.state === "PAID"
+                    ? { status: "PAID", amountPaid: r.amountPaid }
+                    : { status: r.state };
+            } else {
+                pl = await payos.paymentRequests.get(o.orderCode);
+            }
 
             if (pl.status === "PAID") {
                 paid++;
                 log(`[ĐÃ TRẢ] ${tag} — PayOS nhận ${pl.amountPaid}đ`);
 
                 if (commit) {
-                    const r = await getPaymentStatus(doc.id);
+                    const r = o.paymentProvider === "onepay"
+                        ? await getOnepayOrderStatus(doc.id)
+                        : await getPaymentStatus(doc.id);
                     committed++;
                     log(`   -> ĐÃ CHỐT: orderStatus=${r.orderStatus}`);
                 }

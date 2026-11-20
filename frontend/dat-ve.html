@@ -416,6 +416,27 @@
   .co-payhint{margin-top:16px;color:var(--gray);font-size:12.5px;line-height:1.65;}
   .co-payhint b{color:var(--white);}
 
+  /* Chọn phương thức thanh toán (bước 1) + khối điều khoản bắt buộc của thẻ quốc tế */
+  .co-method{display:grid;gap:10px;margin-top:4px;}
+  .co-method-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-md);cursor:pointer;transition:border-color .2s,background .2s;}
+  .co-method-opt:has(input:checked){border-color:var(--green);background:rgba(242,121,12,.07);}
+  .co-method-opt input{accent-color:var(--green);width:17px;height:17px;flex-shrink:0;}
+  .co-method-txt{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .co-method-name{font-size:14px;font-weight:700;color:var(--white);}
+  .co-method-sub{font-size:12px;color:var(--gray);}
+  .card-logos{display:flex;gap:6px;margin-left:auto;flex-shrink:0;}
+  .card-logo{height:24px;width:38px;border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .card-logo svg{height:100%;width:100%;display:block;}
+  .co-terms{margin-top:14px;}
+  .co-terms-title{font-size:12.5px;font-weight:700;color:var(--white);margin-bottom:8px;}
+  .co-terms-box{max-height:170px;overflow-y:auto;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r-md);background:rgba(255,255,255,.02);font-size:12.5px;line-height:1.65;color:var(--gray);}
+  .co-terms-box h5{font-size:12.5px;color:var(--white);margin:8px 0 3px;}
+  .co-terms-box h5:first-child{margin-top:0;}
+  .co-terms-box p{margin:0 0 6px;}
+  .co-terms-box b{color:var(--white);}
+  .co-terms-check{display:flex;align-items:flex-start;gap:9px;margin-top:10px;font-size:13px;color:var(--white);cursor:pointer;}
+  .co-terms-check input{accent-color:var(--green);width:17px;height:17px;margin-top:1px;flex-shrink:0;}
+
   .co-done{text-align:center;padding:8px 0 4px;}
   .co-done-mark{
     width:64px;height:64px;border-radius:50%;margin:0 auto 16px;
@@ -442,6 +463,8 @@
     .co-body,.co-head{padding-left:18px;padding-right:18px;}
     .co-foot{padding-left:18px;padding-right:18px;flex-wrap:wrap;}
     .co-bank-row{flex-wrap:wrap;gap:4px 10px;}
+    .co-method-opt{flex-wrap:wrap;}
+    .card-logos{margin-left:0;width:100%;padding-left:29px;}
     .co-bank-row .co-bk{flex:0 0 100%;}
     .co-step span.co-step-label{display:none;}
   }
@@ -961,6 +984,31 @@
             </div>
             <span class="co-coupon-msg" id="coCouponMsg"></span>
           </div>
+          <div class="co-field-wrap full">
+            <span class="co-label" data-i18n="co.method">Phương thức thanh toán</span>
+            <div class="co-method" role="radiogroup">
+              <label class="co-method-opt">
+                <input type="radio" name="coMethod" value="payos" checked>
+                <span class="co-method-txt"><span class="co-method-name" data-i18n="co.methodQr">Chuyển khoản QR ngân hàng</span><span class="co-method-sub" data-i18n="co.methodQrSub">Quét mã QR bằng ứng dụng ngân hàng</span></span>
+              </label>
+              <label class="co-method-opt">
+                <input type="radio" name="coMethod" value="onepay">
+                <span class="co-method-txt"><span class="co-method-name" data-i18n="co.methodCard">Thẻ quốc tế</span><span class="co-method-sub" data-i18n="co.methodCardSub">Visa, Mastercard, JCB, American Express — qua cổng OnePay</span></span>
+                <span class="card-logos" aria-hidden="true">
+                  <span class="card-logo" title="Visa"><svg viewBox="0 0 38 24"><text x="19" y="16.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="900" font-style="italic" fill="#1a1f71">VISA</text></svg></span>
+                  <span class="card-logo" title="Mastercard"><svg viewBox="0 0 38 24"><circle cx="15" cy="12" r="7.5" fill="#eb001b"/><circle cx="23" cy="12" r="7.5" fill="#f79e1b"/><path d="M19 5.9a7.5 7.5 0 0 1 0 12.2 7.5 7.5 0 0 1 0-12.2z" fill="#ff5f00"/></svg></span>
+                  <span class="card-logo" title="JCB"><svg viewBox="0 0 38 24"><rect x="6" y="4" width="8" height="16" rx="3" fill="#0e4c96"/><rect x="15" y="4" width="8" height="16" rx="3" fill="#e30613"/><rect x="24" y="4" width="8" height="16" rx="3" fill="#00a94f"/><text x="19" y="15" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" font-weight="900" fill="#fff">JCB</text></svg></span>
+                  <span class="card-logo" title="American Express"><svg viewBox="0 0 38 24"><rect width="38" height="24" fill="#2e77bb"/><text x="19" y="14.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="6.2" font-weight="900" fill="#fff">AMEX</text></svg></span>
+                </span>
+              </label>
+            </div>
+            <div class="co-terms" id="coTerms" hidden>
+              <div class="co-terms-title" data-i18n="co.termsTitle">Điều khoản thanh toán & chính sách hoàn / huỷ</div>
+              <div class="co-terms-box" tabindex="0" data-i18n="co.termsBody"></div>
+              <label class="co-terms-check"><input type="checkbox" id="coTermsAgree"><span data-i18n="co.termsAgree">Tôi đã đọc và đồng ý với Điều khoản thanh toán *</span></label>
+              <span class="co-err" id="errTerms" data-i18n="co.termsErr">Vui lòng đọc và đồng ý với điều khoản thanh toán để tiếp tục.</span>
+            </div>
+          </div>
         </div>
         <div class="co-order" id="coOrder"></div>
       </section>
@@ -969,7 +1017,7 @@
       <section class="co-view" id="coView2" hidden>
         <div class="co-hold" id="coHoldBar">
           <svg class="icon"><use href="#ic-clock"/></svg>
-          <span data-i18n="co.holdText2">Ghế đang được giữ cho bạn. Hoàn tất chuyển khoản trước khi hết giờ.</span>
+          <span id="coHoldText" data-i18n="co.holdText2">Ghế đang được giữ cho bạn. Hoàn tất chuyển khoản trước khi hết giờ.</span>
           <span class="co-count" id="coCount">10:00</span>
         </div>
 
@@ -979,7 +1027,7 @@
           <div class="co-pay-link" id="coPayLink"></div>
         </div>
 
-        <p class="co-payhint" data-i18n="co.payhint">
+        <p class="co-payhint" id="coPayHint" data-i18n="co.payhint">
           Vui lòng chuyển khoản <b>đúng số tiền</b> và <b>đúng nội dung</b> ở trên để hệ thống tự động đối soát.
           Sau khi chuyển khoản, bấm <b>“Tôi đã chuyển khoản”</b> — chúng tôi sẽ xác nhận và gửi vé qua email cho bạn.
         </p>
@@ -1547,6 +1595,41 @@ async function createPaymentOnServer(holdId, customer, couponCode) {
   return result.order; // { orderId, orderCode, subtotal, amount, coupon, checkoutUrl, qrCode, qrCodeDataUrl }
 }
 
+/* Thẻ quốc tế qua OnePay: server tạo đơn + URL đã ký, frontend chỉ chuyển hướng
+   khách sang đó. Kết quả thật do server nhận (ReturnURL + IPN), không tin URL. */
+async function createOnepayPaymentOnServer(holdId, customer, couponCode) {
+  if (TEST_MODE) {
+    return { orderId: 'test_order_' + Date.now(), orderCode: Date.now(), subtotal: 0, amount: 0, coupon: null, free: false, paymentUrl: '#' };
+  }
+
+  const response = await fetch(`${API_BASE_URL}/payments/onepay/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      holdId,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      customerEmail: customer.email,
+      couponCode: couponCode || undefined,
+      termsAccepted: true,
+      locale: currentLang === 'en' ? 'en' : 'vn'
+    })
+  });
+
+  let result;
+  try {
+    result = await response.json();
+  } catch (e) {
+    throw new Error(t('err.connPayment'));
+  }
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || t('err.paymentCreateFail'));
+  }
+
+  return result.order; // { orderId, orderCode, subtotal, amount, coupon, free, paymentUrl }
+}
+
 /* Kiểm tra mã giảm giá — chỉ để hiện % giảm ngay khi khách bấm "Áp dụng",
    KHÔNG phải bước tính tiền cuối cùng (server tính lại thật ở bước tạo
    thanh toán, xem createPaymentOnServer). */
@@ -1577,12 +1660,12 @@ async function validateCouponOnServer(code) {
 
 /* Hỏi trạng thái thanh toán — dùng để poll trong lúc chưa có domain đăng ký
    webhook. Server hỏi thẳng PayOS, không cần PayOS gọi ngược lại mình. */
-async function fetchPaymentStatus(orderId) {
+async function fetchPaymentStatus(orderId, provider) {
   if (TEST_MODE) {
     return { orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING' };
   }
 
-  const response = await fetch(`${API_BASE_URL}/payments/${encodeURIComponent(orderId)}/status`);
+  const response = await fetch(`${API_BASE_URL}/payments/${encodeURIComponent(orderId)}/status` + (provider === 'onepay' ? '?provider=onepay' : ''));
 
   let result;
   try {
@@ -2762,7 +2845,14 @@ function renderBankBox(){
     wrap.appendChild(row);
   });
 
-  if (currentOrder && currentOrder.qrCodeDataUrl){
+  const isCard = !!(currentOrder && currentOrder.provider === 'onepay');
+  const setI18n = (id, key) => { const el = document.getElementById(id); el.setAttribute('data-i18n', key); el.innerHTML = t(key); };
+  setI18n('coHoldText', isCard ? 'co.holdTextCard' : 'co.holdText2');
+  setI18n('coPayHint', isCard ? 'co.payhintCard' : 'co.payhint');
+
+  if (isCard){
+    qr.innerHTML = t('co.cardWaiting');
+  } else if (currentOrder && currentOrder.qrCodeDataUrl){
     qr.innerHTML = '<img src="' + currentOrder.qrCodeDataUrl + '" alt="' + t('co.qrAlt') + '">';
   } else {
     qr.innerHTML = t('co.qrGenerating');
@@ -2787,18 +2877,27 @@ let paymentPollTimer = null;
 function startPaymentPolling(){
   stopPaymentPolling();
   if (!currentOrder || !currentOrder.orderId) return;
-  paymentPollTimer = setInterval(async () => {
+  const pollOnce = async () => {
     if (!currentOrder || coStep !== 2) { stopPaymentPolling(); return; }
     try {
-      const result = await fetchPaymentStatus(currentOrder.orderId);
+      const result = await fetchPaymentStatus(currentOrder.orderId, currentOrder.provider);
       if (result.orderStatus === 'PAID') {
         stopPaymentPolling();
         finishPaidOrder();
+      } else if (currentOrder.provider === 'onepay' && (result.orderStatus === 'CANCELLED' || result.orderStatus === 'EXPIRED')) {
+        // Thẻ bị từ chối / khách huỷ trên cổng OnePay: đơn đã đóng nhưng ghế vẫn
+        // giữ tới hết giờ — đưa khách về bước 1 để thử lại hoặc đổi phương thức.
+        stopPaymentPolling();
+        toast(t('msg.cardFailed'), 'warn');
+        setStep(1);
       }
     } catch (e) {
       // Lỗi mạng tạm thời — bỏ qua, lần poll sau thử lại
     }
-  }, 4000);
+  };
+  paymentPollTimer = setInterval(pollOnce, 4000);
+  // Vừa quay về từ cổng thẻ: hỏi ngay một lần thay vì đợi 4 giây.
+  if (currentOrder.provider === 'onepay') setTimeout(pollOnce, 800);
 }
 
 function stopPaymentPolling(){
@@ -2846,7 +2945,7 @@ function setStep(n){
     renderOrderBox();
   } else if (n === 2){
     coTitle.textContent = t('co.title2');
-    coNextLabel.textContent = t('co.nextLabel2');
+    coNextLabel.textContent = t(currentOrder && currentOrder.provider === 'onepay' ? 'co.nextLabel2Card' : 'co.nextLabel2');
     coBackBtn.textContent = t('co.backLabel2');
     coBackBtn.style.display = '';
     coNextBtn.style.display = '';
@@ -3007,6 +3106,22 @@ function validateCustomer(){
 
 coBackBtn.addEventListener('click', () => closeCheckout());
 
+/* Phương thức thanh toán đang chọn ở bước 1: 'payos' (QR) hoặc 'onepay' (thẻ quốc tế) */
+function selectedPayMethod(){
+  const el = document.querySelector('input[name="coMethod"]:checked');
+  return el ? el.value : 'payos';
+}
+document.querySelectorAll('input[name="coMethod"]').forEach(el => {
+  el.addEventListener('change', () => {
+    document.getElementById('coTerms').hidden = selectedPayMethod() !== 'onepay';
+  });
+});
+document.getElementById('coTermsAgree').addEventListener('change', e => {
+  if (e.target.checked) document.getElementById('errTerms').classList.remove('show');
+});
+// Bấm Back từ trang OnePay: trình duyệt có thể khôi phục trang nguyên trạng (nút đang khoá).
+window.addEventListener('pageshow', e => { if (e.persisted) coNextBtn.disabled = false; });
+
 coNextBtn.addEventListener('click', async () => {
   /* ---- Bước 1 → 2: xác thực thông tin, giữ ghế, hiện thông tin chuyển khoản ---- */
   if (coStep === 1){
@@ -3016,6 +3131,15 @@ coNextBtn.addEventListener('click', async () => {
 
     const customer = validateCustomer();
     if (!customer){ toast(t('msg.checkInfo'), 'warn'); return; }
+
+    const payMethod = selectedPayMethod();
+    // Thẻ quốc tế: khách bắt buộc tick đồng ý điều khoản (quy định tổ chức thẻ,
+    // không được bỏ qua) — server cũng kiểm tra lại và ghi thời điểm đồng ý.
+    if (payMethod === 'onepay' && !document.getElementById('coTermsAgree').checked){
+      document.getElementById('errTerms').classList.add('show');
+      toast(t('co.termsErr'), 'warn');
+      return;
+    }
 
     const emailSuggestion = suggestEmailDomain(customer.email);
     if (emailSuggestion && !emailSuggestionConfirmed){
@@ -3064,7 +3188,9 @@ coNextBtn.addEventListener('click', async () => {
     coNextBtn.disabled = true;
     let payment;
     try {
-      payment = await createPaymentOnServer(currentOrder.holdId, customer, appliedCoupon ? appliedCoupon.code : null);
+      payment = payMethod === 'onepay'
+        ? await createOnepayPaymentOnServer(currentOrder.holdId, customer, appliedCoupon ? appliedCoupon.code : null)
+        : await createPaymentOnServer(currentOrder.holdId, customer, appliedCoupon ? appliedCoupon.code : null);
     } catch (error) {
       coNextBtn.disabled = false;
       // Coupon có thể vừa hết hạn/hết lượt đúng lúc này — server từ chối
@@ -3073,6 +3199,7 @@ coNextBtn.addEventListener('click', async () => {
       return;
     }
     coNextBtn.disabled = false;
+    currentOrder.provider = payMethod;
     currentOrder.orderId = payment.orderId;
     currentOrder.orderCode = payment.orderCode;
     currentOrder.checkoutUrl = payment.checkoutUrl;
@@ -3092,6 +3219,15 @@ coNextBtn.addEventListener('click', async () => {
     }
 
     sendBookingEmail('HOLD_CREATED', currentOrder);      // mail: đã giữ ghế, chờ thanh toán
+
+    // Thẻ quốc tế: chuyển khách sang cổng OnePay (cùng tab để quay về đúng phiên
+    // đã lưu ở sessionStorage). Giữ nút khoá để bấm đúp không tạo giao dịch thứ hai.
+    if (payMethod === 'onepay'){
+      coNextBtn.disabled = true;
+      window.location.href = payment.paymentUrl;
+      return;
+    }
+
     setStep(2);
     startPaymentPolling();
     return;
@@ -3104,7 +3240,7 @@ coNextBtn.addEventListener('click', async () => {
     coNextBtn.disabled = true;
     let statusResult;
     try {
-      statusResult = await fetchPaymentStatus(currentOrder.orderId);
+      statusResult = await fetchPaymentStatus(currentOrder.orderId, currentOrder.provider);
     } catch (error) {
       coNextBtn.disabled = false;
       toast(error.message || t('err.statusCheckFail'), 'warn');
@@ -3507,6 +3643,37 @@ async function tryResumeHold(){
 }
 
 /* =========================================================
+   12c. KHÁCH QUAY VỀ TỪ CỔNG THẺ ONEPAY
+   Server đã tự xác minh + ghi kết quả (ReturnURL/IPN); URL chỉ mang orderId để
+   biết hỏi đơn nào — mọi tham số khác trên URL bị bỏ qua, trạng thái thật luôn
+   lấy từ /payments/:orderId/status?provider=onepay.
+   ========================================================= */
+function readOnepayReturn(){
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('onepayReturn') !== '1') return null;
+  const orderId = params.get('orderId');
+  history.replaceState(null, '', window.location.pathname);
+  return orderId ? { orderId } : null;
+}
+
+async function showOnepayReturnResult(info){
+  try {
+    const r = await fetchPaymentStatus(info.orderId, 'onepay');
+    if (r.orderStatus === 'PAID'){
+      clearSavedOrder();
+      toast(t('msg.cardReturnPaid'));
+      await loadShow();
+    } else if (r.orderStatus === 'CANCELLED' || r.orderStatus === 'EXPIRED'){
+      toast(t('msg.cardFailed'), 'warn');
+    } else {
+      toast(t('msg.cardReturnPending'));
+    }
+  } catch (e) {
+    toast(t('msg.cardReturnPending'));
+  }
+}
+
+/* =========================================================
    13. MODAL & TOAST
    ========================================================= */
 const overlay = document.getElementById('overlay');
@@ -3601,6 +3768,22 @@ const I18N = {
     'co.email':'Email *', 'co.emailPh':'ban@example.com', 'co.emailErr':'Email chưa hợp lệ.',
     'co.emailHint':'Vé điện tử và các thông báo về tình trạng đặt vé sẽ được gửi tới email này.',
     'co.emailSuggest':'Có phải ý bạn là {email}? Bấm để sửa.',
+    'co.method':'Phương thức thanh toán',
+    'co.methodQr':'Chuyển khoản QR ngân hàng',
+    'co.methodQrSub':'Quét mã QR bằng ứng dụng ngân hàng',
+    'co.methodCard':'Thẻ quốc tế',
+    'co.methodCardSub':'Visa, Mastercard, JCB, American Express — qua cổng OnePay',
+    'co.termsTitle':'Điều khoản thanh toán & chính sách hoàn / huỷ',
+    'co.termsBody':'<h5>Chính sách chung</h5><p>Vé đã mua và thanh toán thành công <b>không được hoàn tiền, không hỗ trợ đổi sang suất diễn khác hoặc đổi hạng vé</b>, trừ các trường hợp nêu tại mục “Trường hợp được hoàn tiền” dưới đây. Khách hàng vui lòng kiểm tra kỹ suất diễn, hạng vé trước khi thanh toán.</p><h5>Khách hàng tự huỷ vé</h5><p>Khách hàng tự huỷ vé đã mua (không do lỗi hệ thống/đơn vị tổ chức) sẽ không được hoàn tiền. Thời điểm chấm dứt được tính từ lúc khách hàng gửi yêu cầu huỷ qua hotline/email hỗ trợ.</p><h5>Trường hợp được hoàn tiền</h5><p>LumiShow hoàn tiền 100% giá trị vé đã thanh toán khi: (1) suất diễn bị huỷ hoàn toàn và không có suất thay thế phù hợp; (2) lỗi phát sinh từ hệ thống LumiShow khiến khách hàng bị tính sai số tiền, bị trừ tiền nhưng không nhận được vé hợp lệ, hoặc ghế/vé bị bán trùng mà LumiShow không thể bố trí thay thế tương đương.</p><p>Hoàn tiền thực hiện về đúng phương thức/tài khoản khách hàng đã thanh toán ban đầu, trong vòng tối đa <b>07 ngày làm việc</b> kể từ khi xác nhận đủ điều kiện. Yêu cầu hoàn tiền gửi qua hotline/email hỗ trợ, phản hồi trong vòng 03 ngày làm việc.</p><h5>Vé điện tử</h5><p>Vé chỉ có giá trị cho đúng suất diễn (ngày, giờ) ghi trên vé điện tử, xuất trình mã QR tại cổng soát vé. Vé được gửi qua email ngay sau khi thanh toán thành công.</p>',
+    'co.termsAgree':'Tôi đã đọc và đồng ý với Điều khoản thanh toán *',
+    'co.termsErr':'Vui lòng đọc và đồng ý với điều khoản thanh toán để tiếp tục.',
+    'co.holdTextCard':'Ghế đang được giữ cho bạn. Hoàn tất thanh toán thẻ trước khi hết giờ.',
+    'co.cardWaiting':'Đang chờ kết quả<br>thanh toán thẻ',
+    'co.payhintCard':'Hệ thống đang xác nhận kết quả với cổng thanh toán OnePay — vé điện tử sẽ được gửi qua email ngay khi xác nhận xong. Nếu bạn vừa thanh toán xong, bấm <b>“Kiểm tra thanh toán”</b>.',
+    'co.nextLabel2Card':'Kiểm tra thanh toán',
+    'msg.cardFailed':'Thanh toán thẻ chưa thành công. Bạn có thể thử lại hoặc chọn phương thức khác — ghế vẫn đang được giữ cho đến hết giờ.',
+    'msg.cardReturnPaid':'Thanh toán thẻ thành công! Vé điện tử đã được gửi qua email của bạn.',
+    'msg.cardReturnPending':'Đang xác nhận thanh toán thẻ với cổng OnePay. Vé sẽ được gửi qua email ngay khi xác nhận xong.',
     'co.coupon':'Mã giảm giá (nếu có)', 'co.couponPh':'Nhập mã giảm giá', 'co.apply':'Áp dụng',
     'co.couponRemoved':'Đã bỏ mã giảm giá.',
     'co.checking':'Đang kiểm tra…',
@@ -3728,6 +3911,22 @@ const I18N = {
     'co.email':'Email *', 'co.emailPh':'you@example.com', 'co.emailErr':'Invalid email address.',
     'co.emailHint':'Your e-ticket and booking updates will be sent to this email.',
     'co.emailSuggest':'Did you mean {email}? Tap to fix.',
+    'co.method':'Payment method',
+    'co.methodQr':'Bank transfer via QR',
+    'co.methodQrSub':'Scan the QR code with your banking app',
+    'co.methodCard':'International card',
+    'co.methodCardSub':'Visa, Mastercard, JCB, American Express — via OnePay gateway',
+    'co.termsTitle':'Payment terms & refund / cancellation policy',
+    'co.termsBody':'<h5>General policy</h5><p>Tickets that have been purchased and paid for successfully are <b>non-refundable and cannot be exchanged for another showtime or ticket class</b>, except in the cases listed under “Refund cases” below. Please check the showtime and ticket class carefully before paying.</p><h5>Customer-initiated cancellation</h5><p>Tickets cancelled by the customer (not due to a system or organizer fault) are not refunded. The termination date is counted from the moment the cancellation request is sent via the support hotline/email.</p><h5>Refund cases</h5><p>LumiShow refunds 100% of the ticket price paid when: (1) the show is cancelled entirely with no suitable replacement showtime; (2) a LumiShow system error results in an incorrect charge, a charge without a valid ticket being issued, or a seat/ticket sold twice that LumiShow cannot replace with an equivalent one.</p><p>Refunds are made to the original payment method/account within a maximum of <b>7 business days</b> after eligibility is confirmed. Refund requests are sent via the support hotline/email and answered within 3 business days.</p><h5>E-tickets</h5><p>A ticket is valid only for the exact showtime (date, time) printed on the e-ticket; present the QR code at the entrance. Tickets are emailed right after successful payment.</p>',
+    'co.termsAgree':'I have read and agree to the Payment Terms *',
+    'co.termsErr':'Please read and agree to the payment terms to continue.',
+    'co.holdTextCard':'Your seats are being held. Complete the card payment before time runs out.',
+    'co.cardWaiting':'Waiting for the<br>card payment result',
+    'co.payhintCard':'We are confirming the result with the OnePay payment gateway — your e-tickets will be emailed as soon as it is confirmed. If you have just paid, click <b>“Check payment”</b>.',
+    'co.nextLabel2Card':'Check payment',
+    'msg.cardFailed':'The card payment was not successful. You can try again or choose another method — your seats are still held until time runs out.',
+    'msg.cardReturnPaid':'Card payment successful! Your e-tickets have been emailed to you.',
+    'msg.cardReturnPending':'Confirming your card payment with OnePay. Your tickets will be emailed as soon as it is confirmed.',
     'co.coupon':'Discount code (optional)', 'co.couponPh':'Enter discount code', 'co.apply':'Apply',
     'co.couponRemoved':'Discount code removed.',
     'co.checking':'Checking…',
@@ -3870,8 +4069,11 @@ drawSafetyBoxes();
 
   renderSchedule();
 
+  const onepayReturn = readOnepayReturn();
   const resumed = await tryResumeHold();
   if (!resumed) await loadShow();
+  // Hold đã hết hạn lúc khách quay về (không khôi phục được phiên): vẫn báo đúng kết quả đơn.
+  if (!resumed && onepayReturn) await showOnepayReturnResult(onepayReturn);
 })();
 onViewChange();
 setLang(currentLang);

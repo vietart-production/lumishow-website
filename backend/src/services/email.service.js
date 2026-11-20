@@ -528,7 +528,36 @@ async function sendContactEmail({ name, phone, email, company, message }) {
     }
 }
 
+// Cảnh báo kỹ thuật dạng text ngắn (vd. tiền đã vào nhưng đơn đã huỷ/hết hạn,
+// cần hoàn tay). Không throw — người gọi chỉ cần log lỗi nếu gửi hỏng.
+async function sendTechAlertEmail(subject, text) {
+
+    if (!RESEND_API_KEY) {
+        console.warn("[email] RESEND_API_KEY chưa cấu hình — bỏ qua gửi mail cảnh báo kỹ thuật.");
+        return;
+    }
+
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            from: EMAIL_FROM,
+            to: TECH_ALERT_EMAILS,
+            subject,
+            text
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Gửi mail cảnh báo kỹ thuật thất bại (${response.status}): ${await response.text()}`);
+    }
+}
+
 module.exports = {
+    sendTechAlertEmail,
     sendTicketEmail,
     sendOrderNotificationEmail,
     sendSeatConflictAlertEmail,
