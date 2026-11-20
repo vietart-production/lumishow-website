@@ -2097,7 +2097,7 @@ document.getElementById('scBtn').addEventListener('click', () => {
    Nếu vì lý do nào đó thư viện không tải được (làm việc offline chẳng hạn),
    fallback bên dưới vẫn cho kéo/lăn bình thường.
    ========================================================= */
-const MIN_SCALE = 1, MAX_SCALE = 6, CLOSE_UP = 1.9;
+const MIN_SCALE = 1, MAX_SCALE = 6, CLOSE_UP = 1; // 1 = luôn hiện số ghế kể cả khi thu nhỏ tối đa (trước là 1.9)
 // Panzoom tính pan bằng pixel di chuyển thật của ngón tay/chuột chia cho scale,
 // KHÔNG biết gì về viewBoxK (tỉ lệ SVG hiển thị nhỏ hơn viewBox thật) — nên 1px
 // kéo thật chỉ đẩy khung nhìn đi viewBoxK px trên màn hình (viewBoxK < 1, càng
@@ -2294,6 +2294,7 @@ function focusSeat(id, targetScale){
 document.getElementById('zoomIn').addEventListener('click',  () => zoomer.zoomIn());
 document.getElementById('zoomOut').addEventListener('click', () => zoomer.zoomOut());
 document.getElementById('zoomReset').addEventListener('click', () => { zoomer.reset(); closeSeatCard(); });
+onViewChange(); // dựng số ghế ngay từ lần tải đầu (CLOSE_UP=1 nên không chờ zoom)
 
 /* ---- Phân biệt "chạm chọn ghế" với "kéo bản đồ" ----
    Ghi lại phần tử ngay lúc pointerdown thay vì dò lại ở pointerup, tránh việc
